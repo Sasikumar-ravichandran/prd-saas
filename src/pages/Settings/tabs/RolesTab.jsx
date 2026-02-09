@@ -53,7 +53,7 @@ export default function RolesTab() {
   // --- HANDLERS ---
   const handleToggle = (permId) => {
     setSaved(false);
-    const currentPerms = rolePermissions[activeRole] || [];
+    const currentPerms = rolePermissions?.[activeRole] || [];
     let newPerms = currentPerms.includes(permId)
       ? currentPerms.filter(id => id !== permId)
       : [...currentPerms, permId];
@@ -66,7 +66,7 @@ export default function RolesTab() {
     try {
       setSaving(true);
       // Save ONLY the currently active role to the backend
-      await settingService.updateRole(activeRole, rolePermissions[activeRole]);
+      await settingService.updateRole(activeRole, rolePermissions?.[activeRole]);
       
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
@@ -86,6 +86,7 @@ export default function RolesTab() {
 
   if (loading) return <Box p={4}><CircularProgress /></Box>;
 
+  
   return (
     <Box sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column' }}>
        <SettingsHeader 
@@ -160,7 +161,7 @@ export default function RolesTab() {
 
                     <Box sx={{ px: 3 }}>
                       {groupedPermissions[category].map((perm) => {
-                        const isChecked = rolePermissions[activeRole]?.includes(perm.id) || false;
+                        const isChecked = rolePermissions?.[activeRole]?.includes(perm.id) || false;
                         const isDisabled = activeRole === 'admin';
 
                         return (

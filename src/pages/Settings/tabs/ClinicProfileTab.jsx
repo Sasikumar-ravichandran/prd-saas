@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form'; // 1. Use Hook Form
-import { Box, Grid, TextField, Button, CircularProgress, Alert } from '@mui/material';
+import { useForm } from 'react-hook-form'; 
+import { Box, Grid, TextField, Button, CircularProgress, InputAdornment } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import KeyIcon from '@mui/icons-material/Key'; // Icon for ID
 import SettingsHeader from '../components/SettingsHeader';
 import { useColorMode } from '../../../context/ThemeContext';
-import { settingService } from '../../../api/services/settingService'; // Import Service
+import { settingService } from '../../../api/services/settingService'; 
 import { useToast } from '../../../context/ToastContext';
 
 export default function ClinicProfileTab() {
@@ -13,15 +14,13 @@ export default function ClinicProfileTab() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Setup Form
-  const { register, handleSubmit, reset, setValue } = useForm();
+  const { register, handleSubmit, reset } = useForm();
 
   // --- 1. FETCH DATA ---
   useEffect(() => {
     const fetchClinic = async () => {
       try {
         const data = await settingService.getClinic();
-        // Populate form if data exists
         if (data) {
           reset(data); 
         }
@@ -60,7 +59,7 @@ export default function ClinicProfileTab() {
             color={primaryColor}
             action={
               <Button 
-                type="submit" // Triggers form submit
+                type="submit" 
                 variant="contained" 
                 startIcon={saving ? <CircularProgress size={20} color="inherit"/> : <SaveIcon />} 
                 disabled={saving}
@@ -72,6 +71,28 @@ export default function ClinicProfileTab() {
           />
           
           <Grid container spacing={3}>
+             
+             {/* --- NEW FIELD: CLINIC ID (READ ONLY) --- */}
+             <Grid item xs={12}>
+                <TextField 
+                  fullWidth 
+                  label="Clinic ID (System Generated)" 
+                  disabled // <--- READ ONLY
+                  InputLabelProps={{ shrink: true }}
+                  {...register("clinicId")} 
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <KeyIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ 
+                    '& .MuiInputBase-root': { bgcolor: '#f1f5f9' } // Grey background
+                  }}
+                />
+             </Grid>
+
              <Grid item xs={12}>
                 <TextField 
                   fullWidth label="Clinic Legal Name" 

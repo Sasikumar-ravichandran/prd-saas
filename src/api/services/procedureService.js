@@ -7,7 +7,6 @@ export const procedureService = {
   },
   
   create: async (data) => {
-	console.log(data,'@@@@@@@@')
     const response = await api.post('/procedures', data);
     return response.data;
   },

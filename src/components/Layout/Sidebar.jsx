@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
 	Box, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
-	IconButton, Typography, Divider, Tooltip, alpha
+	IconButton, Typography, Divider, Tooltip, alpha, Avatar
 } from '@mui/material';
 import { useColorMode } from '../../context/ThemeContext';
 

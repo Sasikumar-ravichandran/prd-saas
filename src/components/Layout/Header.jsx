@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { 
   AppBar, Toolbar, IconButton, Box, Button, Menu, MenuItem, InputBase, 
-  Typography, Avatar, Stack, Tooltip, Badge, Divider, alpha 
+  Typography, Avatar, Stack, Tooltip, Badge, Divider, alpha, ListItemIcon
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../../context/ThemeContext';
+import { authService } from '../../api/services/authService';
 
 // Icons
 import MenuIcon from '@mui/icons-material/Menu';
@@ -13,17 +15,34 @@ import SearchIcon from '@mui/icons-material/Search';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import LogoutIcon from '@mui/icons-material/Logout';
+import SettingsIcon from '@mui/icons-material/Settings';
+import PersonIcon from '@mui/icons-material/Person';
 
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 80;
 const HEADER_HEIGHT = 74;
 
 export default function Header({ isCollapsed, handleDrawerToggle }) {
-  const { primaryColor } = useColorMode();
-  const [anchorEl, setAnchorEl] = useState(null);
+  const navigate = useNavigate();
+  const { primaryColor, clinicName } = useColorMode(); // Get Global Branding
+  
+  // 1. Get Logged In User Data
+  const user = JSON.parse(localStorage.getItem('user')) || { name: 'Guest', role: 'Staff' };
+  
+  // State for Menus
+  const [branchAnchor, setBranchAnchor] = useState(null);
+  const [userAnchor, setUserAnchor] = useState(null);
 
-  const handleBranchClick = (event) => setAnchorEl(event.currentTarget);
-  const handleBranchClose = () => setAnchorEl(null);
+  // --- Handlers ---
+  const handleLogout = () => {
+    authService.logout();
+    navigate('/login');
+  };
+
+  const getInitials = (name) => {
+    return name ? name.substring(0, 2).toUpperCase() : 'DR';
+  };
 
   return (
     <AppBar 
@@ -41,7 +60,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     >
       <Toolbar sx={{ height: HEADER_HEIGHT, display: 'flex', justifyContent: 'space-between', px: 2 }}>
         
-        {/* LEFT: Mobile Toggle & Branch */}
+        {/* LEFT: Mobile Toggle & Clinic Name */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, width: '25%' }}>
           <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ display: { md: 'none' } }}>
             <MenuIcon />
@@ -49,7 +68,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
           
           <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
              <Button 
-               onClick={handleBranchClick}
+               onClick={(e) => setBranchAnchor(e.currentTarget)}
                startIcon={<LocationOnIcon sx={{ color: primaryColor }} />}
                endIcon={<KeyboardArrowDownIcon sx={{ color: '#94a3b8' }} />}
                sx={{ 
@@ -59,16 +78,29 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                  '&:hover': { bgcolor: '#f8fafc', borderColor: '#cbd5e1' }
                }}
              >
-               Adyar Branch
+               {/* 2. Show Real Clinic Name */}
+               {clinicName || "My Clinic"}
              </Button>
-             <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleBranchClose}>
-                <MenuItem onClick={handleBranchClose} sx={{ fontWeight: 'bold' }}>Adyar Branch</MenuItem>
-                <MenuItem onClick={handleBranchClose}>Anna Nagar Branch</MenuItem>
+
+             {/* Branch Menu (Placeholder for future multi-location) */}
+             <Menu 
+               anchorEl={branchAnchor} 
+               open={Boolean(branchAnchor)} 
+               onClose={() => setBranchAnchor(null)}
+               PaperProps={{ elevation: 3, sx: { mt: 1, borderRadius: 2, minWidth: 180 } }}
+             >
+                <MenuItem onClick={() => setBranchAnchor(null)} sx={{ fontWeight: 'bold' }}>
+                  {clinicName} (Main)
+                </MenuItem>
+                <MenuItem onClick={() => navigate('/settings')}>
+                   <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+                   Clinic Settings
+                </MenuItem>
              </Menu>
           </Box>
         </Box>
 
-        {/* CENTER: Search Bar */}
+        {/* CENTER: Search Bar (Visual Only for now) */}
         <Box sx={{ display: 'flex', justifyContent: 'center', width: '50%' }}>
            <Box sx={{ 
               width: { xs: '100%', md: 450 }, 
@@ -114,10 +146,18 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
           
           <Divider orientation="vertical" flexItem sx={{ height: 24, alignSelf: 'center', mx: 1 }} />
 
-          <Button sx={{ textTransform: 'none', color: 'text.primary', borderRadius: 3, py: 0.5, px: 1, '&:hover': { bgcolor: '#f1f5f9' } }}>
+          {/* 3. Real User Profile Button */}
+          <Button 
+            onClick={(e) => setUserAnchor(e.currentTarget)}
+            sx={{ textTransform: 'none', color: 'text.primary', borderRadius: 3, py: 0.5, px: 1, '&:hover': { bgcolor: '#f1f5f9' } }}
+          >
             <Box sx={{ textAlign: 'right', mr: 1.5, display: { xs: 'none', sm: 'block' } }}>
-              <Typography variant="subtitle2" fontWeight="bold" sx={{ lineHeight: 1.2 }}>Dr. Ramesh</Typography>
-              <Typography variant="caption" color="text.secondary" display="block">Admin</Typography>
+              <Typography variant="subtitle2" fontWeight="bold" sx={{ lineHeight: 1.2 }}>
+                {user.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" display="block">
+                {user.role}
+              </Typography>
             </Box>
             <Avatar 
               sx={{ 
@@ -125,9 +165,34 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                 boxShadow: `0 0 0 2px white, 0 0 0 4px ${alpha(primaryColor, 0.15)}`
               }}
             >
-              DR
+              {getInitials(user.name)}
             </Avatar>
           </Button>
+
+          {/* 4. Functional User Menu */}
+          <Menu
+            anchorEl={userAnchor}
+            open={Boolean(userAnchor)}
+            onClose={() => setUserAnchor(null)}
+            PaperProps={{ elevation: 3, sx: { mt: 1, borderRadius: 2, minWidth: 160 } }}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          >
+             <MenuItem onClick={() => { setUserAnchor(null); navigate('/settings'); }}>
+               <ListItemIcon><PersonIcon fontSize="small" /></ListItemIcon> 
+               Profile
+             </MenuItem>
+             <MenuItem onClick={() => { setUserAnchor(null); navigate('/settings'); }}>
+               <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon> 
+               Settings
+             </MenuItem>
+             <Divider />
+             <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+               <ListItemIcon><LogoutIcon fontSize="small" color="error" /></ListItemIcon>
+               Logout
+             </MenuItem>
+          </Menu>
+
         </Box>
 
       </Toolbar>
