@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
-  Avatar, Typography, Chip, Stack, Tooltip, IconButton 
+  Avatar, Typography, Chip, Stack, Tooltip, IconButton, CircularProgress, Alert
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -9,20 +9,38 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import SettingsHeader from '../components/SettingsHeader';
 import UserModal from '../modals/UserModal';
 import { useColorMode } from '../../../context/ThemeContext';
-
-const INITIAL_USERS = [
-  { id: 1, name: 'Dr. Ramesh', email: 'ramesh@clinic.com', role: 'Doctor', status: 'Active' },
-  { id: 2, name: 'Divya S', email: 'reception@clinic.com', role: 'Receptionist', status: 'Active' },
-  { id: 3, name: 'Admin User', email: 'admin@clinic.com', role: 'Administrator', status: 'Active' },
-];
+import { userService } from '../../../api/services/userService'; // Import Service
 
 export default function UserManagementTab() {
   const { primaryColor } = useColorMode();
-  const [users, setUsers] = useState(INITIAL_USERS);
+  
+  // State
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
-  // Handlers
+  // --- 1. FETCH USERS ---
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await userService.getAll();
+      setUsers(data);
+    } catch (err) {
+      console.error("Failed to load users", err);
+      setError("Failed to load user list");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  // --- HANDLERS ---
   const handleAddClick = () => {
     setEditingUser(null);
     setModalOpen(true);
@@ -33,22 +51,33 @@ export default function UserManagementTab() {
     setModalOpen(true);
   };
 
-  const handleDeleteClick = (id) => {
+  const handleDeleteClick = async (id) => {
     if (window.confirm("Are you sure you want to remove this user? They will lose access immediately.")) {
-      setUsers(users.filter(u => u.id !== id));
+      try {
+        await userService.delete(id);
+        setUsers(users.filter(u => u._id !== id)); // Optimistic update
+      } catch (err) {
+        alert("Failed to delete user");
+      }
     }
   };
 
-  const handleSaveUser = (data) => {
-    if (editingUser) {
-      // Update existing
-      setUsers(users.map(u => (u.id === editingUser.id ? { ...data, id: u.id } : u)));
-    } else {
-      // Create new
-      const newId = users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
-      setUsers([...users, { ...data, id: newId }]);
+  const handleSaveUser = async (data) => {
+    try {
+      if (editingUser) {
+        // Update existing
+        const updated = await userService.update(editingUser._id, data);
+        setUsers(users.map(u => (u._id === editingUser._id ? updated : u)));
+      } else {
+        // Create new
+        const created = await userService.create(data);
+        setUsers([...users, created]);
+      }
+      setModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "Failed to save user");
     }
-    setModalOpen(false);
   };
 
   const getStatusColor = (status) => {
@@ -59,6 +88,9 @@ export default function UserManagementTab() {
       default: return { bg: '#f1f5f9', color: '#000' };
     }
   };
+
+  if (loading) return <Box p={4}><CircularProgress /></Box>;
+  if (error) return <Box p={4}><Alert severity="error">{error}</Alert></Box>;
 
   return (
     <Box sx={{ p: 4 }}>
@@ -89,7 +121,7 @@ export default function UserManagementTab() {
                 {users.map((user) => {
                    const statusStyle = getStatusColor(user.status);
                    return (
-                     <TableRow key={user.id} hover>
+                     <TableRow key={user._id} hover>
                         <TableCell>
                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                               <Avatar sx={{ width: 32, height: 32, bgcolor: primaryColor, fontSize: 14 }}>
@@ -119,7 +151,7 @@ export default function UserManagementTab() {
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="Delete">
-                                <IconButton size="small" color="error" onClick={() => handleDeleteClick(user.id)}>
+                                <IconButton size="small" color="error" onClick={() => handleDeleteClick(user._id)}>
                                   <DeleteOutlineIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
@@ -139,11 +171,11 @@ export default function UserManagementTab() {
 
        {/* MODAL */}
        <UserModal 
-          open={modalOpen} 
-          onClose={() => setModalOpen(false)} 
-          onSave={handleSaveUser} 
-          user={editingUser} 
-          primaryColor={primaryColor} 
+         open={modalOpen} 
+         onClose={() => setModalOpen(false)} 
+         onSave={handleSaveUser} 
+         user={editingUser} 
+         primaryColor={primaryColor} 
        />
     </Box>
   );

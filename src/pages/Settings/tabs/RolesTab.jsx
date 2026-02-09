@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Box, Paper, Stack, Button, Typography, Switch, Divider, 
-  Chip, Alert 
+  Box, Paper, Stack, Button, Typography, Switch, Chip, Alert, CircularProgress 
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import SettingsHeader from '../components/SettingsHeader';
 import { useColorMode } from '../../../context/ThemeContext';
+import { settingService } from '../../../api/services/settingService'; // Import Service
 
-// --- DEFINITIONS ---
+// ... (Keep ROLES and MASTER_PERMISSIONS constants the same) ...
 const ROLES = [
   { id: 'admin', label: 'Administrator', desc: 'Full access to everything.' },
   { id: 'doctor', label: 'Doctor', desc: 'Clinical access & personal revenue.' },
@@ -26,42 +26,65 @@ const MASTER_PERMISSIONS = [
   { id: 'ops_calendar', label: 'Manage Calendar', category: 'Operational', desc: 'Book & move appointments.' },
 ];
 
-const INITIAL_STATE = {
-  admin: ['fin_view_revenue', 'fin_edit_invoice', 'fin_discounts', 'pt_delete', 'pt_export', 'ops_settings', 'ops_calendar'], 
-  doctor: ['fin_view_revenue', 'ops_calendar'], 
-  receptionist: ['ops_calendar', 'fin_edit_invoice'],
-  nurse: []
-};
-
 export default function RolesTab() {
   const { primaryColor } = useColorMode();
   
   const [activeRole, setActiveRole] = useState('doctor');
-  const [rolePermissions, setRolePermissions] = useState(INITIAL_STATE);
+  const [rolePermissions, setRolePermissions] = useState(null); // Start as null
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // --- 1. FETCH DATA ON MOUNT ---
+  useEffect(() => {
+    const fetchRoles = async () => {
+      try {
+        const data = await settingService.getRoles();
+        setRolePermissions(data);
+      } catch (error) {
+        console.error("Failed to load roles", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRoles();
+  }, []);
 
   // --- HANDLERS ---
   const handleToggle = (permId) => {
     setSaved(false);
-    const currentPerms = rolePermissions[activeRole];
+    const currentPerms = rolePermissions[activeRole] || [];
     let newPerms = currentPerms.includes(permId)
       ? currentPerms.filter(id => id !== permId)
       : [...currentPerms, permId];
 
+    // Optimistic Update (Update UI immediately)
     setRolePermissions({ ...rolePermissions, [activeRole]: newPerms });
   };
 
-  const handleSave = () => {
-    console.log("Saving Permissions:", rolePermissions);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      // Save ONLY the currently active role to the backend
+      await settingService.updateRole(activeRole, rolePermissions[activeRole]);
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      console.error("Failed to save", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
+  // Group permissions logic (Keep same)
   const groupedPermissions = MASTER_PERMISSIONS.reduce((acc, perm) => {
     if (!acc[perm.category]) acc[perm.category] = [];
     acc[perm.category].push(perm);
     return acc;
   }, {});
+
+  if (loading) return <Box p={4}><CircularProgress /></Box>;
 
   return (
     <Box sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -72,21 +95,20 @@ export default function RolesTab() {
          action={
            <Button 
              variant="contained" 
-             startIcon={saved ? <CheckCircleIcon /> : <SaveIcon />} 
+             startIcon={saved ? <CheckCircleIcon /> : (saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />)} 
              onClick={handleSave}
+             disabled={saving}
              color={saved ? "success" : "primary"}
              sx={{ bgcolor: saved ? 'success.main' : primaryColor, transition: 'all 0.3s' }}
            >
-             {saved ? 'Saved!' : 'Save Changes'}
+             {saved ? 'Saved!' : (saving ? 'Saving...' : 'Save Changes')}
            </Button>
          }
        />
        
-       {/* === FLEX CONTAINER (Prevents Wrapping) === */}
        <Box sx={{ display: 'flex', gap: 4, flex: 1, minHeight: 0 }}>
-          
-          {/* --- LEFT: ROLE SELECTOR (Fixed Width) --- */}
-          <Box sx={{ width: 260, flexShrink: 0 }}>
+         {/* LEFT: ROLE SELECTOR */}
+         <Box sx={{ width: 260, flexShrink: 0 }}>
              <Paper variant="outlined" sx={{ overflow: 'hidden', bgcolor: '#f8fafc', height: '100%' }}>
                 <Box sx={{ p: 2, borderBottom: '1px solid #e2e8f0' }}>
                   <Typography variant="subtitle2" fontWeight="800" color="text.secondary" sx={{ letterSpacing: 1 }}>SELECT ROLE</Typography>
@@ -97,10 +119,7 @@ export default function RolesTab() {
                        key={role.id}
                        onClick={() => { setActiveRole(role.id); setSaved(false); }}
                        sx={{ 
-                         justifyContent: 'flex-start', 
-                         borderRadius: 0, 
-                         py: 2, px: 2, 
-                         textTransform: 'none',
+                         justifyContent: 'flex-start', borderRadius: 0, py: 2, px: 2, textTransform: 'none',
                          color: activeRole === role.id ? primaryColor : '#64748b',
                          bgcolor: activeRole === role.id ? 'white' : 'transparent',
                          fontWeight: activeRole === role.id ? '800' : '500',
@@ -117,12 +136,10 @@ export default function RolesTab() {
                    ))}
                 </Stack>
              </Paper>
-          </Box>
+         </Box>
 
-          {/* --- RIGHT: PERMISSION TOGGLES (Flexible Width & Scrollable) --- */}
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-             
-             {/* Header for Right Panel */}
+         {/* RIGHT: PERMISSIONS */}
+         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
                <Typography variant="h6" fontWeight="800" sx={{ color: primaryColor }}>
                  {ROLES.find(r => r.id === activeRole)?.label} Permissions
@@ -131,35 +148,23 @@ export default function RolesTab() {
              </Box>
              
              {activeRole === 'admin' && (
-               <Alert severity="warning" sx={{ mb: 3 }}>
-                 The Administrator role has full access by default. Modifications are restricted.
-               </Alert>
+               <Alert severity="warning" sx={{ mb: 3 }}>The Administrator role has full access by default. Modifications are restricted.</Alert>
              )}
 
-             {/* Scrollable Permissions List */}
              <Paper variant="outlined" sx={{ flex: 1, overflowY: 'auto', p: 0 }}>
                 {Object.keys(groupedPermissions).map((category, index) => (
                   <Box key={category}>
                     <Box sx={{ px: 3, py: 1.5, bgcolor: '#f8fafc', borderBottom: '1px solid #f1f5f9', borderTop: index > 0 ? '1px solid #f1f5f9' : 'none' }}>
-                      <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>
-                        {category}
-                      </Typography>
+                      <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 1 }}>{category}</Typography>
                     </Box>
 
                     <Box sx={{ px: 3 }}>
                       {groupedPermissions[category].map((perm) => {
-                        const isChecked = rolePermissions[activeRole].includes(perm.id);
+                        const isChecked = rolePermissions[activeRole]?.includes(perm.id) || false;
                         const isDisabled = activeRole === 'admin';
 
                         return (
-                          <Box 
-                            key={perm.id} 
-                            sx={{ 
-                              display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                              py: 2, borderBottom: '1px solid #f1f5f9',
-                              '&:last-child': { borderBottom: 'none' }
-                            }}
-                          >
+                          <Box key={perm.id} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 2, borderBottom: '1px solid #f1f5f9', '&:last-child': { borderBottom: 'none' } }}>
                             <Box>
                               <Typography variant="body2" fontWeight="700" sx={{ color: '#1e293b' }}>{perm.label}</Typography>
                               <Typography variant="caption" color="text.secondary">{perm.desc}</Typography>
@@ -169,10 +174,7 @@ export default function RolesTab() {
                               checked={isChecked}
                               disabled={isDisabled}
                               onChange={() => handleToggle(perm.id)}
-                              sx={{ 
-                                '& .MuiSwitch-switchBase.Mui-checked': { color: primaryColor }, 
-                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: primaryColor } 
-                              }} 
+                              sx={{ '& .MuiSwitch-switchBase.Mui-checked': { color: primaryColor }, '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: primaryColor } }} 
                             />
                           </Box>
                         );
@@ -181,7 +183,7 @@ export default function RolesTab() {
                   </Box>
                 ))}
              </Paper>
-          </Box>
+         </Box>
        </Box>
     </Box>
   );

@@ -7,14 +7,14 @@ import CloseIcon from '@mui/icons-material/Close';
 
 export default function ProcedureModal({ open, onClose, onSave, procedure, primaryColor }) {
   const [formData, setFormData] = useState({
-    code: '', name: '', price: '', tax: 0, comm: 0, lab: 0, active: true
+    code: '', name: '', price: '',  commission: 0,  active: true
   });
 
   useEffect(() => {
     if (procedure) {
       setFormData(procedure);
     } else {
-      setFormData({ code: '', name: '', price: '', tax: 0, comm: 0, lab: 0, active: true });
+      setFormData({ code: '', name: '', price: '', commission: 0, active: true });
     }
   }, [procedure, open]);
 
@@ -42,15 +42,15 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
           <Grid item xs={6}>
             <TextField fullWidth label="Standard Price" name="price" type="number" value={formData.price} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} />
           </Grid>
-           <Grid item xs={6}>
+           {/* <Grid item xs={6}>
             <TextField fullWidth label="Lab Cost (Est)" name="lab" type="number" value={formData.lab} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment> }} />
-          </Grid>
+          </Grid> */}
           <Grid item xs={6}>
-            <TextField fullWidth label="Doctor Commission" name="comm" type="number" value={formData.comm} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
+            <TextField fullWidth label="Doctor Commission" name="commission" type="number" value={formData.commission} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
           </Grid>
-          <Grid item xs={6}>
+          {/* <Grid item xs={6}>
             <TextField fullWidth label="Tax Rate" name="tax" type="number" value={formData.tax} onChange={handleChange} InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }} />
-          </Grid>
+          </Grid> */}
         </Grid>
       </DialogContent>
       

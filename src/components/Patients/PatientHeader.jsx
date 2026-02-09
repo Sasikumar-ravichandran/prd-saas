@@ -32,6 +32,8 @@ export default function PatientHeader({ patient, onEdit }) {
   const { primaryColor } = useColorMode();
   const GenderIcon = patient.gender === 'Male' ? MaleIcon : FemaleIcon;
 
+  console.log(patient,'###')
+
   return (
     <Paper 
       elevation={0} 
@@ -66,7 +68,7 @@ export default function PatientHeader({ patient, onEdit }) {
                     </IconButton>
                  </Stack>
                  <Chip 
-                   label={patient.id} 
+                   label={patient.patientId} 
                    size="small" 
                    sx={{ mt: 0.8, height: 20, fontSize: '0.65rem', fontWeight: 'bold', bgcolor: alpha(primaryColor, 0.1), color: primaryColor }} 
                  />
@@ -85,7 +87,7 @@ export default function PatientHeader({ patient, onEdit }) {
                  <DataField label="Age / Gender" value={`${patient.age} Yrs / ${patient.gender}`} icon={<GenderIcon sx={{ fontSize: 16 }} />} />
               </Grid>
               <Grid item xs={6}>
-                 <DataField label="Blood Group" value="O+ ve" /> {/* Mock Data */}
+                 <DataField label="Blood Group" value={patient?.bloodGroup} /> {/* Mock Data */}
               </Grid>
               <Grid item xs={6}>
                  <DataField label="Last Visit" value={patient.lastVisit} icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />} />

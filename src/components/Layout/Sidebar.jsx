@@ -16,6 +16,7 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import LogoutIcon from '@mui/icons-material/Logout';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 
+
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 80;
 const HEADER_HEIGHT = 74;
@@ -30,7 +31,7 @@ const MENU_ITEMS = [
 export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, setIsCollapsed }) {
 	const navigate = useNavigate();
 	const location = useLocation();
-	const { primaryColor } = useColorMode();
+	const { primaryColor, clinicName, clinicLogo } = useColorMode();
 
 	const handleCollapseToggle = () => setIsCollapsed(!isCollapsed);
 
@@ -44,18 +45,54 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 				borderBottom: '1px solid #f1f5f9'
 			}}>
 				{isCollapsed ? (
-					<LocalHospitalIcon sx={{ color: primaryColor, fontSize: 32 }} />
+					// === 1. COLLAPSED STATE ===
+					<Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+						{clinicLogo ? (
+							<Avatar
+								src={clinicLogo}
+								variant="rounded"
+								sx={{ width: 32, height: 32, bgcolor: 'transparent' }}
+							/>
+						) : (
+							<LocalHospitalIcon sx={{ color: primaryColor, fontSize: 32 }} />
+						)}
+					</Box>
 				) : (
-					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-						<Box sx={{
-							width: 38, height: 38, borderRadius: 2, bgcolor: primaryColor,
-							display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
-							boxShadow: `0 4px 6px -1px ${alpha(primaryColor, 0.4)}`
-						}}>
-							<LocalHospitalIcon fontSize="small" />
-						</Box>
-						<Typography variant="h6" fontWeight="800" sx={{ color: '#1e293b', lineHeight: 1, letterSpacing: -0.5 }}>
-							Dental<span style={{ color: primaryColor }}>App</span>
+					// === 2. EXPANDED STATE ===
+					<Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, overflow: 'hidden' }}>
+
+						{/* LOGO LOGIC */}
+						{clinicLogo ? (
+							<Box
+								component="img"
+								src={clinicLogo}
+								alt="Logo"
+								sx={{
+									width: 38, height: 38, borderRadius: 2,
+									objectFit: 'contain',
+									bgcolor: 'white',
+									boxShadow: `0 4px 6px -1px ${alpha(primaryColor, 0.4)}`
+								}}
+							/>
+						) : (
+							<Box sx={{
+								width: 38, height: 38, borderRadius: 2, bgcolor: primaryColor,
+								display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
+								boxShadow: `0 4px 6px -1px ${alpha(primaryColor, 0.4)}`,
+								flexShrink: 0 // Prevents icon from squishing
+							}}>
+								<LocalHospitalIcon fontSize="small" />
+							</Box>
+						)}
+
+						{/* NAME LOGIC */}
+						<Typography
+							variant="h6"
+							fontWeight="800"
+							noWrap
+							sx={{ color: primaryColor, lineHeight: 1, letterSpacing: -0.5 }}
+						>
+							{clinicName}
 						</Typography>
 					</Box>
 				)}

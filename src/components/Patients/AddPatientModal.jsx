@@ -17,25 +17,28 @@ import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import WaterDropIcon from '@mui/icons-material/WaterDrop'; // Icon for Blood Group
 
 const DENTAL_CONCERNS = ['Tooth Pain', 'Cleaning', 'Braces', 'Implant', 'Cosmetic', 'General Checkup', 'Sensitivity'];
-const MEDICAL_CONDITIONS = ['Diabetes', 'BP (High/Low)', 'Heart Issue', 'Pregnancy', 'Asthma', 'Thyroid', 'Epilepsy'];
+const MEDICAL_CONDITIONS = ['Diabetes', 'BP (High/Low)', 'Heart Issue', 'Pregnancy', 'Asthma', 'Thyroid', 'Epilepsy', 'None'];
 const REFERRAL_SOURCES = ['Google', 'Friend/Family', 'Walk-in', 'Instagram'];
 const DOCTORS_LIST = ['Dr. Ramesh', 'Dr. Priya', 'Dr. Bench'];
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'Unknown'];
+import { patientService } from '../../api/services/patientService';
+import { useToast } from '../../context/ToastContext';
+
 
 const QuickChip = ({ label, selected, onClick, disabled }) => (
-  <Chip 
-    label={label} 
+  <Chip
+    label={label}
     onClick={!disabled ? onClick : undefined}
-    variant={selected ? "filled" : "outlined"} 
+    variant={selected ? "filled" : "outlined"}
     color={selected ? "primary" : "default"}
     disabled={disabled && !selected}
-    sx={{ mr: 1, mb: 1, borderRadius: '8px', border: selected ? 'none' : '1px solid #ddd', opacity: disabled && !selected ? 0.5 : 1 }} 
+    sx={{ mr: 1, mb: 1, borderRadius: '8px', border: selected ? 'none' : '1px solid #ddd', opacity: disabled && !selected ? 0.5 : 1 }}
   />
 );
 
 const PainButton = ({ level, currentLevel, onChange, disabled }) => {
   const isSelected = currentLevel === level;
-  let color = level > 6 ? '#ef5350' : '#42a5f5'; 
+  let color = level > 6 ? '#ef5350' : '#42a5f5';
   return (
     <Box
       onClick={() => !disabled && onChange(level)}
@@ -45,8 +48,8 @@ const PainButton = ({ level, currentLevel, onChange, disabled }) => {
         border: `1px solid ${isSelected ? color : '#ddd'}`,
         color: isSelected ? 'white' : '#666',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: disabled ? 'default' : 'pointer', 
-        fontWeight: 'bold', fontSize: '0.85rem', 
+        cursor: disabled ? 'default' : 'pointer',
+        fontWeight: 'bold', fontSize: '0.85rem',
         opacity: disabled && !isSelected ? 0.3 : 1
       }}
     >
@@ -83,7 +86,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
     if (open) {
       if (initialData) {
         reset(initialData);
-        setIsEditing(false); 
+        setIsEditing(false);
       } else {
         reset({
           fullName: '', age: '', gender: 'Male', mobile: '', bloodGroup: '',
@@ -99,10 +102,26 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
   const currentGender = watch('gender');
   const currentReferral = watch('referredBy');
   const currentPain = watch('painLevel');
+  const { showToast } = useToast();
 
-  const handleFormSubmit = (data) => {
-    if (onSubmit) onSubmit(data);
-    onClose();
+
+  const handleFormSubmit = async (data) => {
+    try {
+      if (initialData) {
+        // Edit Mode
+        await patientService.update(initialData._id, data);
+        showToast('Patient updated successfully', 'success');
+      } else {
+        // Create Mode
+        await patientService.create(data); // <--- Clean & Professional
+        showToast('Patient registered successfully', 'success');
+      }
+
+      if (onSubmit) onSubmit(); // Refresh the list
+      onClose();
+    } catch (error) {
+      showToast('Error saving patient', 'error');
+    }
   };
 
   return (
@@ -121,17 +140,17 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
             {initialData ? `ID: ${initialData.id || 'PID-000'}` : 'Create New ID'}
           </Typography>
         </Box>
-        
+
         <Box>
           {initialData && !isEditing && (
-             <Button 
-               variant="outlined" 
-               startIcon={<EditIcon />} 
-               onClick={() => setIsEditing(true)}
-               sx={{ mr: 2, borderRadius: 2 }}
-             >
-               Edit Details
-             </Button>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={() => setIsEditing(true)}
+              sx={{ mr: 2, borderRadius: 2 }}
+            >
+              Edit Details
+            </Button>
           )}
           <IconButton onClick={onClose} size="small" sx={{ bgcolor: '#f5f5f5' }}><CloseIcon fontSize="small" /></IconButton>
         </Box>
@@ -140,13 +159,13 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
       {/* FORM BODY */}
       <DialogContent sx={{ p: 0, display: 'flex', flexDirection: isMobile ? 'column' : 'row', height: '100%' }}>
         <form onSubmit={handleSubmit(handleFormSubmit)} style={{ display: 'contents' }}>
-          
+
           {/* === LEFT PANEL === */}
           <Box sx={{ flex: 1.1, p: 4, overflowY: 'auto' }}>
             <Typography variant="overline" color="text.secondary" fontWeight="bold">PATIENT IDENTITY</Typography>
             <Stack spacing={2.5} sx={{ mt: 1 }}>
-              
-              <TextField 
+
+              <TextField
                 fullWidth placeholder="Full Name" disabled={!isEditing}
                 {...register("fullName", { required: "Name is required" })}
                 InputProps={{
@@ -157,31 +176,40 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
 
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
-                  <TextField 
+                  <TextField
                     fullWidth placeholder="Mobile" disabled={!isEditing}
                     {...register("mobile")}
                     InputProps={{ startAdornment: <InputAdornment position="start">+91</InputAdornment>, sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}
                   />
                 </Grid>
                 <Grid item xs={6} sm={3}>
-                  <TextField 
+                  <TextField
                     fullWidth placeholder="Age" type="number" disabled={!isEditing}
                     {...register("age")}
                     InputProps={{ sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}
                   />
                 </Grid>
                 {/* NEW BLOOD GROUP FIELD */}
-                <Grid item xs={6} sm={3}>
-                  <TextField 
-                    select fullWidth label="Blood" disabled={!isEditing}
-                    {...register("bloodGroup")}
-                    InputProps={{ 
-                      startAdornment: <InputAdornment position="start"><WaterDropIcon sx={{ fontSize: 16, color: '#ef5350' }} /></InputAdornment>,
-                      sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } 
-                    }}
-                  >
-                    {BLOOD_GROUPS.map(bg => <MenuItem key={bg} value={bg}>{bg}</MenuItem>)}
-                  </TextField>
+                <Grid item xs={6} sm={4}>
+                  <Controller
+                    name="bloodGroup"
+                    control={control} // Get this from useForm()
+                    render={({ field }) => (
+                      <TextField
+                        {...field} // Handles value, onChange, onBlur automatically
+                        select
+                        fullWidth
+                        label="Blood Group"
+                        disabled={!isEditing}
+                        InputProps={{
+                          startAdornment: <InputAdornment position="start"><WaterDropIcon sx={{ fontSize: 16, color: '#ef5350' }} /></InputAdornment>,
+                          sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' }
+                        }}
+                      >
+                        {BLOOD_GROUPS.map(bg => <MenuItem key={bg} value={bg}>{bg}</MenuItem>)}
+                      </TextField>
+                    )}
+                  />
                 </Grid>
               </Grid>
 
@@ -189,7 +217,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                 <Typography variant="caption" display="block" mb={0.5} color="text.secondary">GENDER</Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                   {['Male', 'Female', 'Other'].map(g => (
-                    <QuickChip 
+                    <QuickChip
                       key={g} label={g} selected={currentGender === g} disabled={!isEditing}
                       onClick={() => setValue('gender', g)}
                     />
@@ -232,7 +260,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
           <Box sx={{ flex: 1, bgcolor: '#f8fafc', p: 4, borderLeft: isMobile ? 'none' : '1px solid #eee', overflowY: 'auto' }}>
             <Typography variant="overline" color="primary" fontWeight="bold">CLINICAL</Typography>
             <Stack spacing={3} sx={{ mt: 1 }}>
-              
+
               <Controller
                 name="primaryConcern"
                 control={control}
@@ -251,9 +279,9 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                 <Typography variant="caption" fontWeight="bold" sx={{ mb: 1, display: 'block' }}>PAIN SCALE (0 - 10)</Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   {[0, 2, 4, 6, 8, 10].map(level => (
-                    <PainButton 
+                    <PainButton
                       key={level} level={level} currentLevel={currentPain} disabled={!isEditing}
-                      onChange={(val) => setValue('painLevel', val)} 
+                      onChange={(val) => setValue('painLevel', val)}
                     />
                   ))}
                 </Box>
@@ -283,9 +311,9 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                 </Grid>
               </Box>
 
-              <TextField 
-                fullWidth multiline rows={2} label="Chief Notes" disabled={!isEditing} 
-                sx={{ bgcolor: 'white' }} {...register("notes")} 
+              <TextField
+                fullWidth multiline rows={2} label="Chief Notes" disabled={!isEditing}
+                sx={{ bgcolor: 'white' }} {...register("notes")}
               />
 
               <Controller
@@ -306,9 +334,9 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
 
       <DialogActions sx={{ p: 2, bgcolor: 'white', borderTop: '1px solid #eee', justifyContent: 'flex-end' }}>
         <Button onClick={onClose} color="inherit" size="large" sx={{ mr: 1, color: '#666' }}>Cancel</Button>
-        
+
         {isEditing && (
-          <Button 
+          <Button
             onClick={handleSubmit(handleFormSubmit)}
             variant="contained" size="large" disableElevation startIcon={<SaveIcon />}
             sx={{ px: 4, borderRadius: 2, fontWeight: 'bold' }}
