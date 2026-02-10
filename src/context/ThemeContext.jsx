@@ -25,22 +25,32 @@ export const ThemeWrapper = ({ children }) => {
   // --- 1. FETCH BRANDING ON LOAD ---
   useEffect(() => {
     const loadBranding = async () => {
-      try {
-        const data = await settingService.getClinic();
-        
-        if (data) {
-          // If DB has values, use them. If not, keep the defaults.
-          if (data.primaryColor) setPrimaryColor(data.primaryColor);
-          if (data.name) setClinicName(data.name);
-          if (data.logo) setClinicLogo(data.logo);
+      // 1. CHECK FOR USER TOKEN FIRST
+      // We read directly from localStorage because Context might not be ready
+      const storedUser = localStorage.getItem('user');
+      const user = storedUser ? JSON.parse(storedUser) : null;
+
+      // 2. ONLY CALL API IF USER IS LOGGED IN
+      if (user && user.token) {
+        try {
+          const data = await settingService.getClinic();
+          
+          if (data) {
+            if (data.primaryColor) setPrimaryColor(data.primaryColor);
+            if (data.name) setClinicName(data.name);
+            if (data.logo) setClinicLogo(data.logo);
+          }
+        } catch (error) {
+          console.error("Failed to load theme settings, using defaults.", error);
+          // If 401, it might mean token expired, but we just fall back to default blue
         }
-      } catch (error) {
-        console.error("Failed to load theme settings, using defaults.", error);
-        // No action needed, defaults are already set
-      } finally {
-        setIsBrandingLoaded(true);
-      }
+      } 
+      
+      // 3. ALWAYS FINISH LOADING
+      // Even if no user (Login Page), we must set this to true so the UI shows up
+      setIsBrandingLoaded(true);
     };
+
     loadBranding();
   }, []);
 

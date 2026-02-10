@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import {
   Dialog, DialogContent, DialogActions, Button, TextField, Grid, Typography, Box,
   IconButton, Autocomplete, Chip, useTheme, useMediaQuery, InputAdornment,
-  Divider, Stack, RadioGroup, FormControlLabel, Radio, MenuItem, Tooltip
+  Divider, Stack, RadioGroup, FormControlLabel, Radio, MenuItem
 } from '@mui/material';
 
 import CloseIcon from '@mui/icons-material/Close';
@@ -14,16 +14,16 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import BadgeIcon from '@mui/icons-material/BadgeOutlined';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import WaterDropIcon from '@mui/icons-material/WaterDrop'; // Icon for Blood Group
+import WaterDropIcon from '@mui/icons-material/WaterDrop'; 
+
+import { patientService } from '../../api/services/patientService';
+import api from '../../api/services/api'; 
+import { useToast } from '../../context/ToastContext';
 
 const DENTAL_CONCERNS = ['Tooth Pain', 'Cleaning', 'Braces', 'Implant', 'Cosmetic', 'General Checkup', 'Sensitivity'];
 const MEDICAL_CONDITIONS = ['Diabetes', 'BP (High/Low)', 'Heart Issue', 'Pregnancy', 'Asthma', 'Thyroid', 'Epilepsy', 'None'];
 const REFERRAL_SOURCES = ['Google', 'Friend/Family', 'Walk-in', 'Instagram'];
-const DOCTORS_LIST = ['Dr. Ramesh', 'Dr. Priya', 'Dr. Bench'];
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'Unknown'];
-import { patientService } from '../../api/services/patientService';
-import { useToast } from '../../context/ToastContext';
-
 
 const QuickChip = ({ label, selected, onClick, disabled }) => (
   <Chip
@@ -72,16 +72,36 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isEditing, setIsEditing] = useState(false);
+  
+  const [doctorList, setDoctorList] = useState([]);
 
   const { register, handleSubmit, control, setValue, watch, reset, formState: { errors } } = useForm({
     defaultValues: {
       fullName: '', age: '', gender: 'Male', mobile: '', bloodGroup: '',
-      emergencyContact: '', emergencyRelation: '', assignedDoctor: 'Dr. Ramesh',
+      emergencyContact: '', emergencyRelation: '', assignedDoctor: '',
       primaryConcern: null, painLevel: 0, medicalConditions: [],
       referredBy: '', communication: 'WhatsApp', notes: ''
     }
   });
 
+  // 1. FETCH DOCTORS
+  useEffect(() => {
+    const fetchDoctors = async () => {
+      try {
+        const res = await api.get('/users'); 
+        const docs = res.data.filter(u => u.role === 'Doctor' || u.role === 'doctor');
+        setDoctorList(docs);
+      } catch (err) {
+        console.error("Failed to fetch doctors", err);
+      }
+    };
+
+    if (open) {
+      fetchDoctors();
+    }
+  }, [open]);
+
+  // 2. RESET FORM
   useEffect(() => {
     if (open) {
       if (initialData) {
@@ -90,7 +110,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
       } else {
         reset({
           fullName: '', age: '', gender: 'Male', mobile: '', bloodGroup: '',
-          emergencyContact: '', emergencyRelation: '', assignedDoctor: 'Dr. Ramesh',
+          emergencyContact: '', emergencyRelation: '', assignedDoctor: '',
           primaryConcern: null, painLevel: 0, medicalConditions: [],
           referredBy: '', communication: 'WhatsApp', notes: ''
         });
@@ -104,7 +124,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
   const currentPain = watch('painLevel');
   const { showToast } = useToast();
 
-
+  // --- 3. UPDATED SUBMIT HANDLER WITH ERROR HANDLING ---
   const handleFormSubmit = async (data) => {
     try {
       if (initialData) {
@@ -113,14 +133,27 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
         showToast('Patient updated successfully', 'success');
       } else {
         // Create Mode
-        await patientService.create(data); // <--- Clean & Professional
+        await patientService.create(data);
         showToast('Patient registered successfully', 'success');
       }
 
-      if (onSubmit) onSubmit(); // Refresh the list
+      if (onSubmit) onSubmit(); 
       onClose();
     } catch (error) {
-      showToast('Error saving patient', 'error');
+      console.error("Save Error:", error);
+      
+      // Check for Duplicate Key Error (11000)
+      // This checks deep inside the error object where MongoDB hides the code
+      const isDuplicate = error.response?.data?.errorResponse?.code === 11000 
+                       || error.response?.data?.code === 11000
+                       || (error.response?.data?.message && error.response.data.message.includes('duplicate'));
+
+      if (isDuplicate) {
+         showToast('System Error: Patient ID Collision. Please try saving again.', 'error');
+      } else {
+         const msg = error.response?.data?.message || 'Error saving patient';
+         showToast(msg, 'error');
+      }
     }
   };
 
@@ -189,14 +222,13 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                     InputProps={{ sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}
                   />
                 </Grid>
-                {/* NEW BLOOD GROUP FIELD */}
                 <Grid item xs={6} sm={4}>
                   <Controller
                     name="bloodGroup"
-                    control={control} // Get this from useForm()
+                    control={control}
                     render={({ field }) => (
                       <TextField
-                        {...field} // Handles value, onChange, onBlur automatically
+                        {...field}
                         select
                         fullWidth
                         label="Blood Group"
@@ -241,8 +273,27 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
 
               <Divider sx={{ borderStyle: 'dashed' }} />
 
-              <TextField select fullWidth label="Assign Doctor" disabled={!isEditing} defaultValue="Dr. Ramesh" {...register("assignedDoctor")} InputProps={{ sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}>
-                {DOCTORS_LIST.map(doc => <MenuItem key={doc} value={doc}>{doc}</MenuItem>)}
+              {/* DYNAMIC DOCTOR DROPDOWN */}
+              <TextField 
+                select 
+                fullWidth 
+                label="Assign Doctor" 
+                disabled={!isEditing} 
+                defaultValue="" 
+                {...register("assignedDoctor")} 
+                InputProps={{ sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}
+              >
+                 {doctorList && doctorList.length > 0 ? (
+                    doctorList.map(doc => (
+                        <MenuItem key={doc._id} value={doc.name}>
+                            {doc.name}
+                        </MenuItem>
+                    ))
+                ) : (
+                    <MenuItem disabled value="">
+                        <em>No Doctor Available</em>
+                    </MenuItem>
+                )}
               </TextField>
 
               <Box>
