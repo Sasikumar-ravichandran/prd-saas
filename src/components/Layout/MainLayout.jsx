@@ -39,8 +39,8 @@ export default function MainLayout() {
         sx={{ 
           flexGrow: 1, 
           p: 3, 
-          width: { md: `calc(100% - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)` },
-          mt: `${HEADER_HEIGHT}px`, // Push content down
+          width: { md: `calc(1250px - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)` },
+          mt: `${HEADER_HEIGHT}px`, 
           transition: 'width 0.3s',
           minHeight: '100vh',
           bgcolor: '#f8fafc' 

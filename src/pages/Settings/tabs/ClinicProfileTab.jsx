@@ -1,156 +1,383 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form'; 
-import { Box, Grid, TextField, Button, CircularProgress, InputAdornment } from '@mui/material';
+import { useForm } from 'react-hook-form';
+import { useDispatch } from 'react-redux'; // <--- 1. IMPORT DISPATCH
+import {
+  Box, Grid, TextField, Button, CircularProgress, InputAdornment,
+  Divider, Typography, Card, CardContent, IconButton, Stack, Dialog,
+  DialogTitle, DialogContent, DialogActions, Chip, Alert, Tooltip
+} from '@mui/material';
+
+// Icons
 import SaveIcon from '@mui/icons-material/Save';
-import KeyIcon from '@mui/icons-material/Key'; // Icon for ID
+import KeyIcon from '@mui/icons-material/Key';
+import StoreIcon from '@mui/icons-material/Store';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import BusinessIcon from '@mui/icons-material/Business';
+import WarningIcon from '@mui/icons-material/Warning';
+
+// Context & Services
 import SettingsHeader from '../components/SettingsHeader';
 import { useColorMode } from '../../../context/ThemeContext';
-import { settingService } from '../../../api/services/settingService'; 
+import { settingService } from '../../../api/services/settingService';
 import { useToast } from '../../../context/ToastContext';
+import api from '../../../api/services/api';
+import { setBranches } from '../../../redux/slices/authSlice'; // <--- 2. IMPORT ACTION
 
 export default function ClinicProfileTab() {
   const { primaryColor } = useColorMode();
   const { showToast } = useToast();
+  const dispatch = useDispatch(); // <--- 3. INITIALIZE DISPATCH
+
+  // Get currently active branch to prevent deletion
+  const activeBranchId = localStorage.getItem('activeBranchId');
+
+  // --- STATE ---
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [branches, setBranchesLocal] = useState([]); // Renamed to clarify it's local state
 
+  // Branch Form Dialog
+  const [openDialog, setOpenDialog] = useState(false);
+  const [editingBranch, setEditingBranch] = useState(null);
+  const [branchSaving, setBranchSaving] = useState(false);
+
+  // Delete Confirmation Dialog
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [branchToDelete, setBranchToDelete] = useState(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
+
+  // Main Clinic Form
   const { register, handleSubmit, reset } = useForm();
 
-  // --- 1. FETCH DATA ---
-  useEffect(() => {
-    const fetchClinic = async () => {
-      try {
-        const data = await settingService.getClinic();
-        if (data) {
-          reset(data); 
-        }
-      } catch (err) {
-        console.error("Failed to load profile", err);
-        showToast("Failed to load clinic details", "error");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchClinic();
-  }, [reset, showToast]);
+  // Branch Form
+  const {
+    register: registerBranch,
+    handleSubmit: handleSubmitBranch,
+    reset: resetBranch,
+  } = useForm();
 
-  // --- 2. SAVE HANDLER ---
-  const onSubmit = async (data) => {
+  // --- 1. FETCH DATA (UPDATED FOR REDUX) ---
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [clinicData, branchData] = await Promise.all([
+        settingService.getClinic(),
+        api.get('/branches')
+      ]);
+
+      if (clinicData) reset(clinicData);
+
+      if (branchData.data) {
+        setBranchesLocal(branchData.data); // Update the list in this tab
+
+        // ⚡️ MAGIC LINE: Update Global Redux Store
+        // This makes the Header update instantly!
+        dispatch(setBranches(branchData.data));
+      }
+
+    } catch (err) {
+      showToast("Failed to load data", "error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // --- 2. CLINIC SAVE ---
+  const onSubmitClinic = async (data) => {
     try {
       setSaving(true);
       await settingService.updateClinic(data);
       showToast("Clinic profile updated successfully", "success");
     } catch (err) {
-      console.error(err);
       showToast("Failed to save changes", "error");
     } finally {
       setSaving(false);
     }
   };
 
+  // --- 3. BRANCH HANDLERS ---
+
+  const handleOpenDialog = (branch = null) => {
+    setEditingBranch(branch);
+    if (branch) {
+      resetBranch(branch);
+    } else {
+      resetBranch({ branchName: '', branchCode: '', phone: '', address: '' });
+    }
+    setOpenDialog(true);
+  };
+
+  const onSubmitBranch = async (data) => {
+    try {
+      setBranchSaving(true);
+      if (editingBranch) {
+        await api.put(`/branches/${editingBranch._id}`, data);
+        showToast("Branch updated", "success");
+      } else {
+        await api.post('/branches', data);
+        showToast("New branch created", "success");
+      }
+
+      // Refresh Data (This triggers the Redux Dispatch in fetchData)
+      fetchData();
+      setOpenDialog(false);
+    } catch (err) {
+      showToast(err.response?.data?.message || "Failed to save branch", "error");
+    } finally {
+      setBranchSaving(false);
+    }
+  };
+
+  // --- 4. SAFE DELETE LOGIC ---
+
+  const initiateDelete = (branch) => {
+    // Safety Check 1: Cannot delete if it's the only branch
+    if (branches.length <= 1) {
+      showToast("You must have at least one branch.", "error");
+      return;
+    }
+    // Safety Check 2: Cannot delete the active branch
+    if (branch._id === activeBranchId) {
+      showToast("Cannot delete the currently active branch. Switch branches first.", "error");
+      return;
+    }
+
+    setBranchToDelete(branch);
+    setDeleteConfirmationText('');
+    setDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteConfirmationText !== 'DELETE') return;
+
+    try {
+      await api.delete(`/branches/${branchToDelete._id}`);
+      showToast(`Branch ${branchToDelete.branchName} deleted`, "success");
+      setDeleteDialog(false);
+      setBranchToDelete(null);
+
+      // Refresh Data (This triggers the Redux Dispatch in fetchData)
+      fetchData();
+    } catch (err) {
+      showToast("Could not delete branch. Ensure it has no active appointments.", "error");
+    }
+  };
+
   if (loading) return <Box p={4}><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ p: 4, maxWidth: 900 }}>
-       <form onSubmit={handleSubmit(onSubmit)}>
-          <SettingsHeader 
-            title="Clinic Profile" 
-            sub="Manage your clinic's legal details for invoices." 
-            color={primaryColor}
-            action={
-              <Button 
-                type="submit" 
-                variant="contained" 
-                startIcon={saving ? <CircularProgress size={20} color="inherit"/> : <SaveIcon />} 
-                disabled={saving}
-                sx={{ bgcolor: primaryColor, fontWeight: 'bold' }}
-              >
-                {saving ? "Saving..." : "Save Changes"}
-              </Button>
-            } 
-          />
-          
-          <Grid container spacing={3}>
-             
-             {/* --- NEW FIELD: CLINIC ID (READ ONLY) --- */}
-             <Grid item xs={12}>
-                <TextField 
-                  fullWidth 
-                  label="Clinic ID (System Generated)" 
-                  disabled // <--- READ ONLY
-                  InputLabelProps={{ shrink: true }}
-                  {...register("clinicId")} 
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <KeyIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ 
-                    '& .MuiInputBase-root': { bgcolor: '#f1f5f9' } // Grey background
-                  }}
-                />
-             </Grid>
+    <Box sx={{ p: 4, maxWidth: 1000 }}>
 
-             <Grid item xs={12}>
-                <TextField 
-                  fullWidth label="Clinic Legal Name" 
-                  placeholder="e.g. Smile Care Pvt Ltd"
-                  InputLabelProps={{ shrink: true }}
-                  {...register("legalName")} 
-                />
-             </Grid>
-             <Grid item xs={12} sm={6}>
-                <TextField 
-                  fullWidth label="Brand Name (Display)" 
-                  placeholder="e.g. Smile Care"
-                  InputLabelProps={{ shrink: true }}
-                  {...register("name", { required: true })} 
-                />
-             </Grid>
-             <Grid item xs={12} sm={6}>
-                <TextField 
-                  fullWidth label="Registration Number" 
-                  placeholder="e.g. TN-DENT-8821"
-                  InputLabelProps={{ shrink: true }}
-                  {...register("registrationNumber")} 
-                />
-             </Grid>
-             <Grid item xs={6}>
-                <TextField 
-                  fullWidth label="GSTIN" 
-                  placeholder="e.g. 33AABCS..."
-                  InputLabelProps={{ shrink: true }}
-                  {...register("gstin")} 
-                />
-             </Grid>
-             <Grid item xs={6}>
-                <TextField 
-                  fullWidth label="Phone" 
-                  placeholder="+91..."
-                  InputLabelProps={{ shrink: true }}
-                  {...register("phone")} 
-                />
-             </Grid>
-             <Grid item xs={12}>
-                <TextField 
-                  fullWidth label="Email" 
-                  placeholder="admin@clinic.com"
-                  InputLabelProps={{ shrink: true }}
-                  {...register("email")} 
-                />
-             </Grid>
-             <Grid item xs={12}>
-                <TextField 
-                  fullWidth multiline rows={3} label="Address" 
-                  placeholder="Full address for billing..."
-                  InputLabelProps={{ shrink: true }}
-                  {...register("address")} 
-                />
-             </Grid>
+      {/* CLINIC DETAILS FORM */}
+      <form onSubmit={handleSubmit(onSubmitClinic)}>
+        <SettingsHeader
+          title="Clinic Profile"
+          sub="Manage your legal business details."
+          color={primaryColor}
+          action={
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+              disabled={saving}
+              sx={{ bgcolor: primaryColor, fontWeight: 'bold' }}
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          }
+        />
+
+        <Grid container spacing={3} sx={{ mb: 6 }}>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth label="Clinic ID" disabled
+              InputLabelProps={{ shrink: true }}
+              {...register("clinicId")}
+              InputProps={{
+                startAdornment: (<InputAdornment position="start"><KeyIcon color="action" /></InputAdornment>),
+              }}
+              sx={{ '& .MuiInputBase-root': { bgcolor: '#f1f5f9' } }}
+            />
           </Grid>
-       </form>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth label="Legal Name" placeholder="Smile Care Pvt Ltd"
+              InputLabelProps={{ shrink: true }} {...register("legalName")}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth label="Brand Name" placeholder="Smile Care"
+              InputLabelProps={{ shrink: true }} {...register("name", { required: true })}
+            />
+          </Grid>
+          <Grid item xs={6} md={3}>
+            <TextField
+              fullWidth label="GSTIN" placeholder="33AABC..."
+              InputLabelProps={{ shrink: true }} {...register("gstin")}
+            />
+          </Grid>
+          <Grid item xs={6} md={3}>
+            <TextField
+              fullWidth label="Phone" placeholder="+91..."
+              InputLabelProps={{ shrink: true }} {...register("phone")}
+            />
+          </Grid>
+        </Grid>
+      </form>
+
+      <Divider sx={{ my: 4 }} />
+
+      {/* BRANCH MANAGEMENT HEADER */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <BusinessIcon color="primary" /> Branch Locations
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Manage multiple locations for this clinic.
+          </Typography>
+        </Box>
+        <Button
+          variant="outlined"
+          startIcon={<AddCircleIcon />}
+          onClick={() => handleOpenDialog()}
+          sx={{ borderColor: primaryColor, color: primaryColor, fontWeight: 'bold' }}
+        >
+          Add Branch
+        </Button>
+      </Box>
+
+      {/* BRANCH LIST GRID */}
+      <Grid container spacing={2}>
+        {branches.map((branch) => {
+          const isCurrentBranch = branch._id === activeBranchId;
+          const isOnlyBranch = branches.length === 1;
+
+          return (
+            <Grid item xs={12} md={6} key={branch._id}>
+              <Card variant="outlined" sx={{
+                borderRadius: 3,
+                border: isCurrentBranch ? `2px solid ${primaryColor}` : '1px solid #e0e0e0',
+                bgcolor: isCurrentBranch ? '#f0f9ff' : 'white'
+              }}>
+                <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box>
+                    <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {branch.branchName || branch.name}
+                      </Typography>
+                      {isCurrentBranch && (
+                        <Chip label="Current" size="small" color="primary" sx={{ height: 20, fontSize: 10, fontWeight: 'bold' }} />
+                      )}
+                    </Stack>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      <StoreIcon sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
+                      {branch.address || "No Address"}
+                    </Typography>
+                    <Chip
+                      label={branch.branchCode}
+                      size="small"
+                      sx={{ mt: 1, bgcolor: '#f1f5f9', color: '#475569', fontWeight: 'bold', borderRadius: 1 }}
+                    />
+                  </Box>
+
+                  <Box>
+                    <IconButton size="small" onClick={() => handleOpenDialog(branch)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+
+                    {/* DELETE BUTTON WITH SAFETY LOGIC */}
+                    <Tooltip title={isCurrentBranch ? "Cannot delete active branch" : (isOnlyBranch ? "Must have at least one branch" : "Delete Branch")}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => initiateDelete(branch)}
+                          disabled={isCurrentBranch || isOnlyBranch}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
+      </Grid>
+
+      {/* ================= ADD/EDIT DIALOG ================= */}
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+        <form onSubmit={handleSubmitBranch(onSubmitBranch)}>
+          <DialogTitle fontWeight="bold">
+            {editingBranch ? "Edit Branch Details" : "Add New Branch"}
+          </DialogTitle>
+          <DialogContent dividers>
+            <Grid container spacing={2} sx={{ mt: 0.5 }}>
+              <Grid item xs={12}>
+                <TextField fullWidth label="Branch Name" {...registerBranch("branchName", { required: true })} />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label="Phone" {...registerBranch("phone", { required: true })} />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField fullWidth label="Address" multiline rows={2} {...registerBranch("address", { required: true })} />
+              </Grid>
+
+            </Grid>
+          </DialogContent>
+          <DialogActions sx={{ p: 2 }}>
+            <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={branchSaving} sx={{ bgcolor: primaryColor }}>
+              {branchSaving ? <CircularProgress size={24} /> : "Save Branch"}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+
+      {/* ================= DANGER: DELETE CONFIRMATION DIALOG ================= */}
+      <Dialog open={deleteDialog} onClose={() => setDeleteDialog(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ color: 'error.main', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <WarningIcon /> Confirm Deletion
+        </DialogTitle>
+        <DialogContent>
+          <Alert severity="error" sx={{ mb: 2 }}>
+            <strong>Warning:</strong> This action is permanent. All patients, appointments, and records linked to
+            <strong> {branchToDelete?.branchName}</strong> branch will be lost forever.
+          </Alert>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            To confirm, please type <strong>DELETE</strong> in the box below:
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Type DELETE"
+            value={deleteConfirmationText}
+            onChange={(e) => setDeleteConfirmationText(e.target.value)}
+            error={deleteConfirmationText.length > 0 && deleteConfirmationText !== 'DELETE'}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setDeleteDialog(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="error"
+            disabled={deleteConfirmationText !== 'DELETE'}
+            onClick={confirmDelete}
+          >
+            Permanently Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 }

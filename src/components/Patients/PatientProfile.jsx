@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import { 
-  Box, Paper, Typography, Tabs, Tab, Stack, Chip, Button, IconButton, Divider, 
-  Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, FormControl, InputLabel, Select, Tooltip, InputAdornment, CircularProgress, Alert, Container
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+    Box, Paper, Typography, Tabs, Tab, Stack, Chip, Button, IconButton, Divider,
+    Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, FormControl, InputLabel, Select, Tooltip, InputAdornment, CircularProgress, Alert, Container
 } from '@mui/material';
 import { useColorMode } from '../../context/ThemeContext';
 import { patientService } from '../../api/services/patientService'; // Service Import
@@ -25,9 +25,11 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import UndoIcon from '@mui/icons-material/Undo'; 
-import CloseIcon from '@mui/icons-material/Close'; 
+import UndoIcon from '@mui/icons-material/Undo';
+import CloseIcon from '@mui/icons-material/Close';
 import { useToast } from '../../context/ToastContext';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; 
+
 
 // Static Procedures List
 const PROCEDURES = [
@@ -42,7 +44,7 @@ const PROCEDURES = [
 ];
 
 export default function PatientProfile() {
-    const { id } = useParams(); 
+    const { id } = useParams();
     const { primaryColor } = useColorMode();
     const { showToast } = useToast();
 
@@ -50,14 +52,14 @@ export default function PatientProfile() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false); // For button loading states
     const [error, setError] = useState(null);
-    const [patientData, setPatientData] = useState(null); 
-    const [tab, setTab] = useState(0); 
-    
+    const [patientData, setPatientData] = useState(null);
+    const [tab, setTab] = useState(0);
+
     // Modals
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [addTreatmentOpen, setAddTreatmentOpen] = useState(false);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
-    
+
     // Form Input
     const [newTreatment, setNewTreatment] = useState({ tooth: '', procedure: '', cost: '' });
 
@@ -66,13 +68,15 @@ export default function PatientProfile() {
     const [isDragging, setIsDragging] = useState(false);
     const dragStart = useRef({ x: 0, y: 0 });
 
+
+    const navigate = useNavigate();
     // --- 1. FETCH DATA ---
     const fetchPatientDetails = async () => {
         try {
             // Only show full spinner on first load
-            if(!patientData) setLoading(true);
+            if (!patientData) setLoading(true);
             setError(null);
-            const data = await patientService.getById(id); 
+            const data = await patientService.getById(id);
             setPatientData(data);
         } catch (err) {
             console.error("Failed to fetch patient details", err);
@@ -109,7 +113,7 @@ export default function PatientProfile() {
     // A. Add Treatment
     const handleAddTreatment = async () => {
         if (!newTreatment.tooth || !newTreatment.procedure) return;
-        
+
         try {
             setSubmitting(true);
             const payload = {
@@ -118,10 +122,10 @@ export default function PatientProfile() {
                 cost: Number(newTreatment.cost),
                 status: 'Proposed'
             };
-            
+
             // API Call
             const updatedPatient = await patientService.addTreatment(id, payload);
-            
+
             setPatientData(updatedPatient); // Update UI Instantly
             showToast('Treatment added to plan', 'success');
             setAddTreatmentOpen(false);
@@ -216,8 +220,26 @@ export default function PatientProfile() {
     return (
         <Box sx={{ height: tab === 0 ? 'calc(100vh - 64px)' : 'auto', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
 
-            {/* HEADER */}
-            <Box sx={{ flexShrink: 0, bgcolor: 'white' }}>
+            <Box sx={{ flexShrink: 0, bgcolor: 'white', pt: 2 }}>
+
+                {/* NEW BACK BUTTON */}
+                <Box sx={{ px: 3, mb: 0 }}>
+                    <Button
+                        startIcon={<ArrowBackIcon />}
+                        onClick={() => navigate('/patients')}
+                        size="small"
+                        sx={{
+                            color: '#64748b',
+                            fontWeight: '700',
+                            textTransform: 'none',
+                            fontSize: '0.85rem',
+                            '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' }
+                        }}
+                    >
+                        Back to Patients
+                    </Button>
+                </Box>
+
                 <PatientHeader patient={patientData} onEdit={() => setEditModalOpen(true)} />
             </Box>
 
@@ -232,12 +254,12 @@ export default function PatientProfile() {
 
             {/* WORKSPACE */}
             <Box sx={{ flex: 1, display: tab === 0 ? 'flex' : 'block', position: 'relative', overflow: 'visible' }}>
-                
+
                 {/* --- TAB 0: CHARTING --- */}
                 {tab === 0 && (
                     <>
                         {/* LEFT: CANVAS */}
-                        <Box sx={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', bgcolor: '#f1f5f9', overflow: 'hidden'  }}>
+                        <Box sx={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', bgcolor: '#f1f5f9', overflow: 'hidden' }}>
                             <Paper elevation={3} sx={{ position: 'absolute', top: 20, left: 20, zIndex: 20, p: 0.5, borderRadius: 2, display: 'flex', gap: 0.5, alignItems: 'center' }}>
                                 <IconButton size="small" onClick={() => handleZoom(0.2)}><ZoomInIcon /></IconButton>
                                 <IconButton size="small" onClick={() => handleZoom(-0.2)}><ZoomOutIcon /></IconButton>
@@ -245,7 +267,7 @@ export default function PatientProfile() {
                                 <IconButton size="small" onClick={handleResetView}><CenterFocusStrongIcon /></IconButton>
                             </Paper>
 
-                            <Box 
+                            <Box
                                 sx={{ flex: 1, width: '100%', height: '25%', cursor: isDragging ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
                                 onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
                             >
@@ -314,12 +336,12 @@ export default function PatientProfile() {
                                     <Typography variant="body2" color="text.secondary" fontWeight="600">Total Estimate</Typography>
                                     <Typography variant="h6" fontWeight="900" color={primaryColor}>₹ {totalEstimate.toLocaleString()}</Typography>
                                 </Stack>
-                                <Button 
-                                    fullWidth 
-                                    variant="contained" 
+                                <Button
+                                    fullWidth
+                                    variant="contained"
                                     startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : (proposedItemsCount > 0 ? <CheckCircleIcon /> : <PlayArrowIcon />)}
-                                    onClick={handleApproveAndStart} 
-                                    disabled={proposedItemsCount === 0 || submitting} 
+                                    onClick={handleApproveAndStart}
+                                    disabled={proposedItemsCount === 0 || submitting}
                                     sx={{ bgcolor: '#0f172a', py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
                                 >
                                     {submitting ? "Processing..." : (proposedItemsCount > 0 ? `Approve & Start` : 'All Active')}
@@ -343,15 +365,15 @@ export default function PatientProfile() {
                     Add Treatment
                     <IconButton size="small" onClick={() => setAddTreatmentOpen(false)}><CloseIcon /></IconButton>
                 </DialogTitle>
-                <DialogContent sx={{ pt: 3, pb: 1, overflow: 'visible' }}> 
+                <DialogContent sx={{ pt: 3, pb: 1, overflow: 'visible' }}>
                     <Stack spacing={3} sx={{ mt: 1 }}>
                         <TextField label="Tooth Number" value={newTreatment.tooth} onChange={(e) => setNewTreatment({ ...newTreatment, tooth: e.target.value })} fullWidth placeholder="e.g. 46" autoFocus InputProps={{ sx: { fontWeight: 'bold' } }} />
                         <FormControl fullWidth>
                             <InputLabel id="procedure-label">Select Procedure</InputLabel>
-                            <Select 
+                            <Select
                                 labelId="procedure-label"
-                                value={newTreatment.procedure} 
-                                label="Select Procedure" 
+                                value={newTreatment.procedure}
+                                label="Select Procedure"
                                 onChange={(e) => { const proc = PROCEDURES.find(p => p.name === e.target.value); setNewTreatment({ ...newTreatment, procedure: proc.name, cost: proc.cost }) }}
                                 MenuProps={{ disablePortal: false, PaperProps: { sx: { maxHeight: 300, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', borderRadius: 2, mt: 1, zIndex: 9999 } }, style: { zIndex: 1400 } }}
                             >

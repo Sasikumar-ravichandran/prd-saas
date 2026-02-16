@@ -2,19 +2,19 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
+import api from '../../api/services/api';
+import { useToast } from '../../context/ToastContext';
 import { useColorMode } from '../../context/ThemeContext';
-import api from '../../api/services/api'; 
-import { useToast } from '../../context/ToastContext'; 
 
 // CSS Imports
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 
 // Material UI
-import { Box, Paper, Typography, Button, IconButton, Stack, Tooltip, Zoom, Divider, GlobalStyles } from '@mui/material';
-
-// Components
-import AppointmentModal from './AppointmentModal';
+import {
+  Box, Typography, Button, IconButton, Stack, Tooltip, Zoom,
+  GlobalStyles, Card, CardContent, Avatar, Chip, Fade
+} from '@mui/material';
 
 // Icons
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -23,188 +23,117 @@ import AddIcon from '@mui/icons-material/Add';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalPhoneIcon from '@mui/icons-material/LocalPhone';
 import PersonIcon from '@mui/icons-material/Person';
-import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
 
-// --- SETUP ---
+import AppointmentModal from './AppointmentModal';
+
+// --- CONFIG ---
 const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
 
 const RESOURCES = [
-  { id: 1, title: 'Chair 1 (Surgical)', capacity: 'Dr. Ramesh' },
-  { id: 2, title: 'Chair 2 (General)', capacity: 'Dr. Priya' },
-  { id: 3, title: 'Chair 3 (Hygiene)', capacity: 'Hygienist' },
+  { id: 1, title: 'Chair 1 (Surgical)' },
+  { id: 2, title: 'Chair 2 (General)' },
+  { id: 3, title: 'Chair 3 (Hygiene)' },
 ];
 
-const THEMES = {
-  blue: { bg: '#2563eb', border: '#1e40af', text: '#ffffff' }, 
-  orange: { bg: '#f97316', border: '#c2410c', text: '#ffffff' },
-  green: { bg: '#16a34a', border: '#15803d', text: '#ffffff' },
+const EVENT_COLORS = {
+  default: { bg: '#eff6ff', border: '#3b82f6', text: '#1e3a8a' }, // Blue
+  surgery: { bg: '#fef2f2', border: '#ef4444', text: '#7f1d1d' }, // Red
+  checkup: { bg: '#ecfdf5', border: '#10b981', text: '#064e3b' }, // Green
 };
 
-// --- CUSTOM COMPONENTS ---
-
-// 1. TOOLTIP CONTENT (Shows ALL details even for small slots)
-const EventTooltip = ({ event }) => (
-  <Box sx={{ p: 1.5, minWidth: 240 }}>
-    <Typography variant="subtitle1" fontWeight="800" sx={{ color: '#fff', mb: 0.5, lineHeight: 1.2 }}>
-      {event.title}
-    </Typography>
-    <Divider sx={{ borderColor: 'rgba(255,255,255,0.1)', mb: 1.5 }} />
-    
-    <Stack spacing={1.2}>
-       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <AccessTimeIcon sx={{ fontSize: 18, color: '#fbbf24' }} />
-          <Typography variant="body2" sx={{ color: '#fbbf24', fontWeight: 'bold' }}>
+// --- 1. RICH TOOLTIP CARD ---
+const RichTooltip = ({ event }) => (
+  <Card sx={{ minWidth: 280, maxWidth: 320, boxShadow: '0 8px 16px rgba(0,0,0,0.15)', borderRadius: 3 }}>
+    <Box sx={{ bgcolor: '#f8fafc', p: 2, borderBottom: '1px solid #e2e8f0' }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+        <Box>
+          <Typography variant="subtitle1" fontWeight="800" color="#1e293b" lineHeight={1.2}>
+            {event.title}
+          </Typography>
+          <Typography variant="caption" color="text.secondary" fontWeight="600">
+            {event.type || 'General Visit'}
+          </Typography>
+        </Box>
+        <Chip
+          label="Scheduled" size="small"
+          sx={{ bgcolor: '#dbeafe', color: '#1e40af', fontWeight: 'bold', fontSize: '0.65rem', height: 20 }}
+        />
+      </Stack>
+    </Box>
+    <CardContent sx={{ p: 2, pb: '16px !important', display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><AccessTimeIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+        <Box>
+          <Typography variant="body2" fontWeight="600" color="#334155">
             {moment(event.start).format('h:mm A')} - {moment(event.end).format('h:mm A')}
           </Typography>
-       </Box>
-
-       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <MedicalServicesIcon sx={{ fontSize: 18, color: '#f87171' }} />
-          <Typography variant="body2" sx={{ color: '#fff' }}>
-            {event.type}
-          </Typography>
-       </Box>
-
-       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <PersonIcon sx={{ fontSize: 18, color: '#4ade80' }} />
-          <Typography variant="body2" sx={{ color: '#fff' }}>
-             Dr. {event.doc || 'Unknown'}
-          </Typography>
-       </Box>
-
-       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <LocalPhoneIcon sx={{ fontSize: 18, color: '#60a5fa' }} />
-          <Typography variant="body2" sx={{ color: '#e2e8f0' }}>
-            {event.phone || 'No Phone'}
-          </Typography>
-       </Box>
-
-       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <EventSeatIcon sx={{ fontSize: 18, color: '#a78bfa' }} />
-          <Typography variant="body2" sx={{ color: '#e2e8f0' }}>
-            Chair {event.resourceId}
-          </Typography>
-       </Box>
-    </Stack>
-  </Box>
+          <Typography variant="caption" color="text.secondary">Duration: {moment(event.end).diff(moment(event.start), 'minutes')} mins</Typography>
+        </Box>
+      </Stack>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><PersonIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+        <Typography variant="body2" color="#334155">Dr. {event.doc}</Typography>
+      </Stack>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><LocalPhoneIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+        <Typography variant="body2" color="#334155">{event.phone}</Typography>
+      </Stack>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><EventSeatIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+        <Typography variant="body2" color="#334155">Chair {event.resourceId}</Typography>
+      </Stack>
+    </CardContent>
+    <Box sx={{ px: 2, pb: 2 }}>
+      <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#94a3b8', bgcolor: '#f8fafc', py: 0.5, borderRadius: 1 }}>
+        Click to edit or reschedule
+      </Typography>
+    </Box>
+  </Card>
 );
 
-// 2. EVENT CARD (Fixed for 15-min slots)
-const CustomEvent = ({ event }) => {
-  const theme = THEMES[event.theme] || THEMES.blue;
-  
-  // Detect if appointment is small (<= 30 mins)
+// --- 2. MODERN EVENT COMPONENT ---
+const ModernEvent = ({ event }) => {
+  let style = EVENT_COLORS.default;
+  if (event.title.toLowerCase().includes('surgery')) style = EVENT_COLORS.surgery;
+  if (event.title.toLowerCase().includes('checkup')) style = EVENT_COLORS.checkup;
+
   const duration = moment(event.end).diff(moment(event.start), 'minutes');
-  const isCompact = duration <= 30; 
+  const isCompact = duration <= 30;
 
   return (
-    <Tooltip 
-      title={<EventTooltip event={event} />} 
-      arrow 
-      TransitionComponent={Zoom}
-      placement="right" 
-      disablePortal={false} 
-      componentsProps={{
-        tooltip: {
-            sx: {
-                bgcolor: '#0f172a', 
-                color: 'white',
-                '& .MuiTooltip-arrow': { color: '#0f172a' },
-                boxShadow: '0px 10px 30px rgba(0,0,0,0.5)',
-                borderRadius: 2,
-                border: '1px solid rgba(255,255,255,0.1)'
-            }
-        }
-      }}
+    <Tooltip
+      title={<RichTooltip event={event} />} placement="right" arrow
+      TransitionComponent={Fade} TransitionProps={{ timeout: 200 }}
+      componentsProps={{ tooltip: { sx: { bgcolor: 'transparent', boxShadow: 'none', maxWidth: 'none', p: 0 } } }}
     >
       <Box sx={{
-        height: '100%',
-        width: '100%',
-        display: 'flex', 
-        flexDirection: 'column',
-        // If Compact: Center the name vertically so it's visible
-        justifyContent: isCompact ? 'center' : 'flex-start',
-        // If Compact: Remove padding so text doesn't get pushed out
-        p: isCompact ? 0 : 0.5, 
-        
-        bgcolor: theme.bg,
-        borderLeft: isCompact ? 'none' : `4px solid ${theme.border}`,
-        borderRadius: '3px',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        boxShadow: '0 1px 2px rgba(0,0,0,0.2)',
-        
-        // HOVER MAGIC
-        position: 'relative',
-        zIndex: 10,
-        pointerEvents: 'auto', 
-        transition: 'all 0.1s ease-in-out',
-        '&:hover': { 
-            filter: 'brightness(1.1)', 
-            transform: 'scale(1.02)',
-            zIndex: 999 
-        }
+        height: '100%', width: '100%',
+        bgcolor: style.bg, borderLeft: `4px solid ${style.border}`,
+        borderRadius: '3px', px: 1, py: isCompact ? 0 : 0.5,
+        display: 'flex', flexDirection: 'column', justifyContent: 'center',
+        cursor: 'grab', overflow: 'hidden', position: 'relative',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+        '&:hover': { filter: 'brightness(0.97)' },
+        '&:active': { cursor: 'grabbing' }
       }}>
-        {/* Title / Name */}
-        <Typography 
-            variant="subtitle2" fontWeight="700" 
-            sx={{ 
-                color: theme.text, fontSize: isCompact ? '0.7rem' : '0.8rem', lineHeight: 1,
-                textAlign: isCompact ? 'center' : 'left', // Center text for tiny slots
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                width: '100%',
-                px: isCompact ? 0.5 : 0 
-            }}
-        >
+        <Typography variant="subtitle2" fontWeight="700" sx={{ color: style.text, fontSize: '0.75rem', lineHeight: 1.2, noWrap: true }}>
           {event.title}
         </Typography>
-
-        {/* ONLY show details if slot is big enough (> 30 mins) */}
         {!isCompact && (
-          <>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.7rem', mt: 0.5, lineHeight: 1 }}>
-              {event.type}
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
+            <Typography variant="caption" sx={{ color: style.text, opacity: 0.8, fontWeight: 600, fontSize: '0.7rem' }}>
+              {moment(event.start).format('h:mm A')}
             </Typography>
-            <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', mt: 'auto' }}>
-              {moment(event.start).format('h:mm')} - {moment(event.end).format('h:mm')}
-            </Typography>
-          </>
+          </Stack>
         )}
       </Box>
     </Tooltip>
   );
 };
 
-// 3. TOOLBAR
-const CustomToolbar = ({ date, onNavigate, onView, view, onBook }) => {
-  const dateLabel = moment(date).format('dddd, D MMMM YYYY');
-  const { primaryColor } = useColorMode();
-  return (
-    <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', px: 2, pt: 2 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Paper elevation={0} sx={{ display: 'flex', alignItems: 'center', p: 0.5, borderRadius: 3, border: '1px solid #e5e7eb' }}>
-          <IconButton size="small" onClick={() => onNavigate('PREV')}><ChevronLeftIcon /></IconButton>
-          <Button onClick={() => onNavigate('TODAY')} sx={{ fontWeight: 'bold', textTransform: 'none' }}>Today</Button>
-          <IconButton size="small" onClick={() => onNavigate('NEXT')}><ChevronRightIcon /></IconButton>
-        </Paper>
-        <Typography variant="h6" fontWeight="800" color="#111827">{dateLabel}</Typography>
-      </Box>
-      <Stack direction="row" spacing={2}>
-        <Box sx={{ border: '1px solid #e5e7eb', borderRadius: 2, display: 'flex', overflow: 'hidden' }}>
-          <Button onClick={() => onView(Views.DAY)} sx={{ bgcolor: view === Views.DAY ? '#f3f4f6' : 'transparent', color: view === Views.DAY ? 'primary.main' : 'text.secondary' }}>Day</Button>
-          <Button onClick={() => onView(Views.WEEK)} sx={{ bgcolor: view === Views.WEEK ? '#f3f4f6' : 'transparent', color: view === Views.WEEK ? 'primary.main' : 'text.secondary' }}>Week</Button>
-        </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={onBook} sx={{ bgcolor: primaryColor, borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}>Book Appointment</Button>
-      </Stack>
-    </Box>
-  );
-};
-
-// --- MAIN PAGE COMPONENT ---
+// --- MAIN PAGE ---
 export default function CalendarPage() {
   const [view, setView] = useState(Views.DAY);
   const [date, setDate] = useState(new Date());
@@ -213,130 +142,273 @@ export default function CalendarPage() {
   const [patients, setPatients] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const { showToast } = useToast(); 
+  const { showToast } = useToast();
+  const activeBranchId = localStorage.getItem('activeBranchId');
+  const { primaryColor } = useColorMode();
 
-  // --- 1. FETCH ALL DATA ---
+  // --- DATA FETCHING ---
   const fetchAllData = useCallback(async () => {
     try {
-      const [patRes, userRes] = await Promise.all([
-         api.get('/patients'),
-         api.get('/users')
+      const [patRes, userRes, apptRes] = await Promise.all([
+        api.get('/patients'),
+        api.get('/users'),
+        api.get('/appointments')
       ]);
       setPatients(patRes.data);
       const docList = userRes.data.filter(u => u.role === 'Doctor' || u.role === 'doctor');
       setDoctors(docList);
 
-      const apptRes = await api.get('/appointments'); 
-      
-      const formattedEvents = apptRes.data.map(evt => ({
+      const branchEvents = apptRes.data.filter(evt => evt.branchId === activeBranchId);
+      setEvents(branchEvents.map(evt => ({
         ...evt,
-        id: evt._id, 
-        // --- Map Backend 'doctorId' to Frontend 'docId' for dropdown ---
-        docId: evt.doctorId, 
-        doc: evt.doctorName, 
+        id: evt._id,
+        title: evt.title || evt.patientName || 'Appointment',
         start: new Date(evt.start),
         end: new Date(evt.end),
-        theme: 'blue' 
-      }));
+        doc: evt.doctorName,
+        resourceId: evt.resourceId || 1,
+        phone: evt.phone || 'N/A',
+        type: evt.type || 'Consultation'
+      })));
+    } catch (err) { console.error(err); }
+  }, [activeBranchId]);
 
-      setEvents(formattedEvents);
+  useEffect(() => { fetchAllData(); }, [fetchAllData]);
 
-    } catch (err) {
-      console.error("Failed to fetch calendar data", err);
-      showToast('Error loading schedule.', 'error'); 
-    }
-  }, [showToast]);
-
-  useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
-
-  // Handlers
-  const handleOpenBooking = () => {
-    setSelectedSlot(null);
-    setModalOpen(true);
-  };
-
-  const handleSelectSlot = useCallback(({ start, end, resourceId }) => {
+  // --- HANDLERS ---
+  const handleSelectSlot = ({ start, end, resourceId }) => {
     setSelectedSlot({ start, end, resourceId });
     setModalOpen(true);
-  }, []);
-
-  const handleSelectEvent = useCallback((event) => {
-    setSelectedSlot(event);
-    setModalOpen(true);
-  }, []);
-
-  // --- 2. SAVE APPOINTMENT ---
-  const handleSaveAppointment = async (data) => {
-    try {
-      if (selectedSlot?.id) {
-        // UPDATE
-        await api.put(`/appointments/${selectedSlot.id}`, data);
-        
-        setEvents(prev => prev.map(ev => ev.id === selectedSlot.id ? { 
-            ...ev, ...data, start: new Date(data.start), end: new Date(data.end) 
-        } : ev));
-        
-        showToast('Appointment updated successfully!', 'success');
-
-      } else {
-        // CREATE
-        const res = await api.post('/appointments', data);
-        const savedEvent = res.data;
-
-        const newEvent = { 
-            ...savedEvent, 
-            id: savedEvent._id,
-            docId: savedEvent.doctorId, // Ensure mapping
-            doc: savedEvent.doctorName,
-            start: new Date(savedEvent.start), 
-            end: new Date(savedEvent.end),
-            status: 'Scheduled', 
-            theme: 'blue' 
-        };
-        setEvents(prev => [...prev, newEvent]);
-        
-        showToast('Appointment booked successfully!', 'success');
-      }
-      
-      setModalOpen(false);
-    } catch (error) {
-        console.error("Error saving appointment", error);
-        showToast('Failed to save appointment.', 'error');
-    }
   };
 
-  // --- 3. DRAG & DROP ---
-  const moveEvent = useCallback(async ({ event, start, end, resourceId }) => {
-    setEvents((prev) => {
-      const existing = prev.find((ev) => ev.id === event.id);
-      const filtered = prev.filter((ev) => ev.id !== event.id);
-      return [...filtered, { ...existing, start, end, resourceId }];
-    });
+  const onEventDrop = useCallback(({ event, start, end, resourceId }) => {
+    const updatedEvent = { ...event, start, end, resourceId };
+    setEvents(prev => prev.map(ev => ev.id === event.id ? updatedEvent : ev)); // UI Update
 
+    api.put(`/appointments/${event.id}`, { start, end, resourceId })
+      .then(() => showToast('Rescheduled', 'success'))
+      .catch(() => {
+        showToast('Move failed', 'error');
+        setEvents(prev => prev.map(ev => ev.id === event.id ? event : ev)); // Revert
+      });
+  }, [showToast]);
+
+  const handleSave = async (data) => {
     try {
-        await api.put(`/appointments/${event.id}`, {
-            start, end, resourceId
-        });
-        showToast('Appointment moved.', 'success'); 
-    } catch (error) {
-        console.error("Failed to move event", error);
-        showToast('Failed to move appointment.', 'error');
-        fetchAllData(); 
-    }
-  }, [showToast, fetchAllData]);
+      const payload = { ...data, branchId: activeBranchId };
+      if (selectedSlot?.id) {
+        await api.put(`/appointments/${selectedSlot.id}`, payload);
+        setEvents(prev => prev.map(ev => ev.id === selectedSlot.id ? { ...ev, ...payload, start: new Date(payload.start), end: new Date(payload.end) } : ev));
+      } else {
+        await api.post('/appointments', payload);
+        fetchAllData();
+      }
+      setModalOpen(false); showToast('Saved', 'success');
+    } catch (e) { showToast('Error', 'error'); }
+  };
+
+  const handleDelete = async (id) => {
+    await api.delete(`/appointments/${id}`);
+    setEvents(prev => prev.filter(e => e.id !== id));
+    setModalOpen(false); showToast('Deleted', 'success');
+  };
 
   return (
-    <Box sx={{ height: 'calc(100vh - 64px)', bgcolor: 'white', display: 'flex', flexDirection: 'column' }}>
-      
-      {/* GLOBAL OVERRIDE: Force Calendar Events to Allow Pointer Events */}
+    <Box sx={{
+      height: 'calc(100vh - 100px)',
+      display: 'flex', flexDirection: 'column',
+      bgcolor: '#fff', borderRadius: 3, p: 2,
+      overflow: 'hidden'
+    }}>
+
+      {/* ⚡️ HIGH CONTRAST GRID STYLES ⚡️ */}
       <GlobalStyles styles={{
-        '.rbc-event': { pointerEvents: 'initial !important' },
-        '.rbc-event-content': { pointerEvents: 'initial !important' }
+        // 1. SCROLLING
+        '.rbc-time-content': { overflowY: 'auto !important', scrollbarWidth: 'thin' },
+        '.rbc-time-view': { border: 'none !important' },
+
+        // 2. THE RED LINE (Current Time)
+        '.rbc-current-time-indicator': {
+          backgroundColor: '#ef4444 !important',
+          height: '2px !important',
+          zIndex: 100,
+          pointerEvents: 'none'
+        },
+        '.rbc-current-time-indicator::before': {
+          content: '""', position: 'absolute', left: '-6px', top: '-3px',
+          width: '8px', height: '8px', backgroundColor: '#ef4444', borderRadius: '50%',
+        },
+
+        // 3. STRONG GRID LINES (The Fix)
+        // Main Hour Line (Solid Dark Grey)
+        '.rbc-timeslot-group': {
+          borderBottom: '1px solid #cbd5e1 !important', // Darker border for hours
+          minHeight: '60px !important', // Force bigger slots for readability
+        },
+        // 15-Min Sub-lines (Dashed Light Grey)
+        '.rbc-time-slot': {
+          borderTop: '1px dashed #e2e8f0 !important'
+        },
+        // Vertical Column Lines (Solid)
+        '.rbc-day-bg + .rbc-day-bg': {
+          borderLeft: '1px solid #cbd5e1 !important'
+        },
+        // Header Column Lines
+        '.rbc-header + .rbc-header': {
+          borderLeft: '1px solid #cbd5e1 !important'
+        },
+
+        // 4. BOLD TIME LABELS
+        '.rbc-label': {
+          color: '#1e293b !important', // Dark text
+          fontWeight: 800,
+          fontSize: '0.85rem',
+          paddingRight: '8px'
+        },
+        '.rbc-time-gutter .rbc-timeslot-group': {
+          borderBottom: 'none !important', // Remove double border in gutter
+          alignItems: 'center', // Center numbers vertically
+          justifyContent: 'center'
+        },
+
+        // 5. HEADER STYLES
+        '.rbc-header': {
+          padding: '12px 0',
+          borderBottom: '2px solid #94a3b8 !important', // Strong header underline
+          fontWeight: 800,
+          color: '#475569',
+          textTransform: 'uppercase',
+          fontSize: '0.8rem',
+          letterSpacing: '0.5px'
+        },
+
+        // CLEANUP
+        '.rbc-event': { background: 'transparent !important', border: 'none !important', padding: '0 !important', outline: 'none !important' },
+        '.rbc-event-label': { display: 'none !important' },
       }} />
 
-      <Box sx={{ flex: 1, p: 2, overflow: 'hidden' }}>
+      {/* Toolbar */}
+      <Box sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' }, // Stack on mobile, row on desktop
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        p: 2,
+        borderBottom: '1px solid #e2e8f0',
+        gap: 2
+      }}>
+
+        {/* LEFT SIDE: Navigation & Title (Anchored) */}
+        <Stack direction="row" alignItems="center" spacing={3}>
+
+          {/* 1. Navigation Cluster (Fixed Position) */}
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Button
+              onClick={() => setDate(new Date())}
+              variant="outlined"
+              size="small"
+              sx={{
+                color: '#0f172a',
+                borderColor: '#e2e8f0',
+                fontWeight: 'bold',
+                textTransform: 'none',
+                minWidth: 'auto',
+                px: 2
+              }}
+            >
+              Today
+            </Button>
+
+            <Box sx={{ display: 'flex', bgcolor: '#f1f5f9', borderRadius: 2 }}>
+              <IconButton
+                onClick={() => setDate(moment(date).subtract(1, view === Views.MONTH ? 'month' : 'day').toDate())}
+                size="small"
+                sx={{ color: '#475569', '&:hover': { color: '#0f172a' } }}
+              >
+                <ChevronLeftIcon fontSize="small" />
+              </IconButton>
+              <Box sx={{ width: '1px', bgcolor: '#cbd5e1', my: 1 }} /> {/* Vertical Divider */}
+              <IconButton
+                onClick={() => setDate(moment(date).add(1, view === Views.MONTH ? 'month' : 'day').toDate())}
+                size="small"
+                sx={{ color: '#475569', '&:hover': { color: '#0f172a' } }}
+              >
+                <ChevronRightIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          </Stack>
+
+          {/* 2. The Date Title (Grows to the right) */}
+          <Box>
+            <Typography variant="h5" fontWeight="800" sx={{ color: '#0f172a', lineHeight: 1, letterSpacing: '-0.5px' }}>
+              {view === Views.DAY
+                ? moment(date).format('MMMM Do') // "February 16th"
+                : moment(date).format('MMMM YYYY')     // "February 2026"
+              }
+            </Typography>
+            {view === Views.DAY && (
+              <Typography variant="caption" fontWeight="600" sx={{ color: '#64748b', display: 'flex', alignItems: 'center', gap: 1 }}>
+                {moment(date).format('dddd')} • {moment(date).format('YYYY')}
+              </Typography>
+            )}
+          </Box>
+        </Stack>
+
+        {/* RIGHT SIDE: View Switcher & Actions */}
+        <Stack direction="row" alignItems="center" spacing={2}>
+
+          {/* View Toggles (Segmented Control Style) */}
+          <Box sx={{ p: 0.5, bgcolor: '#f1f5f9', borderRadius: 2, display: 'flex' }}>
+            <Button
+              size="small"
+              onClick={() => setView(Views.DAY)}
+              sx={{
+                borderRadius: 1.5, textTransform: 'none', fontWeight: 'bold', px: 2, py: 0.5,
+                bgcolor: view === Views.DAY ? '#fff' : 'transparent',
+                color: view === Views.DAY ? '#0f172a' : '#64748b',
+                boxShadow: view === Views.DAY ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                '&:hover': { bgcolor: view === Views.DAY ? '#fff' : 'rgba(0,0,0,0.04)' }
+              }}
+            >
+              Day
+            </Button>
+            <Button
+              size="small"
+              onClick={() => setView(Views.MONTH)}
+              sx={{
+                borderRadius: 1.5, textTransform: 'none', fontWeight: 'bold', px: 2, py: 0.5,
+                bgcolor: view === Views.MONTH ? '#fff' : 'transparent',
+                color: view === Views.MONTH ? '#0f172a' : '#64748b',
+                boxShadow: view === Views.MONTH ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                '&:hover': { bgcolor: view === Views.MONTH ? '#fff' : 'rgba(0,0,0,0.04)' }
+              }}
+            >
+              Month
+            </Button>
+          </Box>
+
+          {/* Primary Action */}
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => { setSelectedSlot(null); setModalOpen(true); }}
+            sx={{
+              bgcolor: primaryColor,
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 'bold',
+              px: 2,
+              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+            }}
+          >
+            Appointment
+          </Button>
+        </Stack>
+
+      </Box>
+
+      {/* Calendar */}
+      <Box sx={{ flex: 1, mt: 2, overflow: 'hidden' }}>
         <DnDCalendar
           localizer={localizer}
           events={events}
@@ -345,38 +417,26 @@ export default function CalendarPage() {
           onView={setView}
           date={date}
           onNavigate={setDate}
-          resources={RESOURCES}
           resourceIdAccessor="id"
           resourceTitleAccessor="title"
+          resources={view === Views.DAY ? RESOURCES : undefined}
           selectable
-          onSelectSlot={handleSelectSlot}
-          onSelectEvent={handleSelectEvent}
-          onEventDrop={moveEvent}
           resizable
           step={15}
           timeslots={4}
-          
-          components={{
-            event: CustomEvent, 
-            toolbar: (props) => <CustomToolbar {...props} onBook={handleOpenBooking} />
-          }}
+          scrollToTime={new Date(new Date().setHours(8, 0, 0, 0))}
+          onSelectSlot={handleSelectSlot}
+          onSelectEvent={(e) => { setSelectedSlot(e); setModalOpen(true); }}
+          onEventDrop={onEventDrop}
+          components={{ event: ModernEvent, toolbar: () => null }}
           style={{ height: '100%' }}
-          formats={{
-            timeGutterFormat: 'HH:mm',
-            eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
-              `${localizer.format(start, 'HH:mm', culture)} - ${localizer.format(end, 'HH:mm', culture)}`,
-          }}
         />
       </Box>
 
       <AppointmentModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        initialData={selectedSlot}
-        onSave={handleSaveAppointment}
-        doctors={doctors}  
-        patients={patients} 
-        resources={RESOURCES}
+        open={modalOpen} onClose={() => setModalOpen(false)}
+        initialData={selectedSlot} onSave={handleSave} onDelete={handleDelete}
+        doctors={doctors} patients={patients} resources={RESOURCES}
       />
     </Box>
   );

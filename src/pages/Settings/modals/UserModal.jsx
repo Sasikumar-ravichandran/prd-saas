@@ -1,99 +1,161 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { 
-  Dialog, DialogTitle, DialogContent, DialogActions, 
-  Button, TextField, Grid, IconButton, Typography, 
-  FormControl, InputLabel, Select, MenuItem 
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, 
+  TextField, Grid, MenuItem, Alert, Typography, Box
 } from '@mui/material';
-import CloseIcon from '@mui/icons-material/Close';
+import { useForm } from 'react-hook-form';
 
-export default function UserModal({ open, onClose, onSave, user, primaryColor }) {
-  const [formData, setFormData] = useState({
-    name: '', email: '', role: 'Doctor', status: 'Active'
-  });
+export default function UserModal({ open, onClose, onSave, user, branches, primaryColor }) {
+  
+  const { register, handleSubmit, reset, watch, setValue } = useForm();
+
+  const watchRole = watch("role");
+  const watchStatus = watch("status");
+  const watchBranch = watch("defaultBranch");
 
   useEffect(() => {
-    if (user) {
-      setFormData(user);
-    } else {
-      setFormData({ name: '', email: '', role: 'Doctor', status: 'Active' });
+    if (open) {
+      if (user) {
+        const branchId = user.defaultBranch?._id || user.defaultBranch || "";
+        reset({
+          name: user.name || '',
+          email: user.email || '',
+          mobile: user.mobile || '',
+          role: user.role || 'Receptionist',
+          status: user.status || 'Active',
+          defaultBranch: branchId
+        });
+      } else {
+        reset({
+          name: '',
+          email: '',
+          mobile: '',
+          role: 'Receptionist',
+          status: 'Active',
+          defaultBranch: ''
+        });
+      }
     }
-  }, [user, open]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  }, [user, open, reset]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Typography variant="h6" fontWeight="bold">
-          {user ? 'Edit User' : 'Invite New User'}
-        </Typography>
-        <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
-      </DialogTitle>
-      
-      <DialogContent dividers>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField 
-              fullWidth label="Full Name" name="name" 
-              value={formData.name} onChange={handleChange} 
-              placeholder="e.g. Dr. Ramesh"
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField 
-              fullWidth label="Email Address" name="email" type="email"
-              value={formData.email} onChange={handleChange} 
-              placeholder="e.g. ramesh@clinic.com"
-            />
-          </Grid>
-          
-          <Grid item xs={6}>
-            <FormControl fullWidth>
-              <InputLabel>Role</InputLabel>
-              <Select
-                name="role"
-                value={formData.role}
-                label="Role"
-                onChange={handleChange}
-              >
-                <MenuItem value="Doctor">Doctor</MenuItem>
-                <MenuItem value="Receptionist">Receptionist</MenuItem>
-                <MenuItem value="Administrator">Administrator</MenuItem>
-                <MenuItem value="Nurse">Nurse</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <form onSubmit={handleSubmit(onSave)}>
+        <DialogTitle sx={{ fontWeight: 'bold', px: 3, pt: 3 }}>
+          {user ? 'Edit Staff Member' : 'Register New Staff'}
+        </DialogTitle>
+        
+        <DialogContent dividers sx={{ p: 3 }}>
+          <Grid container spacing={3}>
+            
+            {/* COLUMN 1: Basic Info */}
+            <Grid item xs={12} md={4}>
+               <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+                  Basic Details
+               </Typography>
+               <Stack spacing={3}>
+                  <TextField 
+                    fullWidth label="Full Name" 
+                    InputLabelProps={{ shrink: true }}
+                    {...register("name", { required: true })} 
+                  />
+                  <TextField 
+                    fullWidth label="Email Address" 
+                    InputLabelProps={{ shrink: true }}
+                    {...register("email", { required: true })} 
+                  />
+               </Stack>
+            </Grid>
+            
+            {/* COLUMN 2: Contact & Location */}
+            <Grid item xs={12} md={4}>
+               <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+                  Contact & Branch
+               </Typography>
+               <Stack spacing={3}>
+                  <TextField 
+                    fullWidth label="Mobile Number" 
+                    InputLabelProps={{ shrink: true }}
+                    {...register("mobile", { required: true })} 
+                  />
+                  <TextField
+                    select fullWidth label="Assigned Branch"
+                    InputLabelProps={{ shrink: true }}
+                    value={watchBranch || ""} 
+                    onChange={(e) => setValue("defaultBranch", e.target.value)}
+                  >
+                    <MenuItem value="" disabled>Select Branch</MenuItem>
+                    {branches && branches.map((b) => (
+                       <MenuItem key={b._id} value={b._id}>
+                          {b.branchName || b.name}
+                       </MenuItem>
+                    ))}
+                  </TextField>
+               </Stack>
+            </Grid>
 
-          <Grid item xs={6}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                name="status"
-                value={formData.status}
-                label="Status"
-                onChange={handleChange}
-              >
-                <MenuItem value="Active">Active</MenuItem>
-                <MenuItem value="Inactive">Inactive</MenuItem>
-                <MenuItem value="Pending">Pending Invite</MenuItem>
-              </Select>
-            </FormControl>
+            {/* COLUMN 3: Access & Role */}
+            <Grid item xs={12} md={4}>
+               <Typography variant="subtitle2" color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+                  Permissions
+               </Typography>
+               <Stack spacing={3}>
+                  <TextField 
+                    select fullWidth label="User Role" 
+                    InputLabelProps={{ shrink: true }}
+                    value={watchRole || "Receptionist"}
+                    onChange={(e) => setValue("role", e.target.value)}
+                  >
+                    <MenuItem value="Administrator">Administrator</MenuItem>
+                    <MenuItem value="Doctor">Doctor</MenuItem>
+                    <MenuItem value="Receptionist">Receptionist</MenuItem>
+                  </TextField>
+
+                  <TextField 
+                    select fullWidth label="Current Status" 
+                    InputLabelProps={{ shrink: true }}
+                    value={watchStatus || "Active"}
+                    onChange={(e) => setValue("status", e.target.value)}
+                  >
+                    <MenuItem value="Active">Active</MenuItem>
+                    <MenuItem value="Inactive">Inactive</MenuItem>
+                  </TextField>
+               </Stack>
+            </Grid>
+
+            {/* COLUMN 4: Info Footer (Span full width) */}
+            {!user && (
+               <Grid item xs={12}>
+                 <Box sx={{ 
+                    mt: 2, p: 2, bgcolor: '#f0f9ff', border: '1px dashed #0ea5e9', 
+                    borderRadius: 2, display: 'flex', justifyContent: 'center' 
+                 }}>
+                   <Typography variant="body2" color="#0369a1">
+                     🔑 <strong>Security Notice:</strong> The default password for this new account is <strong>123456</strong>.
+                   </Typography>
+                 </Box>
+               </Grid>
+            )}
+
           </Grid>
-        </Grid>
-      </DialogContent>
-      
-      <DialogActions sx={{ p: 2.5 }}>
-        <Button onClick={onClose} color="inherit">Cancel</Button>
-        <Button 
-          variant="contained" 
-          onClick={() => onSave(formData)}
-          sx={{ bgcolor: primaryColor, px: 4, fontWeight: 'bold' }}
-        >
-          {user ? 'Save Changes' : 'Send Invite'}
-        </Button>
-      </DialogActions>
+        </DialogContent>
+        
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={onClose} color="inherit" sx={{ fontWeight: 'bold' }}>Cancel</Button>
+          <Button 
+            type="submit" 
+            variant="contained" 
+            sx={{ bgcolor: primaryColor, px: 6, fontWeight: 'bold', '&:hover': { bgcolor: primaryColor } }}
+          >
+            {user ? "Update Staff" : "Confirm & Create"}
+          </Button>
+        </DialogActions>
+      </form>
     </Dialog>
   );
+}
+
+// Simple Stack component if not imported from MUI
+function Stack({ children, spacing }) {
+    return <Box sx={{ display: 'flex', flexDirection: 'column', gap: spacing }}>{children}</Box>;
 }

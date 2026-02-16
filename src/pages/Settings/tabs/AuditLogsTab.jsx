@@ -45,7 +45,7 @@ export default function AuditLogsTab() {
   if (error) return <Box p={4}><Alert severity="error">{error}</Alert></Box>;
 
   return (
-      <Box sx={{ p: 4 }}>
+      <Box sx={{ p: 4, width: '100%' }}>
          <SettingsHeader 
             title="Audit Logs" 
             sub="Track sensitive system changes and user activity." 

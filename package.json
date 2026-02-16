@@ -14,7 +14,9 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.7",
     "@mui/material": "^7.3.7",
+    "@mui/x-data-grid": "^8.27.1",
     "@mui/x-date-pickers": "^8.27.0",
+    "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.13.4",
     "date-fns": "^4.1.0",
     "formik": "^2.4.9",
@@ -23,6 +25,7 @@
     "react-big-calendar": "^1.19.4",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.1",
+    "react-redux": "^9.2.0",
     "react-router-dom": "^7.13.0",
     "yup": "^1.7.1"
   },

@@ -5,7 +5,7 @@ import AdminDashboard from './AdminDashboard';               // You will build t
 import { Box, Typography } from '@mui/material';
 
 // Mock User Role (In real app, get this from Context/Auth)
-const USER_ROLE = 'receptionist'; // Change to 'doctor' or 'admin' to test
+const USER_ROLE = 'admin'; // Change to 'doctor' or 'admin' to test
 
 export default function DashboardRouter() {
   

@@ -1,64 +1,101 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ThemeWrapper } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
-
-// Layouts & Pages
+import { GlobalStyles } from '@mui/material';
+// --- LAYOUTS ---
 import MainLayout from './components/Layout/MainLayout';
+
+// --- PAGES ---
+import LoginPage from './pages/LoginPage';
+import SignupPage from './pages/SignupPage';
+import SetupBranch from './pages/Onboarding/SetupBranch';
+import ChangePasswordScreen from './pages/Auth/ChangePasswordScreen';
+import InventoryPage from './pages/Inventory/InventoryPage';
+
+// --- DASHBOARD PAGES ---
 import DashboardRouter from './pages/Dashboard/DashboardRouter';
 import PatientList from './pages/Dashboard/PatientList';
 import PatientProfile from './components/Patients/PatientProfile';
 import CalendarPage from './pages/Calender/CalendarPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 
-// Auth Pages
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage'; // <--- Import this too!
+// --- 1. AUTH GUARD (Must be logged in) ---
+const RequireAuth = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  const location = useLocation();
 
-function App() {
-  // Get user from storage
+  if (!user) {
+    // Redirect to login but save where they were trying to go
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return <Outlet />;
+};
+
+// --- 2. BRANCH GUARD (Must have a branch selected) ---
+const RequireBranch = () => {
   const user = JSON.parse(localStorage.getItem('user'));
 
+  // If user is Admin but has NO default branch, force them to setup
+  if (user?.role === 'Administrator' && !user?.defaultBranch) {
+    return <Navigate to="/setup-branch" replace />;
+  }
+
+  return <Outlet />;
+};
+
+function App() {
   return (
-    // 1. ThemeWrapper must be the TOP PARENT (so Login can use colors)
     <ThemeWrapper>
+      <GlobalStyles styles={{
+        // Removes the default focus outline from ALL buttons and inputs
+        ':focus': { outline: 'none !important' },
+        'button:focus': { outline: 'none !important' },
+        // Removes the dotted line in Firefox
+        'button::-moz-focus-inner': { border: '0 !important' }
+      }} />
       <ToastProvider>
-        {/* 2. Router must be next (so Login can use navigation) */}
         <BrowserRouter>
           <Routes>
-            
-            {/* --- PUBLIC ROUTES --- */}
-            {/* If logged in, redirect to Dashboard. If not, show Login. */}
-            <Route 
-              path="/login" 
-              element={!user ? <LoginPage /> : <Navigate to="/" />} 
-            />
-            <Route 
-              path="/signup" 
-              element={!user ? <SignupPage /> : <Navigate to="/" />} 
-            />
 
-            {/* --- PROTECTED ROUTES --- */}
-            {/* If NOT logged in, redirect to /login */}
-            <Route 
-               path="/" 
-               element={user ? <MainLayout /> : <Navigate to="/login" />}
-            >
-               {/* Dashboard Child Routes */}
-               <Route index element={<DashboardRouter />} />
-               <Route path="patients" element={<PatientList />} />
-               <Route path="patients/:id" element={<PatientProfile />} />
-               <Route path="calendar" element={<CalendarPage />} />
-               <Route path="settings" element={<SettingsPage />} />
+            {/* --- LEVEL 1: PUBLIC ROUTES --- */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+
+            {/* --- LEVEL 2: AUTHENTICATED ONLY (Onboarding) --- */}
+            {/* Use this for pages that happen AFTER login but BEFORE dashboard */}
+            <Route element={<RequireAuth />}>
+              <Route path="/setup-branch" element={<SetupBranch />} />
+              <Route path="/change-password" element={<ChangePasswordScreen />} />
             </Route>
 
-            {/* Catch-all: Redirect unknown URLs to home */}
-            <Route path="*" element={<Navigate to="/" />} />
+            {/* --- LEVEL 3: FULLY PROTECTED (Auth + Branch + Layout) --- */}
+            <Route element={<RequireAuth />}>
+              <Route element={<RequireBranch />}>
+                <Route path="/" element={<MainLayout />}>
+
+                  {/* Dashboard Children */}
+                  <Route index element={<DashboardRouter />} />
+
+                  <Route path="patients">
+                    <Route index element={<PatientList />} />
+                    <Route path=":id" element={<PatientProfile />} />
+                  </Route>
+
+                  <Route path="calendar" element={<CalendarPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="inventory" element={<InventoryPage />} />
+                </Route>
+              </Route>
+            </Route>
+
+            {/* --- CATCH ALL --- */}
+            <Route path="*" element={<Navigate to="/" replace />} />
 
           </Routes>
         </BrowserRouter>
       </ToastProvider>
-    </ThemeWrapper>
+    </ThemeWrapper >
   );
 }
 

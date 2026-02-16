@@ -15,7 +15,7 @@ import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrow
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import LogoutIcon from '@mui/icons-material/Logout';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-
+import Inventory2Icon from '@mui/icons-material/Inventory2';
 
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 80;
@@ -25,6 +25,7 @@ const MENU_ITEMS = [
 	{ text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
 	{ text: 'Calendar', icon: <CalendarMonthIcon />, path: '/calendar' },
 	{ text: 'Patient List', icon: <PeopleIcon />, path: '/patients' },
+	{ text: 'Inventory', icon: <Inventory2Icon />, path: '/inventory' },
 	{ text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
 

@@ -6,6 +6,9 @@ export const authService = {
     if (response.data.token) {
       localStorage.setItem('user', JSON.stringify(response.data));
     }
+    if (response.data.defaultBranch) {
+      localStorage.setItem('activeBranchId', response.data.defaultBranch);
+    }
     return response.data;
   },
 

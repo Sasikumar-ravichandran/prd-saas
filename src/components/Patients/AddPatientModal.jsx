@@ -14,14 +14,14 @@ import WhatsAppIcon from '@mui/icons-material/WhatsApp';
 import BadgeIcon from '@mui/icons-material/BadgeOutlined';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
-import WaterDropIcon from '@mui/icons-material/WaterDrop'; 
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
 
 import { patientService } from '../../api/services/patientService';
-import api from '../../api/services/api'; 
+import api from '../../api/services/api';
 import { useToast } from '../../context/ToastContext';
 
 const DENTAL_CONCERNS = ['Tooth Pain', 'Cleaning', 'Braces', 'Implant', 'Cosmetic', 'General Checkup', 'Sensitivity'];
-const MEDICAL_CONDITIONS = ['Diabetes', 'BP (High/Low)', 'Heart Issue', 'Pregnancy', 'Asthma', 'Thyroid', 'Epilepsy', 'None'];
+const MEDICAL_CONDITIONS = ['None', 'Diabetes', 'BP (High/Low)', 'Heart Issue', 'Pregnancy', 'Asthma', 'Thyroid', 'Epilepsy'];
 const REFERRAL_SOURCES = ['Google', 'Friend/Family', 'Walk-in', 'Instagram'];
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-', 'Unknown'];
 
@@ -72,7 +72,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const [doctorList, setDoctorList] = useState([]);
 
   const { register, handleSubmit, control, setValue, watch, reset, formState: { errors } } = useForm({
@@ -88,7 +88,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const res = await api.get('/users'); 
+        const res = await api.get('/users');
         const docs = res.data.filter(u => u.role === 'Doctor' || u.role === 'doctor');
         setDoctorList(docs);
       } catch (err) {
@@ -137,25 +137,27 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
         showToast('Patient registered successfully', 'success');
       }
 
-      if (onSubmit) onSubmit(); 
+      if (onSubmit) onSubmit();
       onClose();
     } catch (error) {
       console.error("Save Error:", error);
-      
+
       // Check for Duplicate Key Error (11000)
       // This checks deep inside the error object where MongoDB hides the code
-      const isDuplicate = error.response?.data?.errorResponse?.code === 11000 
-                       || error.response?.data?.code === 11000
-                       || (error.response?.data?.message && error.response.data.message.includes('duplicate'));
+      const isDuplicate = error.response?.data?.errorResponse?.code === 11000
+        || error.response?.data?.code === 11000
+        || (error.response?.data?.message && error.response.data.message.includes('duplicate'));
 
       if (isDuplicate) {
-         showToast('System Error: Patient ID Collision. Please try saving again.', 'error');
+        showToast('System Error: Patient ID Collision. Please try saving again.', 'error');
       } else {
-         const msg = error.response?.data?.message || 'Error saving patient';
-         showToast(msg, 'error');
+        const msg = error.response?.data?.message || 'Error saving patient';
+        showToast(msg, 'error');
       }
     }
   };
+
+  console.log(initialData,'####')
 
   return (
     <Dialog
@@ -170,7 +172,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
             {initialData ? (isEditing ? 'Edit Patient Details' : 'Patient Profile') : 'New Patient Registration'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            {initialData ? `ID: ${initialData.id || 'PID-000'}` : 'Create New ID'}
+            {initialData ? `ID: ${initialData.patientId || 'PID-000'}` : 'Create New ID'}
           </Typography>
         </Box>
 
@@ -274,25 +276,25 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
               <Divider sx={{ borderStyle: 'dashed' }} />
 
               {/* DYNAMIC DOCTOR DROPDOWN */}
-              <TextField 
-                select 
-                fullWidth 
-                label="Assign Doctor" 
-                disabled={!isEditing} 
-                defaultValue="" 
-                {...register("assignedDoctor")} 
+              <TextField
+                select
+                fullWidth
+                label="Assign Doctor"
+                disabled={!isEditing}
+                defaultValue=""
+                {...register("assignedDoctor")}
                 InputProps={{ sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}
               >
-                 {doctorList && doctorList.length > 0 ? (
-                    doctorList.map(doc => (
-                        <MenuItem key={doc._id} value={doc.name}>
-                            {doc.name}
-                        </MenuItem>
-                    ))
-                ) : (
-                    <MenuItem disabled value="">
-                        <em>No Doctor Available</em>
+                {doctorList && doctorList.length > 0 ? (
+                  doctorList.map(doc => (
+                    <MenuItem key={doc._id} value={doc.name}>
+                      {doc.name}
                     </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem disabled value="">
+                    <em>No Doctor Available</em>
+                  </MenuItem>
                 )}
               </TextField>
 
