@@ -20,9 +20,11 @@ import { useColorMode } from '../../context/ThemeContext';
 const PROCEDURES = ['General Checkup', 'Root Canal', 'Cleaning', 'Extraction', 'Consultation', 'Whitening'];
 
 export default function AppointmentModal({ open, onClose, initialData, resources, doctors, patients, onSave, onDelete }) {
-  
+
+  console.log(initialData, '%%%%')
+
   const { primaryColor } = useColorMode();
-  
+
   // --- 1. NEW STATE FOR DELETE CONFIRMATION ---
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
@@ -40,25 +42,43 @@ export default function AppointmentModal({ open, onClose, initialData, resources
   });
 
   const selectedDoctor = doctors?.find(d => d._id === formData.docId);
-  const doctorPhone = selectedDoctor?.mobile || ''; 
+  const doctorPhone = selectedDoctor?.mobile || '';
 
   useEffect(() => {
     if (initialData) {
+
+      // 1. SMART DOCTOR MATCHING
+      // Grab the ID and Name sent by the backend
+      let matchedDocId = initialData.docId || '';
+      const incomingDocName = initialData.docName || initialData.doc || '';
+
+      // If the backend sent a blank ID ("") but gave us the name ("doctor 1"),
+      // we search your 'doctors' array to find their true ID.
+      if (!matchedDocId && incomingDocName && doctors && doctors.length > 0) {
+        const foundDoc = doctors.find(d => d.fullName === incomingDocName);
+        if (foundDoc) {
+          matchedDocId = foundDoc._id; // We found the ID!
+        }
+      }
+
+      // 2. SET FORM DATA
       setFormData({
         id: initialData.id,
         title: initialData.title || '',
         patientId: initialData.patientId || null,
         phone: initialData.phone || '',
-        docId: initialData.docId || '',
-        docName: initialData.doc || '',
+
+        docId: matchedDocId, // ⚡️ Use our smartly matched ID
+        docName: incomingDocName,
+
         type: initialData.type || PROCEDURES[0],
-        date: initialData.start || new Date(),
-        startTime: initialData.start || new Date(),
-        endTime: initialData.end || new Date(),
+        date: initialData.date || initialData.start || new Date(),
+        startTime: initialData.startTime || initialData.start || new Date(),
+        endTime: initialData.endTime || initialData.end || new Date(),
         resourceId: initialData.resourceId || 1
       });
     }
-  }, [initialData, open]);
+  }, [initialData, open, doctors]);
 
   const handlePatientChange = (event, newValue) => {
     if (newValue) {
@@ -79,7 +99,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
     setFormData(prev => ({
       ...prev,
       docId: selectedDocId,
-      docName: selectedDoc ? (selectedDoc.name || selectedDoc.fullName) : 'Unknown'
+      docName: selectedDoc ? (selectedDoc.fullName) : 'Unknown'
     }));
   };
 
@@ -106,8 +126,10 @@ export default function AppointmentModal({ open, onClose, initialData, resources
     onClose();
   };
 
+  console.log(formData, '----------')
+
   // --- 2. UPDATED DELETE HANDLERS ---
-  
+
   // Just opens the confirmation dialog
   const handleDeleteClick = () => {
     setDeleteConfirmOpen(true);
@@ -166,17 +188,17 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 <Box sx={{ width: 180 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>ASSIGN DOCTOR</Typography>
                   <TextField select value={formData.docId} onChange={handleDoctorChange} fullWidth size="small">
-                     {doctors && doctors.length > 0 ? (
-                      doctors.map(doc => <MenuItem key={doc._id} value={doc._id}>{doc.name || doc.fullName}</MenuItem>)
-                     ) : <MenuItem disabled>No Doctors</MenuItem>}
+                    {doctors && doctors.length > 0 ? (
+                      doctors.map(doc => <MenuItem key={doc._id} value={doc._id}>{doc.fullName}</MenuItem>)
+                    ) : <MenuItem disabled>No Doctors</MenuItem>}
                   </TextField>
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>DOCTOR CONTACT</Typography>
                   <TextField
-                    fullWidth size="small" 
-                    value={doctorPhone} 
-                    disabled 
+                    fullWidth size="small"
+                    value={doctorPhone}
+                    disabled
                     placeholder="---"
                     InputProps={{ startAdornment: <InputAdornment position="start"><PhoneIcon fontSize="small" /></InputAdornment> }}
                     sx={{ bgcolor: '#f8fafc' }}
@@ -186,18 +208,18 @@ export default function AppointmentModal({ open, onClose, initialData, resources
 
               {/* ROW 3: CHAIR & PROCEDURE */}
               <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>DENTAL CHAIR</Typography>
-                      <TextField select value={formData.resourceId} onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><EventSeatIcon fontSize="small" /></InputAdornment> }}>
-                      {resources.map(r => <MenuItem key={r.id} value={r.id}>{r.title}</MenuItem>)}
-                      </TextField>
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                      <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PROCEDURE TYPE</Typography>
-                      <TextField select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><MedicalServicesIcon fontSize="small" /></InputAdornment> }}>
-                          {PROCEDURES.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
-                      </TextField>
-                  </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>DENTAL CHAIR</Typography>
+                  <TextField select value={formData.resourceId} onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><EventSeatIcon fontSize="small" /></InputAdornment> }}>
+                    {resources.map(r => <MenuItem key={r.id} value={r.id}>{r.title}</MenuItem>)}
+                  </TextField>
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PROCEDURE TYPE</Typography>
+                  <TextField select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><MedicalServicesIcon fontSize="small" /></InputAdornment> }}>
+                    {PROCEDURES.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+                  </TextField>
+                </Box>
               </Box>
 
               {/* ROW 4: DATE & TIME */}
@@ -223,31 +245,31 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         </DialogContent>
 
         <DialogActions sx={{ p: 2.5, borderTop: '1px solid #f1f5f9', bgcolor: '#fff', justifyContent: 'space-between' }}>
-          
+
           {/* DELETE BUTTON (Triggers confirmation) */}
           {initialData?.id ? (
-              <Button 
-                  onClick={handleDeleteClick} 
-                  color="error" 
-                  startIcon={<DeleteOutlineIcon />}
-                  sx={{ fontWeight: 'bold' }}
-              >
-                  Cancel Appt
-              </Button>
+            <Button
+              onClick={handleDeleteClick}
+              color="error"
+              startIcon={<DeleteOutlineIcon />}
+              sx={{ fontWeight: 'bold' }}
+            >
+              Cancel Appt
+            </Button>
           ) : (
-              <Box /> 
+            <Box />
           )}
 
           <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button onClick={onClose} color="inherit" sx={{ fontWeight: '600', color: '#64748b' }}>Close</Button>
-              <Button
+            <Button onClick={onClose} color="inherit" sx={{ fontWeight: '600', color: '#64748b' }}>Close</Button>
+            <Button
               variant="contained"
               onClick={handleSubmit}
               disabled={!formData.patientId || !formData.docId}
               sx={{ fontWeight: 'bold', px: 4, bgcolor: primaryColor, borderRadius: 1.5 }}
-              >
+            >
               {initialData?.id ? 'Update Schedule' : 'Book Now'}
-              </Button>
+            </Button>
           </Box>
         </DialogActions>
       </Dialog>
@@ -259,36 +281,36 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         PaperProps={{ sx: { width: 400, borderRadius: 3, p: 1 } }}
       >
         <Box sx={{ p: 2, textAlign: 'center' }}>
-            <Box sx={{ 
-                width: 60, height: 60, borderRadius: '50%', bgcolor: '#fee2e2', color: '#ef4444',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', mb: 2
-            }}>
-                <WarningAmberIcon fontSize="large" />
-            </Box>
-            <Typography variant="h6" fontWeight="800" gutterBottom>
-                Cancel Appointment?
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Are you sure you want to cancel this appointment for <b>{formData.title}</b>? This action cannot be undone.
-            </Typography>
-            <Stack direction="row" spacing={2} justifyContent="center">
-                <Button 
-                    onClick={() => setDeleteConfirmOpen(false)} 
-                    variant="outlined" 
-                    color="inherit"
-                    sx={{ fontWeight: 'bold', borderColor: '#e2e8f0', color: '#64748b' }}
-                >
-                    No, Keep it
-                </Button>
-                <Button 
-                    onClick={confirmDelete} 
-                    variant="contained" 
-                    color="error"
-                    sx={{ fontWeight: 'bold', boxShadow: 'none' }}
-                >
-                    Yes, Cancel It
-                </Button>
-            </Stack>
+          <Box sx={{
+            width: 60, height: 60, borderRadius: '50%', bgcolor: '#fee2e2', color: '#ef4444',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', mb: 2
+          }}>
+            <WarningAmberIcon fontSize="large" />
+          </Box>
+          <Typography variant="h6" fontWeight="800" gutterBottom>
+            Cancel Appointment?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Are you sure you want to cancel this appointment for <b>{formData.title}</b>? This action cannot be undone.
+          </Typography>
+          <Stack direction="row" spacing={2} justifyContent="center">
+            <Button
+              onClick={() => setDeleteConfirmOpen(false)}
+              variant="outlined"
+              color="inherit"
+              sx={{ fontWeight: 'bold', borderColor: '#e2e8f0', color: '#64748b' }}
+            >
+              No, Keep it
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              variant="contained"
+              color="error"
+              sx={{ fontWeight: 'bold', boxShadow: 'none' }}
+            >
+              Yes, Cancel It
+            </Button>
+          </Stack>
         </Box>
       </Dialog>
     </>

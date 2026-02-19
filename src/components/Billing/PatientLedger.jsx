@@ -15,7 +15,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 
-import { patientService } from '../../api/services/patientService'; // Import Service
+import { patientService } from '../../api/services/patientService'; 
 
 export default function PatientLedger({ patient, onCollectPayment }) {
   const [filter, setFilter] = useState('all');
@@ -32,7 +32,6 @@ export default function PatientLedger({ patient, onCollectPayment }) {
     
     try {
       setLoading(true);
-      // NOTE: Ensure your backend getPatientLedger accepts the Mongo _id
       const data = await patientService.getLedger(patient._id);
       setLedgerData(data);
     } catch (err) {
@@ -43,12 +42,15 @@ export default function PatientLedger({ patient, onCollectPayment }) {
     }
   };
 
-  // Re-fetch when patient changes (e.g. after a payment is made)
   useEffect(() => {
     fetchLedger();
   }, [patient]);
 
-  // --- 2. CALCULATIONS (Real Data) ---
+  // ⚡️ THE FIX: Removed the redundant frontend filter! 
+  // Your backend is already filtering out proposed/deleted items, 
+  // so we can trust `ledgerData` directly.
+
+  // --- 2. CALCULATIONS ---
   const totalBilled = ledgerData
     .filter(t => t.type === 'DEBIT')
     .reduce((a, b) => a + (b.amount || 0), 0);
@@ -57,11 +59,10 @@ export default function PatientLedger({ patient, onCollectPayment }) {
     .filter(t => t.type === 'CREDIT')
     .reduce((a, b) => a + (b.amount || 0), 0);
 
-  // Note: We use the Patient's walletBalance from props for the most accurate "Due"
-  // but we can also derive it here: (totalBilled - totalReceived)
-  const pendingDue = (patient?.walletBalance || 0);
+  // Calculate pending due based strictly on the ledger math
+  const pendingDue = totalBilled - totalReceived;
 
-  // --- 3. FILTERING LOGIC ---
+  // --- 3. FILTERING LOGIC FOR THE TABLE ---
   const filteredList = ledgerData.filter(t => {
       const type = t.type === 'DEBIT' ? 'invoice' : 'payment';
       
@@ -129,6 +130,7 @@ export default function PatientLedger({ patient, onCollectPayment }) {
                     
                     <Button 
                         variant="contained" size="small" onClick={onCollectPayment}
+                        disabled={pendingDue <= 0} 
                         sx={{ bgcolor: '#3b82f6', fontWeight: 'bold', borderRadius: 2, zIndex: 2, '&:hover': { bgcolor: '#2563eb' } }}
                     >
                         Collect
@@ -182,8 +184,7 @@ export default function PatientLedger({ patient, onCollectPayment }) {
                   </TableHead>
                   <TableBody>
                       {filteredList.map((row) => {
-                          const isInv = row.type === 'DEBIT'; // Backend says DEBIT for treatment
-                          // Format ID: If invoice, use first 8 chars of ID. If payment, use receiptNumber or ID.
+                          const isInv = row.type === 'DEBIT'; 
                           const displayId = isInv ? `INV-${row._id.slice(-6)}` : (row.receiptNumber || `PAY-${row._id.slice(-6)}`);
                           
                           return (
@@ -207,7 +208,7 @@ export default function PatientLedger({ patient, onCollectPayment }) {
                                             <Stack direction="row" alignItems="center" spacing={0.5}>
                                                 <CalendarTodayIcon sx={{ fontSize: 10, color: '#94a3b8' }} />
                                                 <Typography variant="caption" color="text.secondary" fontWeight="600">
-                                                    {new Date(row.date).toLocaleDateString()}
+                                                    {new Date(row.date || row.createdAt || new Date()).toLocaleDateString()}
                                                 </Typography>
                                             </Stack>
                                         </Box>

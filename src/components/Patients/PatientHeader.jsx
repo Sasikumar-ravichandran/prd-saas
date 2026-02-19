@@ -32,8 +32,6 @@ export default function PatientHeader({ patient, onEdit }) {
   const { primaryColor } = useColorMode();
   const GenderIcon = patient.gender === 'Male' ? MaleIcon : FemaleIcon;
 
-  console.log(patient,'###')
-
   return (
     <Paper 
       elevation={0} 

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, Button, 
-  TextField, Grid, MenuItem, Alert, Typography, Box
+  TextField, Grid, MenuItem, Typography, Box, InputAdornment, Divider 
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 
@@ -16,23 +16,39 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
   useEffect(() => {
     if (open) {
       if (user) {
+        // PRE-FILL DATA (Handling nested doctorConfig)
         const branchId = user.defaultBranch?._id || user.defaultBranch || "";
         reset({
-          name: user.name || '',
+          name: user.name || user.fullName || '', // Handle both naming conventions
           email: user.email || '',
           mobile: user.mobile || '',
           role: user.role || 'Receptionist',
           status: user.status || 'Active',
-          defaultBranch: branchId
+          defaultBranch: branchId,
+          
+          // ⚡️ Load Doctor Config if it exists
+          doctorConfig: {
+            specialization: user.doctorConfig?.specialization || 'General Dentist',
+            registrationNumber: user.doctorConfig?.registrationNumber || '',
+            commissionPercentage: user.doctorConfig?.commissionPercentage || 0,
+            baseSalary: user.doctorConfig?.baseSalary || 0
+          }
         });
       } else {
+        // RESET FORM
         reset({
           name: '',
           email: '',
           mobile: '',
           role: 'Receptionist',
           status: 'Active',
-          defaultBranch: ''
+          defaultBranch: '',
+          doctorConfig: {
+            specialization: 'General Dentist',
+            registrationNumber: '',
+            commissionPercentage: 0,
+            baseSalary: 0
+          }
         });
       }
     }
@@ -123,14 +139,54 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
                </Stack>
             </Grid>
 
-            {/* COLUMN 4: Info Footer (Span full width) */}
+            {/* ⚡️⚡️ CONDITIONAL DOCTOR SETTINGS ⚡️⚡️ */}
+            {watchRole === 'Doctor' && (
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }}>
+                    <Typography variant="caption" color="text.secondary">DOCTOR FINANCIAL SETTINGS</Typography>
+                </Divider>
+                
+                <Grid container spacing={3} sx={{ bgcolor: '#f8fafc', p: 2, borderRadius: 2 }}>
+                    <Grid item xs={12} md={4}>
+                        <TextField 
+                            fullWidth label="Specialization" 
+                            placeholder="e.g. Orthodontist"
+                            InputLabelProps={{ shrink: true }}
+                            {...register("doctorConfig.specialization")} 
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                        <TextField 
+                            fullWidth label="License / Reg Number" 
+                            InputLabelProps={{ shrink: true }}
+                            {...register("doctorConfig.registrationNumber")} 
+                        />
+                    </Grid>
+                    <Grid item xs={12} md={4}>
+                        <TextField 
+                            fullWidth label="Commission Share (%)" 
+                            type="number"
+                            InputProps={{ 
+                                endAdornment: <InputAdornment position="end">%</InputAdornment>,
+                                inputProps: { min: 0, max: 100 }
+                            }}
+                            InputLabelProps={{ shrink: true }}
+                            {...register("doctorConfig.commissionPercentage")} 
+                            helperText="Calculated on Net Revenue (Price - Lab Cost)"
+                        />
+                    </Grid>
+                </Grid>
+              </Grid>
+            )}
+
+            {/* SECURITY NOTICE (Only for new users) */}
             {!user && (
                <Grid item xs={12}>
                  <Box sx={{ 
-                    mt: 2, p: 2, bgcolor: '#f0f9ff', border: '1px dashed #0ea5e9', 
-                    borderRadius: 2, display: 'flex', justifyContent: 'center' 
+                   mt: 2, p: 2, bgcolor: '#fff7ed', border: '1px dashed #f97316', 
+                   borderRadius: 2, display: 'flex', justifyContent: 'center' 
                  }}>
-                   <Typography variant="body2" color="#0369a1">
+                   <Typography variant="body2" color="#c2410c">
                      🔑 <strong>Security Notice:</strong> The default password for this new account is <strong>123456</strong>.
                    </Typography>
                  </Box>
@@ -155,7 +211,7 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
   );
 }
 
-// Simple Stack component if not imported from MUI
+// Helper Stack Component
 function Stack({ children, spacing }) {
     return <Box sx={{ display: 'flex', flexDirection: 'column', gap: spacing }}>{children}</Box>;
 }

@@ -90,6 +90,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
       try {
         const res = await api.get('/users');
         const docs = res.data.filter(u => u.role === 'Doctor' || u.role === 'doctor');
+        console.log(docs,'!!!!!!')
         setDoctorList(docs);
       } catch (err) {
         console.error("Failed to fetch doctors", err);
@@ -157,7 +158,6 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
     }
   };
 
-  console.log(initialData,'####')
 
   return (
     <Dialog
@@ -287,8 +287,8 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
               >
                 {doctorList && doctorList.length > 0 ? (
                   doctorList.map(doc => (
-                    <MenuItem key={doc._id} value={doc.name}>
-                      {doc.name}
+                    <MenuItem key={doc._id} value={doc.fullName}>
+                      {doc.fullName}
                     </MenuItem>
                   ))
                 ) : (

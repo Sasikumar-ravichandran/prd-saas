@@ -1,8 +1,12 @@
 import axios from 'axios';
+export const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+export const API_URL = `${SERVER_URL}/api`;
 
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  headers: { 'Content-Type': 'application/json' },
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 // 1. REQUEST INTERCEPTOR (Attaches Token & Branch ID)
@@ -18,8 +22,8 @@ api.interceptors.request.use((config) => {
 
   // B. Handle Active Branch (NEW)
   // We check if the user has selected a specific branch to work in
-  const activeBranchId = localStorage.getItem('activeBranchId'); 
-  
+  const activeBranchId = localStorage.getItem('activeBranchId');
+
   if (activeBranchId) {
     // We send this custom header so the Backend knows which data to return
     config.headers['x-branch-id'] = activeBranchId;

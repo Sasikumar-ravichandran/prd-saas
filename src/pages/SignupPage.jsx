@@ -16,7 +16,7 @@ export default function SignupPage() {
 
   const [formData, setFormData] = useState({
     clinicName: '',
-    adminName: '',
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -83,8 +83,8 @@ export default function SignupPage() {
           />
 
           <TextField
-            fullWidth label="Your Full Name" name="adminName" placeholder="e.g. Dr. Rajesh" required
-            value={formData.adminName} onChange={handleChange}
+            fullWidth label="Your Full Name" name="fullName" placeholder="e.g. Dr. Rajesh" required
+            value={formData.fullName} onChange={handleChange}
             InputProps={{ startAdornment: <InputAdornment position="start"><PersonAddIcon color="action" /></InputAdornment> }}
           />
 

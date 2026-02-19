@@ -85,6 +85,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     return name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'ST';
   };
 
+
   // Safe check for guest users to prevent crash
   const safeUser = user || { name: 'Guest', role: 'Staff' };
 
@@ -157,7 +158,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                         </ListItemIcon>
                         <Box>
                             <Typography variant="body2" fontWeight={branch._id === activeBranchId ? 800 : 500}>
-                                {branch.branchName || branch.name}
+                                {branch.branchName}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
                                 {branch.branchCode || 'No Code'}

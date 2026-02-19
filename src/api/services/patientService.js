@@ -75,5 +75,23 @@ export const patientService = {
   addPayment: async (paymentData) => {
     const response = await api.post('/payments', paymentData);
     return response.data;
+  },
+
+  uploadAttachment: async (patientId, formData) => {
+    // Note: Content-Type header is usually auto-set by axios for FormData, 
+    // but setting it explicitly is safer.
+    const response = await api.post(`/patients/${patientId}/upload`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  // Delete Attachment
+  deleteAttachment: async (patientId, fileUrl) => {
+    // Axios DELETE requires 'data' property for body content
+    const response = await api.delete(`/patients/${patientId}/files`, {
+      data: { fileUrl }
+    });
+    return response.data;
   }
 };

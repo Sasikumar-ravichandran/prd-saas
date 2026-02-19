@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { ThemeWrapper } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { GlobalStyles } from '@mui/material';
+import { useDispatch, useSelector } from 'react-redux'; 
+import { setBranches } from './redux/slices/authSlice';
+import api from './api/services/api';
 // --- LAYOUTS ---
 import MainLayout from './components/Layout/MainLayout';
 
@@ -45,6 +48,23 @@ const RequireBranch = () => {
 };
 
 function App() {
+  const dispatch = useDispatch(); // ⚡️ 4. Initialize Dispatch
+  const { user } = useSelector((state) => state.auth); // ⚡️ 5. Get current user
+
+  const userId = user?._id; 
+
+  useEffect(() => {
+    // Only run if we have a valid User ID
+    if (userId) {
+      api.get('/branches')
+        .then((response) => {
+          dispatch(setBranches(response.data)); 
+        })
+        .catch((error) => console.error("Failed to sync branches on load", error));
+    }
+  }, [userId, dispatch]);
+
+
   return (
     <ThemeWrapper>
       <GlobalStyles styles={{

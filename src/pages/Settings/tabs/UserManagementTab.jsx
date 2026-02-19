@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Avatar, Typography, Chip, Stack, Tooltip, IconButton, CircularProgress, Alert
+  Avatar, Typography, Chip, Stack, Tooltip, IconButton, CircularProgress, Alert,
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions // <--- Added Dialog imports
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 import AddIcon from '@mui/icons-material/Add';
@@ -14,14 +15,14 @@ import UserModal from '../modals/UserModal';
 import { useColorMode } from '../../../context/ThemeContext';
 import { userService } from '../../../api/services/userService';
 import { useToast } from '../../../context/ToastContext';
-import api from '../../../api/services/api'; // Needed to fetch branches for the modal
+import api from '../../../api/services/api';
 
 export default function UserManagementTab() {
   const { primaryColor } = useColorMode();
   const { activeBranchId } = useSelector((state) => state.auth);
 
   const [users, setUsers] = useState([]);
-  const [branches, setBranches] = useState([]); // <--- 1. Store Branches for Dropdown
+  const [branches, setBranches] = useState([]); 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { showToast } = useToast();
@@ -29,7 +30,11 @@ export default function UserManagementTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
-  // 2. Fetch Users AND Branches together
+  // ⚡️ DELETE CONFIRMATION STATE
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
+  // 1. Fetch Users AND Branches together
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -39,7 +44,7 @@ export default function UserManagementTab() {
       ]);
 
       setUsers(userData);
-      setBranches(branchData.data); // Save branches for the modal
+      setBranches(branchData.data); 
     } catch (err) {
       console.error("Failed to load data", err);
       setError("Failed to load user list");
@@ -62,15 +67,25 @@ export default function UserManagementTab() {
     setModalOpen(true);
   };
 
-  const handleDeleteClick = async (id) => {
-    if (window.confirm("Are you sure you want to remove this user?")) {
-      try {
-        await userService.delete(id);
-        setUsers(users.filter(u => u._id !== id));
-        showToast('User deleted successfully', 'success');
-      } catch (err) {
-        showToast("Failed to delete user", 'error');
-      }
+  // ⚡️ Step 1: Open Delete Dialog
+  const requestDelete = (user) => {
+    setUserToDelete(user);
+    setDeleteDialogOpen(true);
+  };
+
+  // ⚡️ Step 2: Confirm Delete
+  const confirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await userService.delete(userToDelete._id);
+      setUsers(users.filter(u => u._id !== userToDelete._id));
+      showToast('User deleted successfully', 'success');
+    } catch (err) {
+      showToast("Failed to delete user", 'error');
+    } finally {
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
   };
 
@@ -80,7 +95,6 @@ export default function UserManagementTab() {
         const updated = await userService.update(editingUser._id, formData);
         setUsers(users.map(u => (u._id === editingUser._id ? updated : u)));
       } else {
-        // If they didn't pick a branch in the modal, default to active
         const payload = {
           ...formData,
           defaultBranch: formData.defaultBranch || activeBranchId,
@@ -110,7 +124,7 @@ export default function UserManagementTab() {
   if (error) return <Box p={4}><Alert severity="error">{error}</Alert></Box>;
 
   return (
-    <Box sx={{ width: '100%', display: 'block',  p: 4 }}>
+    <Box sx={{ width: '100%', display: 'block', p: 4 }}>
       <SettingsHeader title="User Management" sub="Manage staff access and permissions." color={primaryColor}
         action={
           <Button
@@ -137,7 +151,7 @@ export default function UserManagementTab() {
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold' }}>USER</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>ROLE</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>BRANCH</TableCell> {/* <--- NEW HEADER */}
+              <TableCell sx={{ fontWeight: 'bold' }}>BRANCH</TableCell> 
               <TableCell sx={{ fontWeight: 'bold' }}>STATUS</TableCell>
               <TableCell align="right" sx={{ fontWeight: 'bold' }}>ACTIONS</TableCell>
             </TableRow>
@@ -145,8 +159,6 @@ export default function UserManagementTab() {
           <TableBody>
             {users.map((user) => {
               const statusStyle = getStatusColor(user.status);
-
-              // Helper to get branch name safely
               const branchName = user.defaultBranch?.branchName || user.defaultBranch?.name || 'Unassigned';
 
               return (
@@ -164,10 +176,22 @@ export default function UserManagementTab() {
                   </TableCell>
 
                   <TableCell>
-                    <Chip label={user.role} size="small" variant="outlined" sx={{ fontWeight: 500 }} />
+                    <Stack alignItems="flex-start" spacing={0.5}>
+                        <Chip label={user.role} size="small" variant="outlined" sx={{ fontWeight: 500 }} />
+                        {/* ⚡️ DOCTOR DETAILS SHOWN HERE */}
+                        {user.role === 'Doctor' && user.doctorConfig && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            {user.doctorConfig.specialization || 'General'}
+                            {user.doctorConfig.commissionPercentage > 0 && (
+                                <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                                    • {user.doctorConfig.commissionPercentage}% Comm.
+                                </span>
+                            )}
+                        </Typography>
+                        )}
+                    </Stack>
                   </TableCell>
 
-                  {/* <--- NEW BRANCH COLUMN */}
                   <TableCell>
                     <Chip
                       label={branchName}
@@ -191,7 +215,8 @@ export default function UserManagementTab() {
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Delete">
-                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(user._id)}>
+                        {/* ⚡️ CALL requestDelete instead of window.confirm */}
+                        <IconButton size="small" color="error" onClick={() => requestDelete(user)}>
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
@@ -204,14 +229,48 @@ export default function UserManagementTab() {
         </Table>
       </TableContainer>
 
+      {/* MODAL FOR ADD/EDIT */}
       <UserModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSave={handleSaveUser}
         user={editingUser}
-        branches={branches} // <--- PASS BRANCHES TO MODAL
+        branches={branches}
         primaryColor={primaryColor}
       />
+
+      {/* ⚡️ DELETE CONFIRMATION DIALOG ⚡️ */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{ sx: { borderRadius: 3, p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          Delete User?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to remove <b>{userToDelete?.name}</b>? 
+            <br/>
+            This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDeleteDialogOpen(false)} sx={{ fontWeight: 600, color: '#64748b' }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={confirmDelete} 
+            variant="contained" 
+            color="error" 
+            autoFocus 
+            sx={{ fontWeight: 'bold', borderRadius: 2 }}
+          >
+            Yes, Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 }

@@ -13,7 +13,11 @@ import AddPatientModal from '../../components/Patients/AddPatientModal';
 import Odontogram from '../../components/Clinical/Odontogram';
 import PatientLedger from '../../components/Billing/PatientLedger';
 import CollectPaymentModal from '../../components/Patients/CollectPaymentModal';
-
+import PrescriptionList from '../../components/Clinical/PrescriptionList'; // Import this
+import PatientHistory from '../../components/Clinical/PatientHistory';
+import PatientFiles from '../../components/Clinical/PatientFiles';
+// import CreateInvoiceModal from '../../components/Billing/CreateInvoiceModal';
+import CreateInvoiceModal from '../../components/Billing/CreateInvoiceModal';
 // Icons
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import HistoryIcon from '@mui/icons-material/History';
@@ -28,8 +32,9 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import UndoIcon from '@mui/icons-material/Undo';
 import CloseIcon from '@mui/icons-material/Close';
 import { useToast } from '../../context/ToastContext';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack'; 
-
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import MedicationIcon from '@mui/icons-material/Medication';
+import FolderIcon from '@mui/icons-material/Folder';
 
 // Static Procedures List
 const PROCEDURES = [
@@ -68,6 +73,7 @@ export default function PatientProfile() {
     const [isDragging, setIsDragging] = useState(false);
     const dragStart = useRef({ x: 0, y: 0 });
 
+    const [createInvoiceModalOpen, setCreateInvoiceModalOpen] = useState(false);
 
     const navigate = useNavigate();
     // --- 1. FETCH DATA ---
@@ -248,6 +254,8 @@ export default function PatientProfile() {
                 <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ minHeight: 48 }} TabIndicatorProps={{ style: { backgroundColor: primaryColor, height: 3 } }}>
                     <Tab icon={<MedicalServicesIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Clinical Charting" sx={{ fontWeight: 700 }} />
                     <Tab icon={<HistoryIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="History" sx={{ fontWeight: 700 }} />
+                    <Tab icon={<MedicationIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Prescription" sx={{ fontWeight: 700 }} />
+                    <Tab icon={<FolderIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Files" sx={{ fontWeight: 700 }} />
                     <Tab icon={<ReceiptLongIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Billing" sx={{ fontWeight: 700 }} />
                 </Tabs>
             </Box>
@@ -287,7 +295,7 @@ export default function PatientProfile() {
                         </Box>
 
                         {/* RIGHT: SIDEBAR */}
-                        <Box sx={{ width: 380, borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', bgcolor: 'white', height: '100%', zIndex: 15 }}>
+                        <Box sx={{ width: 380, borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', bgcolor: 'white', height: '100%', maxHeight: 400, zIndex: 15 }}>
                             <Box sx={{ p: 2, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Box>
                                     <Typography variant="subtitle1" fontWeight="800" color="#0f172a">Treatment Plan</Typography>
@@ -350,11 +358,50 @@ export default function PatientProfile() {
                         </Box>
                     </>
                 )}
-
-                {/* --- TAB 2: BILLING --- */}
+                {tab === 1 && (
+                    <Box sx={{ width: '100%', minHeight: '80vh', p: 0, bgcolor: '#fff' }}>
+                        <PatientHistory patient={patientData} onRefresh={fetchPatientDetails} />
+                    </Box>
+                )}
                 {tab === 2 && (
                     <Box sx={{ width: '100%', minHeight: '80vh', p: 0 }}>
-                        <PatientLedger onCollectPayment={() => setPaymentModalOpen(true)} patient={patientData} />
+                        <PrescriptionList patientId={patientData._id} />
+                    </Box>
+                )}
+                {tab === 3 && ( // Adjust index (0=Chart, 1=History, 2=Rx, 3=Files, 4=Bill)
+                    <Box sx={{ width: '100%', minHeight: '80vh', bgcolor: '#fff' }}>
+                        <PatientFiles
+                            patient={patientData}
+                            onRefresh={fetchPatientDetails}
+                        />
+                    </Box>
+                )}
+                {/* --- TAB 4: BILLING --- */}
+                {tab === 4 && (
+                    <Box sx={{ width: '100%', minHeight: '80vh', p: 3, bgcolor: '#f8fafc' }}>
+
+                        {/* Top Header for Billing */}
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
+                            <Typography variant="h6" fontWeight="800">Financial Summary</Typography>
+                            <Button
+                                variant="contained"
+                                startIcon={<ReceiptLongIcon />}
+                                // We will create this state variable
+                                onClick={() => setCreateInvoiceModalOpen(true)}
+                                sx={{ bgcolor: primaryColor, borderRadius: 2 }}
+                            >
+                                Generate Invoice
+                            </Button>
+                        </Stack>
+
+                        {/* Existing Ledger */}
+                        <Paper sx={{ p: 0, borderRadius: 3, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                            <PatientLedger onCollectPayment={() => setPaymentModalOpen(true)} patient={patientData} />
+                        </Paper>
+
+                        {/* We will add an InvoiceList component here later to show all generated invoices */}
+                        {/* <InvoiceList patientId={patientData._id} /> */}
+
                     </Box>
                 )}
             </Box>
@@ -398,6 +445,16 @@ export default function PatientProfile() {
 
             <AddPatientModal open={editModalOpen} onClose={() => setEditModalOpen(false)} initialData={patientData} onSubmit={fetchPatientDetails} />
             <CollectPaymentModal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} patient={patientData} onPaymentSuccess={handlePaymentSuccess} />
+            <CreateInvoiceModal
+                open={createInvoiceModalOpen}
+                onClose={() => setCreateInvoiceModalOpen(false)}
+                patientId={patientData._id}
+                // Pass the doctor associated with the patient, or default to the logged-in user if they are a doctor
+                doctorId={patientData?.doctorId || patientData?.assignedDoctor}
+                onSuccess={() => {
+                    fetchPatientDetails();
+                }}
+            />
         </Box>
     );
 }
