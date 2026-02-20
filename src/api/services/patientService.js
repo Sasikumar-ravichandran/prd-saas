@@ -5,9 +5,11 @@ const PATH = '/patients';
 
 export const patientService = {
   // 1. GET ALL PATIENTS
-  getAll: async () => {
-    const response = await api.get(PATH);
-    return response.data; // Returns the array of patients
+  getAll: async (params = {}) => {
+    // Converts { page: 1, limit: 10, search: 'sasi' } to "?page=1&limit=10&search=sasi"
+    const queryString = new URLSearchParams(params).toString();
+    const response = await api.get(`/patients?${queryString}`);
+    return response.data; // Now returns { patients: [], totalCount: X, ... }
   },
 
   // 2. GET SINGLE PATIENT

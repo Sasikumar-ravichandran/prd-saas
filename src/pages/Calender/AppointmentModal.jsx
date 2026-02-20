@@ -14,18 +14,19 @@ import EventSeatIcon from '@mui/icons-material/EventSeat';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'; // New Icon for Alert
+import WarningAmberIcon from '@mui/icons-material/WarningAmber'; 
 import { useColorMode } from '../../context/ThemeContext';
-
-const PROCEDURES = ['General Checkup', 'Root Canal', 'Cleaning', 'Extraction', 'Consultation', 'Whitening'];
+import api from '../../api/services/api'; // ⚡️ IMPORT API
 
 export default function AppointmentModal({ open, onClose, initialData, resources, doctors, patients, onSave, onDelete }) {
 
-  console.log(initialData, '%%%%')
-
   const { primaryColor } = useColorMode();
 
-  // --- 1. NEW STATE FOR DELETE CONFIRMATION ---
+  // ⚡️ THE FIX: Safely extract the array whether it's passed directly, or inside a pagination object
+  const safePatients = Array.isArray(patients) ? patients : (patients?.patients || []);
+
+  // --- NEW STATE FOR DYNAMIC PROCEDURES ---
+  const [proceduresList, setProceduresList] = useState([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -34,7 +35,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
     phone: '',
     docId: '',
     docName: '',
-    type: PROCEDURES[0],
+    type: '', // Default to empty until procedures load
     date: new Date(),
     startTime: new Date(),
     endTime: new Date(),
@@ -44,20 +45,36 @@ export default function AppointmentModal({ open, onClose, initialData, resources
   const selectedDoctor = doctors?.find(d => d._id === formData.docId);
   const doctorPhone = selectedDoctor?.mobile || '';
 
+  // ⚡️ FETCH PROCEDURES ON MOUNT
+  useEffect(() => {
+    const fetchProcedures = async () => {
+      try {
+        const res = await api.get('/procedures');
+        const activeProcedures = (res.data || []).filter(p => p.isActive !== false);
+        setProceduresList(activeProcedures);
+        
+        // Auto-select first procedure if this is a new appointment
+        if (!initialData?.id && activeProcedures.length > 0 && !formData.type) {
+            setFormData(prev => ({ ...prev, type: activeProcedures[0].name }));
+        }
+      } catch (err) {
+        console.error("Failed to load procedures", err);
+      }
+    };
+    fetchProcedures();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (initialData) {
-
       // 1. SMART DOCTOR MATCHING
-      // Grab the ID and Name sent by the backend
       let matchedDocId = initialData.docId || '';
       const incomingDocName = initialData.docName || initialData.doc || '';
 
-      // If the backend sent a blank ID ("") but gave us the name ("doctor 1"),
-      // we search your 'doctors' array to find their true ID.
       if (!matchedDocId && incomingDocName && doctors && doctors.length > 0) {
         const foundDoc = doctors.find(d => d.fullName === incomingDocName);
         if (foundDoc) {
-          matchedDocId = foundDoc._id; // We found the ID!
+          matchedDocId = foundDoc._id; 
         }
       }
 
@@ -67,11 +84,9 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         title: initialData.title || '',
         patientId: initialData.patientId || null,
         phone: initialData.phone || '',
-
-        docId: matchedDocId, // ⚡️ Use our smartly matched ID
+        docId: matchedDocId, 
         docName: incomingDocName,
-
-        type: initialData.type || PROCEDURES[0],
+        type: initialData.type || '', // Wait for procedure list to load or use existing
         date: initialData.date || initialData.start || new Date(),
         startTime: initialData.startTime || initialData.start || new Date(),
         endTime: initialData.endTime || initialData.end || new Date(),
@@ -126,25 +141,18 @@ export default function AppointmentModal({ open, onClose, initialData, resources
     onClose();
   };
 
-  console.log(formData, '----------')
-
-  // --- 2. UPDATED DELETE HANDLERS ---
-
-  // Just opens the confirmation dialog
   const handleDeleteClick = () => {
     setDeleteConfirmOpen(true);
   };
 
-  // Actually performs the delete
   const confirmDelete = () => {
     onDelete(formData.id);
-    setDeleteConfirmOpen(false); // Close confirm
-    onClose(); // Close main modal
+    setDeleteConfirmOpen(false); 
+    onClose(); 
   };
 
   return (
     <>
-      {/* --- MAIN APPOINTMENT FORM DIALOG --- */}
       <Dialog
         open={open}
         onClose={onClose}
@@ -166,9 +174,9 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 <Box sx={{ width: 180 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PATIENT</Typography>
                   <Autocomplete
-                    options={patients || []}
+                    options={safePatients}
                     getOptionLabel={(option) => option.fullName || ''}
-                    value={patients?.find(p => p._id === formData.patientId) || null}
+                    value={safePatients.find(p => p._id === formData.patientId) || null}
                     onChange={handlePatientChange}
                     renderInput={(params) => <TextField {...params} placeholder="Select..." fullWidth size="small" />}
                   />
@@ -216,8 +224,13 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PROCEDURE TYPE</Typography>
+                  {/* ⚡️ UPDATED TO USE DYNAMIC PROCEDURES LIST */}
                   <TextField select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><MedicalServicesIcon fontSize="small" /></InputAdornment> }}>
-                    {PROCEDURES.map(p => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+                    {proceduresList.length > 0 ? (
+                        proceduresList.map(p => <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>)
+                    ) : (
+                        <MenuItem disabled>No Procedures Found</MenuItem>
+                    )}
                   </TextField>
                 </Box>
               </Box>
@@ -274,7 +287,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         </DialogActions>
       </Dialog>
 
-      {/* --- 3. NESTED DELETE CONFIRMATION DIALOG --- */}
+      {/* --- NESTED DELETE CONFIRMATION DIALOG --- */}
       <Dialog
         open={deleteConfirmOpen}
         onClose={() => setDeleteConfirmOpen(false)}

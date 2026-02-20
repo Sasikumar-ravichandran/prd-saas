@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useDispatch } from 'react-redux'; // <--- 1. IMPORT DISPATCH
+import { useDispatch } from 'react-redux'; 
 import {
   Box, Grid, TextField, Button, CircularProgress, InputAdornment,
   Divider, Typography, Card, CardContent, IconButton, Stack, Dialog,
@@ -16,6 +16,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import BusinessIcon from '@mui/icons-material/Business';
 import WarningIcon from '@mui/icons-material/Warning';
+import EventSeatIcon from '@mui/icons-material/EventSeat'; // ⚡️ NEW ICON FOR CHAIRS
 
 // Context & Services
 import SettingsHeader from '../components/SettingsHeader';
@@ -23,12 +24,12 @@ import { useColorMode } from '../../../context/ThemeContext';
 import { settingService } from '../../../api/services/settingService';
 import { useToast } from '../../../context/ToastContext';
 import api from '../../../api/services/api';
-import { setBranches } from '../../../redux/slices/authSlice'; // <--- 2. IMPORT ACTION
+import { setBranches } from '../../../redux/slices/authSlice'; 
 
 export default function ClinicProfileTab() {
   const { primaryColor } = useColorMode();
   const { showToast } = useToast();
-  const dispatch = useDispatch(); // <--- 3. INITIALIZE DISPATCH
+  const dispatch = useDispatch(); 
 
   // Get currently active branch to prevent deletion
   const activeBranchId = localStorage.getItem('activeBranchId');
@@ -36,7 +37,7 @@ export default function ClinicProfileTab() {
   // --- STATE ---
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [branches, setBranchesLocal] = useState([]); // Renamed to clarify it's local state
+  const [branches, setBranchesLocal] = useState([]); 
 
   // Branch Form Dialog
   const [openDialog, setOpenDialog] = useState(false);
@@ -58,7 +59,7 @@ export default function ClinicProfileTab() {
     reset: resetBranch,
   } = useForm();
 
-  // --- 1. FETCH DATA (UPDATED FOR REDUX) ---
+  // --- 1. FETCH DATA ---
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -70,10 +71,7 @@ export default function ClinicProfileTab() {
       if (clinicData) reset(clinicData);
 
       if (branchData.data) {
-        setBranchesLocal(branchData.data); // Update the list in this tab
-
-        // ⚡️ MAGIC LINE: Update Global Redux Store
-        // This makes the Header update instantly!
+        setBranchesLocal(branchData.data); 
         dispatch(setBranches(branchData.data));
       }
 
@@ -86,6 +84,7 @@ export default function ClinicProfileTab() {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // --- 2. CLINIC SAVE ---
@@ -102,29 +101,33 @@ export default function ClinicProfileTab() {
   };
 
   // --- 3. BRANCH HANDLERS ---
-
   const handleOpenDialog = (branch = null) => {
     setEditingBranch(branch);
     if (branch) {
-      resetBranch(branch);
+      // ⚡️ Set existing data (fallback chairCount to 1 if it doesn't exist yet)
+      resetBranch({ ...branch, chairCount: branch.chairCount || 1 });
     } else {
-      resetBranch({ branchName: '', branchCode: '', phone: '', address: '' });
+      // ⚡️ Default new branch to 1 chair
+      resetBranch({ branchName: '', branchCode: '', phone: '', address: '', chairCount: 1 });
     }
     setOpenDialog(true);
   };
 
   const onSubmitBranch = async (data) => {
+    console.log(data,'######')
     try {
       setBranchSaving(true);
+      // Ensure chairCount is sent as a number
+      const payload = { ...data, chairCount: Number(data.chairCount) };
+
       if (editingBranch) {
-        await api.put(`/branches/${editingBranch._id}`, data);
+        await api.put(`/branches/${editingBranch._id}`, payload);
         showToast("Branch updated", "success");
       } else {
-        await api.post('/branches', data);
+        await api.post('/branches', payload);
         showToast("New branch created", "success");
       }
 
-      // Refresh Data (This triggers the Redux Dispatch in fetchData)
       fetchData();
       setOpenDialog(false);
     } catch (err) {
@@ -135,14 +138,11 @@ export default function ClinicProfileTab() {
   };
 
   // --- 4. SAFE DELETE LOGIC ---
-
   const initiateDelete = (branch) => {
-    // Safety Check 1: Cannot delete if it's the only branch
     if (branches.length <= 1) {
       showToast("You must have at least one branch.", "error");
       return;
     }
-    // Safety Check 2: Cannot delete the active branch
     if (branch._id === activeBranchId) {
       showToast("Cannot delete the currently active branch. Switch branches first.", "error");
       return;
@@ -161,8 +161,6 @@ export default function ClinicProfileTab() {
       showToast(`Branch ${branchToDelete.branchName} deleted`, "success");
       setDeleteDialog(false);
       setBranchToDelete(null);
-
-      // Refresh Data (This triggers the Redux Dispatch in fetchData)
       fetchData();
     } catch (err) {
       showToast("Could not delete branch. Ensure it has no active appointments.", "error");
@@ -241,7 +239,7 @@ export default function ClinicProfileTab() {
             <BusinessIcon color="primary" /> Branch Locations
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage multiple locations for this clinic.
+            Manage multiple locations and resources for this clinic.
           </Typography>
         </Box>
         <Button
@@ -277,15 +275,24 @@ export default function ClinicProfileTab() {
                         <Chip label="Current" size="small" color="primary" sx={{ height: 20, fontSize: 10, fontWeight: 'bold' }} />
                       )}
                     </Stack>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                       <StoreIcon sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
                       {branch.address || "No Address"}
                     </Typography>
-                    <Chip
-                      label={branch.branchCode}
-                      size="small"
-                      sx={{ mt: 1, bgcolor: '#f1f5f9', color: '#475569', fontWeight: 'bold', borderRadius: 1 }}
-                    />
+                    <Stack direction="row" spacing={1}>
+                        <Chip
+                        label={branch.branchCode}
+                        size="small"
+                        sx={{ bgcolor: '#f1f5f9', color: '#475569', fontWeight: 'bold', borderRadius: 1 }}
+                        />
+                        {/* ⚡️ DISPLAY CHAIR COUNT ON CARD */}
+                        <Chip
+                        icon={<EventSeatIcon sx={{ fontSize: '14px !important', color: '#475569' }} />}
+                        label={`${branch.chairCount || 1} Chairs`}
+                        size="small"
+                        sx={{ bgcolor: '#f1f5f9', color: '#475569', fontWeight: 'bold', borderRadius: 1 }}
+                        />
+                    </Stack>
                   </Box>
 
                   <Box>
@@ -293,7 +300,7 @@ export default function ClinicProfileTab() {
                       <EditIcon fontSize="small" />
                     </IconButton>
 
-                    {/* DELETE BUTTON WITH SAFETY LOGIC */}
+                    {/* DELETE BUTTON */}
                     <Tooltip title={isCurrentBranch ? "Cannot delete active branch" : (isOnlyBranch ? "Must have at least one branch" : "Delete Branch")}>
                       <span>
                         <IconButton
@@ -322,8 +329,18 @@ export default function ClinicProfileTab() {
           </DialogTitle>
           <DialogContent dividers>
             <Grid container spacing={2} sx={{ mt: 0.5 }}>
-              <Grid item xs={12}>
+              <Grid item xs={12} sm={8}>
                 <TextField fullWidth label="Branch Name" {...registerBranch("branchName", { required: true })} />
+              </Grid>
+              {/* ⚡️ NEW CHAIR INPUT */}
+              <Grid item xs={12} sm={3}>
+                <TextField 
+                    fullWidth 
+                    type="number"
+                    label="No. of Chairs" 
+                    InputProps={{ inputProps: { min: 1, max: 50 } }}
+                    {...registerBranch("chairCount", { required: true, min: 1 })} 
+                />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField fullWidth label="Phone" {...registerBranch("phone", { required: true })} />
@@ -331,13 +348,12 @@ export default function ClinicProfileTab() {
               <Grid item xs={12}>
                 <TextField fullWidth label="Address" multiline rows={2} {...registerBranch("address", { required: true })} />
               </Grid>
-
             </Grid>
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
             <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
             <Button type="submit" variant="contained" disabled={branchSaving} sx={{ bgcolor: primaryColor }}>
-              {branchSaving ? <CircularProgress size={24} /> : "Save Branch"}
+              {branchSaving ? <CircularProgress size={24} color="inherit" /> : "Save Branch"}
             </Button>
           </DialogActions>
         </form>

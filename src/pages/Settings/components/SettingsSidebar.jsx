@@ -7,6 +7,8 @@ import SupervisorAccountIcon from '@mui/icons-material/SupervisorAccount';
 import SecurityIcon from '@mui/icons-material/Security';
 import HistoryIcon from '@mui/icons-material/History';
 import { useColorMode } from '../../../context/ThemeContext';
+import PersonIcon from '@mui/icons-material/Person';
+
 
 const SidebarTab = ({ icon, label, primaryColor, ...props }) => (
   <Tab 
@@ -43,6 +45,7 @@ export default function SettingsSidebar({ tab, setTab }) {
         TabIndicatorProps={{ style: { display: 'none' } }}
         sx={{ flex: 1 }}
       >
+        <SidebarTab icon={<PersonIcon />} label="My Profile" primaryColor={primaryColor} />
         <SidebarTab icon={<StorefrontIcon />} label="Clinic Profile" primaryColor={primaryColor} />
         <SidebarTab icon={<LanguageIcon />} label="Website & Branding" primaryColor={primaryColor} />
         <SidebarTab icon={<VaccinesIcon />} label="Service Catalog" primaryColor={primaryColor} />

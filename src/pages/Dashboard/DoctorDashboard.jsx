@@ -232,14 +232,33 @@ export default function DoctorDashboard() {
   return (
     <Box sx={{ bgcolor: '#f8fafc', minHeight: 'calc(100vh - 64px)', p: { xs: 2, md: 3 } }}>
 
-      {/* HEADER SECTION */}
+      {/* HEADER SECTION - Mobile Responsive */}
       <Box sx={{ mb: 3 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center" mb={2.5}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          mb={2.5}
+          spacing={{ xs: 1.5, sm: 0 }}
+        >
           <Box>
-            <Typography variant="h5" fontWeight="800" sx={{ color: '#0f172a', letterSpacing: -0.5 }}>
+            <Typography
+              variant="h5"
+              fontWeight="800"
+              sx={{
+                color: '#0f172a',
+                letterSpacing: -0.5,
+                fontSize: { xs: '1.25rem', sm: '1.5rem' }
+              }}
+            >
               Dr. {doctorName}'s Station
             </Typography>
-            <Typography variant="body2" color="text.secondary" fontWeight="600">
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              fontWeight="600"
+              sx={{ fontSize: { xs: '0.75rem', sm: '0.875rem' } }}
+            >
               {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
             </Typography>
           </Box>
@@ -247,62 +266,145 @@ export default function DoctorDashboard() {
             variant="outlined"
             onClick={() => navigate('/calendar')}
             startIcon={<CalendarTodayIcon fontSize="small" />}
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: '700', borderColor: '#cbd5e1', color: '#475569', bgcolor: 'white' }}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: '700',
+              borderColor: '#cbd5e1',
+              color: '#475569',
+              bgcolor: 'white',
+              width: { xs: '100%', sm: 'auto' },
+              py: { xs: 0.75, sm: 1 },
+              px: { xs: 2, sm: 2 },
+              fontSize: { xs: '0.8rem', sm: '0.875rem' }
+            }}
           >
             My Calendar
           </Button>
         </Stack>
 
-        {/* KPI CARDS */}
+        {/* KPI CARDS - Mobile Responsive Grid */}
         <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2 }}>
-              <CardContent sx={{ p: 2, pb: "16px !important" }}>
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: '12px !important', sm: '16px !important' } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight="700">APPTS TODAY</Typography>
-                    <Typography variant="h5" fontWeight="800" sx={{ color: '#0f172a' }}>{totalAppointments}</Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      fontWeight="700"
+                      sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                    >
+                      APPTS TODAY
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      fontWeight="800"
+                      sx={{
+                        color: '#0f172a',
+                        fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                      }}
+                    >
+                      {totalAppointments}
+                    </Typography>
                   </Box>
-                  <Avatar sx={{ bgcolor: '#eff6ff', color: '#3b82f6', width: 40, height: 40 }}><EventAvailableIcon fontSize="small" /></Avatar>
+                  <Avatar sx={{ bgcolor: '#eff6ff', color: '#3b82f6', width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
+                    <EventAvailableIcon fontSize="small" />
+                  </Avatar>
                 </Stack>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2 }}>
-              <CardContent sx={{ p: 2, pb: "16px !important" }}>
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: '12px !important', sm: '16px !important' } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight="700">WAITING ROOM</Typography>
-                    <Typography variant="h5" fontWeight="800" sx={{ color: '#d97706' }}>{waitingCount}</Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      fontWeight="700"
+                      sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                    >
+                      WAITING ROOM
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      fontWeight="800"
+                      sx={{
+                        color: '#d97706',
+                        fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                      }}
+                    >
+                      {waitingCount}
+                    </Typography>
                   </Box>
-                  <Avatar sx={{ bgcolor: '#fef3c7', color: '#d97706', width: 40, height: 40 }}><AssignmentIndIcon fontSize="small" /></Avatar>
+                  <Avatar sx={{ bgcolor: '#fef3c7', color: '#d97706', width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
+                    <AssignmentIndIcon fontSize="small" />
+                  </Avatar>
                 </Stack>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2 }}>
-              <CardContent sx={{ p: 2, pb: "16px !important" }}>
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: '12px !important', sm: '16px !important' } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight="700">IN CHAIR</Typography>
-                    <Typography variant="h5" fontWeight="800" sx={{ color: '#16a34a' }}>{inChairCount}</Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      fontWeight="700"
+                      sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                    >
+                      IN CHAIR
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      fontWeight="800"
+                      sx={{
+                        color: '#16a34a',
+                        fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                      }}
+                    >
+                      {inChairCount}
+                    </Typography>
                   </Box>
-                  <Avatar sx={{ bgcolor: '#dcfce7', color: '#16a34a', width: 40, height: 40 }}><EventSeatIcon fontSize="small" /></Avatar>
+                  <Avatar sx={{ bgcolor: '#dcfce7', color: '#16a34a', width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
+                    <EventSeatIcon fontSize="small" />
+                  </Avatar>
                 </Stack>
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={6} sm={6} md={3}>
             <Card elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2 }}>
-              <CardContent sx={{ p: 2, pb: "16px !important" }}>
+              <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: '12px !important', sm: '16px !important' } }}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Box>
-                    <Typography variant="caption" color="text.secondary" fontWeight="700">COMPLETED</Typography>
-                    <Typography variant="h5" fontWeight="800" sx={{ color: '#4f46e5' }}>{completedCount}</Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      fontWeight="700"
+                      sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}
+                    >
+                      COMPLETED
+                    </Typography>
+                    <Typography
+                      variant="h5"
+                      fontWeight="800"
+                      sx={{
+                        color: '#4f46e5',
+                        fontSize: { xs: '1.25rem', sm: '1.5rem' }
+                      }}
+                    >
+                      {completedCount}
+                    </Typography>
                   </Box>
-                  <Avatar sx={{ bgcolor: '#e0e7ff', color: '#4f46e5', width: 40, height: 40 }}><CheckCircleOutlineIcon fontSize="small" /></Avatar>
+                  <Avatar sx={{ bgcolor: '#e0e7ff', color: '#4f46e5', width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
+                    <CheckCircleOutlineIcon fontSize="small" />
+                  </Avatar>
                 </Stack>
               </CardContent>
             </Card>
@@ -310,12 +412,12 @@ export default function DoctorDashboard() {
         </Grid>
       </Box>
 
-      {/* ⚡️ THE FIX: Fluid Grid Layout. Left is fixed max-width, Right gets all remaining space */}
+      {/* MAIN CONTENT - Mobile Responsive Layout */}
       <Grid container spacing={3} alignItems="flex-start" sx={{ flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
 
-        {/* --- LEFT: PATIENT DETAILS (Narrower & Fixed) --- */}
+        {/* LEFT: PATIENT DETAILS - Stacks on top on mobile */}
         <Grid item xs={12} md="auto" sx={{ width: '100%', minWidth: { md: '300px' }, maxWidth: { md: '340px' }, flexShrink: 0 }}>
-          <Box sx={{ position: 'sticky', top: 90 }}>
+          <Box sx={{ position: { md: 'sticky' }, top: { md: 90 } }}>
             {displayPatient ? (
               <Paper
                 elevation={0}
@@ -327,31 +429,57 @@ export default function DoctorDashboard() {
                 }}
               >
                 {/* Header */}
-                <Box sx={{ p: 2.5, bgcolor: displayPatient.status === 'In Progress' ? alpha(primaryColor, 0.05) : 'white', borderBottom: '1px solid #f1f5f9' }}>
+                <Box sx={{ p: { xs: 2, sm: 2.5 }, bgcolor: displayPatient.status === 'In Progress' ? alpha(primaryColor, 0.05) : 'white', borderBottom: '1px solid #f1f5f9' }}>
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Avatar
                       sx={{
-                        width: 50, height: 50,
+                        width: { xs: 44, sm: 50 },
+                        height: { xs: 44, sm: 50 },
                         bgcolor: displayPatient.status === 'In Progress' ? primaryColor : '#f1f5f9',
                         color: displayPatient.status === 'In Progress' ? 'white' : '#64748b',
-                        fontSize: '1.3rem', fontWeight: '800'
+                        fontSize: { xs: '1.1rem', sm: '1.3rem' },
+                        fontWeight: '800'
                       }}
                     >
                       {displayPatient.name.charAt(0)}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle1" fontWeight="800" color="#0f172a" sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="800"
+                        color="#0f172a"
+                        sx={{
+                          lineHeight: 1.2,
+                          mb: 0.5,
+                          fontSize: { xs: '0.95rem', sm: '1rem' }
+                        }}
+                      >
                         {displayPatient.name}
                       </Typography>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="caption" color="text.secondary" fontWeight="600" display="flex" alignItems="center" gap={0.5}>
+                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight="600"
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                        >
                           <AccessTimeIcon fontSize="inherit" /> {displayPatient.time}
                         </Typography>
-                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+                        <Divider orientation="vertical" flexItem sx={{ mx: 0.5, display: { xs: 'none', sm: 'block' } }} />
                         {displayPatient.status === 'In Progress' ? (
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#16a34a', animation: `${pulseAnimation} 2s infinite` }} />
-                            <Typography variant="caption" fontWeight="800" color="#16a34a">IN CHAIR</Typography>
+                            <Typography
+                              variant="caption"
+                              fontWeight="800"
+                              color="#16a34a"
+                              sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                            >
+                              IN CHAIR
+                            </Typography>
                           </Box>
                         ) : getStatusChip(displayPatient.status)}
                       </Stack>
@@ -360,19 +488,51 @@ export default function DoctorDashboard() {
                 </Box>
 
                 {/* Details */}
-                <Box sx={{ p: 2.5, bgcolor: '#fbfcfd' }}>
-                  <Typography variant="caption" fontWeight="700" color="text.secondary" sx={{ letterSpacing: 0.5, mb: 0.5, display: 'block' }}>
+                <Box sx={{ p: { xs: 2, sm: 2.5 }, bgcolor: '#fbfcfd' }}>
+                  <Typography
+                    variant="caption"
+                    fontWeight="700"
+                    color="text.secondary"
+                    sx={{
+                      letterSpacing: 0.5,
+                      mb: 0.5,
+                      display: 'block',
+                      fontSize: { xs: '0.65rem', sm: '0.7rem' }
+                    }}
+                  >
                     APPOINTMENT REASON
                   </Typography>
-                  <Typography variant="body2" fontWeight="800" color="#1e293b" mb={displayPatient.activeTreatments?.length > 0 ? 3 : 2} sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+                  <Typography
+                    variant="body2"
+                    fontWeight="800"
+                    color="#1e293b"
+                    mb={displayPatient.activeTreatments?.length > 0 ? 3 : 2}
+                    sx={{
+                      p: 1.5,
+                      bgcolor: 'white',
+                      borderRadius: 2,
+                      border: '1px solid #e2e8f0',
+                      fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                    }}
+                  >
                     {displayPatient.originalType || displayPatient.type || "General Consultation"}
                   </Typography>
 
-                  <Typography variant="caption" fontWeight="700" color="text.secondary" sx={{ letterSpacing: 0.5, mb: 1, display: 'block' }}>
+                  <Typography
+                    variant="caption"
+                    fontWeight="700"
+                    color="text.secondary"
+                    sx={{
+                      letterSpacing: 0.5,
+                      mb: 1,
+                      display: 'block',
+                      fontSize: { xs: '0.65rem', sm: '0.7rem' }
+                    }}
+                  >
                     TREATMENT PLAN
                   </Typography>
 
-                  {/* ⚡️ Smart Treatment Display */}
+                  {/* Smart Treatment Display */}
                   {displayPatient.activeTreatments && displayPatient.activeTreatments.length > 0 ? (
                     <Stack direction="row" flexWrap="wrap" gap={1} mb={2}>
                       {displayPatient.activeTreatments.map(t => (
@@ -383,24 +543,53 @@ export default function DoctorDashboard() {
                             bgcolor: alpha(primaryColor, 0.1),
                             color: primaryColor,
                             fontWeight: '800',
-                            borderRadius: 1.5
+                            borderRadius: 1.5,
+                            fontSize: { xs: '0.7rem', sm: '0.75rem' },
+                            height: { xs: 20, sm: 24 }
                           }}
                         />
                       ))}
                     </Stack>
                   ) : (
-                    <Typography variant="body2" fontWeight="800" color="#1e293b" mb={2} sx={{ p: 1.5, bgcolor: 'white', borderRadius: 2, border: '1px solid #e2e8f0' }}>
+                    <Typography
+                      variant="body2"
+                      fontWeight="800"
+                      color="#1e293b"
+                      mb={2}
+                      sx={{
+                        p: 1.5,
+                        bgcolor: 'white',
+                        borderRadius: 2,
+                        border: '1px solid #e2e8f0',
+                        fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                      }}
+                    >
                       No ongoing treatment for this patient.
                     </Typography>
                   )}
 
                   {(displayPatient.conditions?.length > 0 || displayPatient.notes) && (
                     <Box>
-                      <Typography variant="caption" fontWeight="700" color="#e11d48" sx={{ letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography
+                        variant="caption"
+                        fontWeight="700"
+                        color="#e11d48"
+                        sx={{
+                          letterSpacing: 0.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          fontSize: { xs: '0.65rem', sm: '0.7rem' }
+                        }}
+                      >
                         <ErrorOutlineIcon fontSize="inherit" /> MEDICAL ALERTS
                       </Typography>
                       <Alert severity="error" icon={false} sx={{ mt: 1, borderRadius: 2, py: 0, px: 1.5, '& .MuiAlert-message': { py: 1 } }}>
-                        <Typography variant="caption" fontWeight="700">
+                        <Typography
+                          variant="caption"
+                          fontWeight="700"
+                          sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}
+                        >
                           {displayPatient.conditions?.length ? displayPatient.conditions.join(', ') : displayPatient.notes}
                         </Typography>
                       </Alert>
@@ -408,25 +597,40 @@ export default function DoctorDashboard() {
                   )}
                 </Box>
 
-                {/* Action Buttons */}
-                <Box sx={{ p: 2, bgcolor: 'white', borderTop: '1px solid #f1f5f9' }}>
+                {/* Action Buttons - Mobile Responsive */}
+                <Box sx={{ p: { xs: 2, sm: 2 }, bgcolor: 'white', borderTop: '1px solid #f1f5f9' }}>
                   <Stack direction="row" spacing={1}>
                     <Tooltip title="View Patient Profile">
                       <Button
                         variant="outlined"
                         onClick={() => navigate(`/patients/${displayPatient?.pid || displayPatient.id}`)}
-                        sx={{ borderRadius: 2, fontWeight: '700', borderColor: '#e2e8f0', color: '#475569', minWidth: 40, px: 1 }}
+                        sx={{
+                          borderRadius: 2,
+                          fontWeight: '700',
+                          borderColor: '#e2e8f0',
+                          color: '#475569',
+                          minWidth: { xs: 36, sm: 40 },
+                          px: { xs: 0.5, sm: 1 }
+                        }}
                       >
-                        <PersonIcon />
+                        <PersonIcon fontSize="small" />
                       </Button>
                     </Tooltip>
 
                     {(displayPatient.status === 'Scheduled' || displayPatient.status === 'pending') && (
                       <Button
-                        variant="contained" fullWidth
+                        variant="contained"
+                        fullWidth
                         onClick={() => handleStartSession(displayPatient.id)}
                         startIcon={<PlayArrowIcon fontSize="small" />}
-                        sx={{ borderRadius: 2, fontWeight: '700', textTransform: 'none', bgcolor: primaryColor }}
+                        sx={{
+                          borderRadius: 2,
+                          fontWeight: '700',
+                          textTransform: 'none',
+                          bgcolor: primaryColor,
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          py: { xs: 0.75, sm: 1 }
+                        }}
                       >
                         Start Treatment
                       </Button>
@@ -434,17 +638,36 @@ export default function DoctorDashboard() {
 
                     {displayPatient.status === 'In Progress' && (
                       <Button
-                        variant="contained" fullWidth color="success"
+                        variant="contained"
+                        fullWidth
+                        color="success"
                         onClick={() => handleEndSessionTrigger(displayPatient.id)}
                         startIcon={<CheckCircleIcon fontSize="small" />}
-                        sx={{ borderRadius: 2, fontWeight: '700', textTransform: 'none' }}
+                        sx={{
+                          borderRadius: 2,
+                          fontWeight: '700',
+                          textTransform: 'none',
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          py: { xs: 0.75, sm: 1 }
+                        }}
                       >
                         Complete Session
                       </Button>
                     )}
 
                     {displayPatient.status === 'Completed' && (
-                      <Button variant="outlined" fullWidth disabled sx={{ borderRadius: 2, fontWeight: '700', textTransform: 'none' }}>
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        disabled
+                        sx={{
+                          borderRadius: 2,
+                          fontWeight: '700',
+                          textTransform: 'none',
+                          fontSize: { xs: '0.8rem', sm: '0.875rem' },
+                          py: { xs: 0.75, sm: 1 }
+                        }}
+                      >
                         Session Finished
                       </Button>
                     )}
@@ -452,126 +675,258 @@ export default function DoctorDashboard() {
                 </Box>
               </Paper>
             ) : (
-              <Paper elevation={0} sx={{ p: 4, borderRadius: 3, border: '2px dashed #cbd5e1', textAlign: 'center', bgcolor: 'transparent' }}>
-                <MedicalServicesIcon sx={{ fontSize: 40, color: '#94a3b8', mb: 1 }} />
-                <Typography variant="subtitle1" fontWeight="800" color="#475569">No Patient Selected</Typography>
-                <Typography variant="caption" color="text.secondary">Select from the schedule to begin.</Typography>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: { xs: 3, sm: 4 },
+                  borderRadius: 3,
+                  border: '2px dashed #cbd5e1',
+                  textAlign: 'center',
+                  bgcolor: 'transparent'
+                }}
+              >
+                <MedicalServicesIcon sx={{ fontSize: { xs: 32, sm: 40 }, color: '#94a3b8', mb: 1 }} />
+                <Typography variant="subtitle1" fontWeight="800" color="#475569" sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}>
+                  No Patient Selected
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.75rem' } }}>
+                  Select from the schedule to begin.
+                </Typography>
               </Paper>
             )}
           </Box>
         </Grid>
 
-        {/* --- RIGHT: INTERACTIVE SCHEDULE TABLE (Takes all remaining width) --- */}
+        {/* RIGHT: INTERACTIVE SCHEDULE TABLE - Mobile Responsive */}
         <Grid item xs sx={{ minWidth: 0 }}>
           <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
 
-            <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', bgcolor: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Typography variant="subtitle1" fontWeight="800" color="#0f172a">
+            <Box sx={{
+              p: { xs: 2, sm: 2.5 },
+              borderBottom: '1px solid #e2e8f0',
+              bgcolor: 'white',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <Typography
+                variant="subtitle1"
+                fontWeight="800"
+                color="#0f172a"
+                sx={{ fontSize: { xs: '0.95rem', sm: '1rem' } }}
+              >
                 Today's Schedule
               </Typography>
             </Box>
 
-            <TableContainer sx={{ maxHeight: 450, overflowY: 'auto', overflowX: 'auto' }}>
-              <Table stickyHeader size="medium" sx={{ minWidth: 600 }}> {/* Changed size to medium for better spacing */}
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>PATIENT</TableCell>
-                    <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>TIME</TableCell>
-                    <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>TREATMENT</TableCell>
-                    <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>APPT REASON</TableCell>
-                    <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>STATUS</TableCell>
-                    <TableCell align="right" sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>ACTION</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paginatedSchedule.length === 0 ? (
-                    /* ⚡️ EMPTY STATE UI */
-                    <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <Avatar sx={{ width: 64, height: 64, bgcolor: '#f1f5f9', color: '#cbd5e1', mb: 2 }}>
-                            <EventAvailableIcon fontSize="large" />
+            {/* Mobile: Card View, Desktop: Table View */}
+            <Box sx={{ display: { xs: 'block', sm: 'none' } }}>
+              {/* MOBILE CARD VIEW */}
+              <Stack spacing={1.5} sx={{ p: 2 }}>
+                {paginatedSchedule.length === 0 ? (
+                  <Box sx={{ py: 6, textAlign: 'center' }}>
+                    <Avatar sx={{ width: 56, height: 56, bgcolor: '#f1f5f9', color: '#cbd5e1', mb: 2, mx: 'auto' }}>
+                      <EventAvailableIcon fontSize="large" />
+                    </Avatar>
+                    <Typography variant="subtitle2" fontWeight="800" color="#475569">
+                      No Appointments Today
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      You have a clear schedule!
+                    </Typography>
+                  </Box>
+                ) : (
+                  paginatedSchedule.map((appt) => {
+                    const isSelected = selectedApptId === appt.id;
+                    return (
+                      <Paper
+                        key={appt.id}
+                        elevation={0}
+                        onClick={() => setSelectedApptId(appt.id)}
+                        sx={{
+                          p: 2,
+                          border: isSelected ? `2px solid ${primaryColor}` : '1px solid #e2e8f0',
+                          borderRadius: 2,
+                          bgcolor: isSelected ? alpha(primaryColor, 0.04) : 'white',
+                          cursor: 'pointer',
+                          '&:active': {
+                            transform: 'scale(0.98)'
+                          }
+                        }}
+                      >
+                        <Stack direction="row" spacing={1.5} alignItems="flex-start" mb={1}>
+                          <Avatar
+                            sx={{
+                              width: 36,
+                              height: 36,
+                              bgcolor: isSelected ? primaryColor : '#f1f5f9',
+                              color: isSelected ? 'white' : '#64748b',
+                              fontWeight: '700',
+                              fontSize: '0.9rem'
+                            }}
+                          >
+                            {appt.name.charAt(0)}
                           </Avatar>
-                          <Typography variant="h6" fontWeight="800" color="#475569">
-                            No Appointments Today
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                            You have a clear schedule for the day!
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    /* ⚡️ YOUR EXISTING MAP LOGIC */
-                    paginatedSchedule.map((appt) => {
-                      const isSelected = selectedApptId === appt.id;
-                      return (
-                        <TableRow
-                          key={appt.id}
-                          hover
-                          onClick={() => setSelectedApptId(appt.id)}
-                          sx={{
-                            cursor: 'pointer',
-                            bgcolor: isSelected ? alpha(primaryColor, 0.04) : 'transparent',
-                            position: 'relative',
-                            '&::after': isSelected ? {
-                              content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', backgroundColor: primaryColor
-                            } : {}
-                          }}
-                        >
-                          <TableCell sx={{ py: 1.5 }}>
-                            <Stack direction="row" spacing={1.5} alignItems="center">
-                              <Avatar sx={{ width: 36, height: 36, bgcolor: isSelected ? primaryColor : '#f1f5f9', color: isSelected ? 'white' : '#64748b', fontWeight: '700', fontSize: '0.9rem' }}>
-                                {appt.name.charAt(0)}
-                              </Avatar>
-                              <Typography variant="body2" fontWeight="700" color="#0f172a">{appt.name}</Typography>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="body2" fontWeight="700" color="#0f172a" mb={0.5}>
+                              {appt.name}
+                            </Typography>
+                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" gap={0.5}>
+                              <Typography variant="caption" color="text.secondary" fontWeight="600">
+                                {appt.time}
+                              </Typography>
+                              <Divider orientation="vertical" flexItem sx={{ height: 12 }} />
+                              {getStatusChip(appt.status)}
                             </Stack>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" color="text.secondary" fontWeight="600">{appt.time}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" color="#334155" fontWeight="600">{appt?.activeTreatments.length > 0 ? appt.type || 'Consultation' : 'No active treatment'}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" color="#334155" fontWeight="600">{appt.originalType || 'Consultation'}</Typography>
-                          </TableCell>
-                          <TableCell>{getStatusChip(appt.status)}</TableCell>
-                          <TableCell align="right">
-                            {appt.status === 'Scheduled' || appt.status === 'pending' ? (
-                              <Tooltip title="Start Session">
-                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleStartSession(appt.id); }} sx={{ bgcolor: alpha(primaryColor, 0.1), color: primaryColor }}>
-                                  <PlayArrowIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            ) : appt.status === 'In Progress' ? (
-                              <Tooltip title="Complete Session">
-                                <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEndSessionTrigger(appt.id); }} sx={{ bgcolor: '#dcfce7', color: '#16a34a' }}>
-                                  <CheckCircleIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            ) : (
-                              <CheckCircleOutlineIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                          </Box>
+                          {appt.status === 'Scheduled' || appt.status === 'pending' ? (
+                            <IconButton
+                              size="small"
+                              onClick={(e) => { e.stopPropagation(); handleStartSession(appt.id); }}
+                              sx={{ bgcolor: alpha(primaryColor, 0.1), color: primaryColor }}
+                            >
+                              <PlayArrowIcon fontSize="small" />
+                            </IconButton>
+                          ) : appt.status === 'In Progress' ? (
+                            <IconButton
+                              size="small"
+                              onClick={(e) => { e.stopPropagation(); handleEndSessionTrigger(appt.id); }}
+                              sx={{ bgcolor: '#dcfce7', color: '#16a34a' }}
+                            >
+                              <CheckCircleIcon fontSize="small" />
+                            </IconButton>
+                          ) : (
+                            <CheckCircleOutlineIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
+                          )}
+                        </Stack>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {appt.originalType || 'Consultation'}
+                        </Typography>
+                      </Paper>
+                    );
+                  })
+                )}
+              </Stack>
 
-            <TablePagination
-              component="div"
-              count={schedule.length}
-              page={page}
-              onPageChange={handleChangePage}
-              rowsPerPage={rowsPerPage}
-              rowsPerPageOptions={[5, 10, 25]}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-              sx={{ borderTop: '1px solid #e2e8f0' }}
-            />
+              {/* Mobile Pagination */}
+              {schedule.length > 0 && (
+                <TablePagination
+                  component="div"
+                  count={schedule.length}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  sx={{ borderTop: '1px solid #e2e8f0' }}
+                />
+              )}
+            </Box>
+
+            {/* DESKTOP TABLE VIEW */}
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <TableContainer sx={{ maxHeight: 450, overflowY: 'auto', overflowX: 'auto' }}>
+                <Table stickyHeader size="medium" sx={{ minWidth: 600 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>PATIENT</TableCell>
+                      <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>TIME</TableCell>
+                      <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>TREATMENT</TableCell>
+                      <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>APPT REASON</TableCell>
+                      <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>STATUS</TableCell>
+                      <TableCell align="right" sx={{ bgcolor: '#f8fafc', fontWeight: '800', fontSize: '0.75rem', color: '#64748b' }}>ACTION</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedSchedule.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <Avatar sx={{ width: 64, height: 64, bgcolor: '#f1f5f9', color: '#cbd5e1', mb: 2 }}>
+                              <EventAvailableIcon fontSize="large" />
+                            </Avatar>
+                            <Typography variant="h6" fontWeight="800" color="#475569">
+                              No Appointments Today
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                              You have a clear schedule for the day!
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      paginatedSchedule.map((appt) => {
+                        const isSelected = selectedApptId === appt.id;
+                        return (
+                          <TableRow
+                            key={appt.id}
+                            hover
+                            onClick={() => setSelectedApptId(appt.id)}
+                            sx={{
+                              cursor: 'pointer',
+                              bgcolor: isSelected ? alpha(primaryColor, 0.04) : 'transparent',
+                              position: 'relative',
+                              '&::after': isSelected ? {
+                                content: '""', position: 'absolute', left: 0, top: 0, bottom: 0, width: '3px', backgroundColor: primaryColor
+                              } : {}
+                            }}
+                          >
+                            <TableCell sx={{ py: 1.5 }}>
+                              <Stack direction="row" spacing={1.5} alignItems="center">
+                                <Avatar sx={{ width: 36, height: 36, bgcolor: isSelected ? primaryColor : '#f1f5f9', color: isSelected ? 'white' : '#64748b', fontWeight: '700', fontSize: '0.9rem' }}>
+                                  {appt.name.charAt(0)}
+                                </Avatar>
+                                <Typography variant="body2" fontWeight="700" color="#0f172a">{appt.name}</Typography>
+                              </Stack>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" color="text.secondary" fontWeight="600">{appt.time}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" color="#334155" fontWeight="600">{appt?.activeTreatments.length > 0 ? appt.type || 'Consultation' : 'No active treatment'}</Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" color="#334155" fontWeight="600">{appt.originalType || 'Consultation'}</Typography>
+                            </TableCell>
+                            <TableCell>{getStatusChip(appt.status)}</TableCell>
+                            <TableCell align="right">
+                              {appt.status === 'Scheduled' || appt.status === 'pending' ? (
+                                <Tooltip title="Start Session">
+                                  <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleStartSession(appt.id); }} sx={{ bgcolor: alpha(primaryColor, 0.1), color: primaryColor }}>
+                                    <PlayArrowIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              ) : appt.status === 'In Progress' ? (
+                                <Tooltip title="Complete Session">
+                                  <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleEndSessionTrigger(appt.id); }} sx={{ bgcolor: '#dcfce7', color: '#16a34a' }}>
+                                    <CheckCircleIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              ) : (
+                                <CheckCircleOutlineIcon sx={{ color: '#cbd5e1', fontSize: 20 }} />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+
+              {schedule.length > 0 && (
+                <TablePagination
+                  component="div"
+                  count={schedule.length}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  rowsPerPage={rowsPerPage}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  sx={{ borderTop: '1px solid #e2e8f0' }}
+                />
+              )}
+            </Box>
           </Paper>
         </Grid>
       </Grid>
