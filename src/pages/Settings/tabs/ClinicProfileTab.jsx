@@ -215,13 +215,13 @@ export default function ClinicProfileTab() {
               InputLabelProps={{ shrink: true }} {...register("name", { required: true })}
             />
           </Grid>
-          <Grid item xs={6} md={3}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth label="GSTIN" placeholder="33AABC..."
               InputLabelProps={{ shrink: true }} {...register("gstin")}
             />
           </Grid>
-          <Grid item xs={6} md={3}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth label="Phone" placeholder="+91..."
               InputLabelProps={{ shrink: true }} {...register("phone")}

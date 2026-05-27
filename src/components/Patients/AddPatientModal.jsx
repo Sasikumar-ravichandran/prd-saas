@@ -15,6 +15,7 @@ import BadgeIcon from '@mui/icons-material/BadgeOutlined';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined'; // Icon for ID
 
 import { patientService } from '../../api/services/patientService';
 import api from '../../api/services/api';
@@ -75,8 +76,10 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
 
   const [doctorList, setDoctorList] = useState([]);
 
+  // ⚡️ ADDED patientId to defaultValues
   const { register, handleSubmit, control, setValue, watch, reset, formState: { errors } } = useForm({
     defaultValues: {
+      patientId: '', // Custom ID field
       fullName: '', age: '', gender: 'Male', mobile: '', bloodGroup: '',
       emergencyContact: '', emergencyRelation: '', assignedDoctor: '',
       primaryConcern: null, painLevel: 0, medicalConditions: [],
@@ -109,6 +112,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
         setIsEditing(false);
       } else {
         reset({
+          patientId: '', // Reset custom ID
           fullName: '', age: '', gender: 'Male', mobile: '', bloodGroup: '',
           emergencyContact: '', emergencyRelation: '', assignedDoctor: '',
           primaryConcern: null, painLevel: 0, medicalConditions: [],
@@ -124,7 +128,6 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
   const currentPain = watch('painLevel');
   const { showToast } = useToast();
 
-  // --- 3. UPDATED SUBMIT HANDLER WITH ERROR HANDLING ---
   const handleFormSubmit = async (data) => {
     try {
       if (initialData) {
@@ -142,14 +145,12 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
     } catch (error) {
       console.error("Save Error:", error);
 
-      // Check for Duplicate Key Error (11000)
-      // This checks deep inside the error object where MongoDB hides the code
       const isDuplicate = error.response?.data?.errorResponse?.code === 11000
         || error.response?.data?.code === 11000
         || (error.response?.data?.message && error.response.data.message.includes('duplicate'));
 
       if (isDuplicate) {
-        showToast('System Error: Patient ID Collision. Please try saving again.', 'error');
+        showToast('Error: This Patient ID is already in use.', 'error');
       } else {
         const msg = error.response?.data?.message || 'Error saving patient';
         showToast(msg, 'error');
@@ -199,9 +200,27 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
             <Typography variant="overline" color="text.secondary" fontWeight="bold">PATIENT IDENTITY</Typography>
             <Stack spacing={2.5} sx={{ mt: 1 }}>
 
+              {/* ⚡️ CUSTOM PATIENT ID FIELD */}
+              <TextField
+                fullWidth 
+                placeholder="Physical File ID (Optional)" 
+                // We only allow editing the ID if it's a completely new patient.
+                // You shouldn't be able to edit an existing patient's ID.
+                disabled={!isEditing || !!initialData} 
+                {...register("patientId")}
+                helperText={!initialData ? "Leave blank to auto-generate (e.g. PID-1001)" : ""}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start"><BadgeOutlinedIcon color="action" fontSize="small" /></InputAdornment>,
+                  sx: { bgcolor: (!isEditing || !!initialData) ? '#f5f5f5' : 'white' }
+                }}
+                FormHelperTextProps={{ sx: { ml: 0 } }}
+              />
+
               <TextField
                 fullWidth placeholder="Full Name" disabled={!isEditing}
                 {...register("fullName", { required: "Name is required" })}
+                error={!!errors.fullName}
+                helperText={errors.fullName?.message}
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><PersonIcon color="action" /></InputAdornment>,
                   sx: { fontSize: '1.1rem', fontWeight: 500, bgcolor: !isEditing ? '#f5f5f5' : 'white' }
@@ -212,7 +231,9 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                 <Grid item xs={12} sm={6}>
                   <TextField
                     fullWidth placeholder="Mobile" disabled={!isEditing}
-                    {...register("mobile")}
+                    {...register("mobile", { required: "Mobile is required" })}
+                    error={!!errors.mobile}
+                    helperText={errors.mobile?.message}
                     InputProps={{ startAdornment: <InputAdornment position="start">+91</InputAdornment>, sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}
                   />
                 </Grid>
@@ -281,7 +302,9 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                 label="Assign Doctor"
                 disabled={!isEditing}
                 defaultValue=""
-                {...register("assignedDoctor")}
+                {...register("assignedDoctor", { required: "Assigning a doctor is required" })}
+                error={!!errors.assignedDoctor}
+                helperText={errors.assignedDoctor?.message}
                 InputProps={{ sx: { bgcolor: !isEditing ? '#f5f5f5' : 'white' } }}
               >
                 {doctorList && doctorList.length > 0 ? (

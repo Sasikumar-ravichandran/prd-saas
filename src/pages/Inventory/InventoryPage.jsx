@@ -279,7 +279,7 @@ export default function InventoryPage() {
 
 			{/* HEADER & STATS */}
 			<Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" mb={3} spacing={2}>
-				<Box>
+				<Box sx={{ textAlign: 'left' }}>
 					<Typography variant="h5" fontWeight="900" color={primaryColor} letterSpacing="-0.5px">Inventory</Typography>
 					<Typography variant="body2" color="#64748b" fontWeight="500">Manage your clinic's supplies.</Typography>
 				</Box>

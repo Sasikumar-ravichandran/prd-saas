@@ -39,16 +39,19 @@ export default function MainLayout() {
         sx={{ 
           flexGrow: 1, 
           p: 3, 
-          width: { md: `calc(1250px - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)` },
+          width: { 
+            xs: '100%', 
+            md: `calc(100% - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)` 
+          },
           mt: `${HEADER_HEIGHT}px`, 
           transition: 'width 0.3s',
-          minHeight: '100vh',
-          bgcolor: '#f8fafc' 
+          minHeight: '100vh',          
+          minWidth: 0,
+          overflowX: 'hidden'
         }}
       >
         <Outlet /> 
       </Box>
-
     </Box>
   );
 }

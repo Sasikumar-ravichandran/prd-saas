@@ -14,7 +14,7 @@ import EventSeatIcon from '@mui/icons-material/EventSeat';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber'; 
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useColorMode } from '../../context/ThemeContext';
 import api from '../../api/services/api'; // ⚡️ IMPORT API
 
@@ -52,10 +52,10 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         const res = await api.get('/procedures');
         const activeProcedures = (res.data || []).filter(p => p.isActive !== false);
         setProceduresList(activeProcedures);
-        
+
         // Auto-select first procedure if this is a new appointment
         if (!initialData?.id && activeProcedures.length > 0 && !formData.type) {
-            setFormData(prev => ({ ...prev, type: activeProcedures[0].name }));
+          setFormData(prev => ({ ...prev, type: activeProcedures[0].name }));
         }
       } catch (err) {
         console.error("Failed to load procedures", err);
@@ -74,7 +74,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
       if (!matchedDocId && incomingDocName && doctors && doctors.length > 0) {
         const foundDoc = doctors.find(d => d.fullName === incomingDocName);
         if (foundDoc) {
-          matchedDocId = foundDoc._id; 
+          matchedDocId = foundDoc._id;
         }
       }
 
@@ -84,7 +84,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         title: initialData.title || '',
         patientId: initialData.patientId || null,
         phone: initialData.phone || '',
-        docId: matchedDocId, 
+        docId: matchedDocId,
         docName: incomingDocName,
         type: initialData.type || '', // Wait for procedure list to load or use existing
         date: initialData.date || initialData.start || new Date(),
@@ -147,8 +147,8 @@ export default function AppointmentModal({ open, onClose, initialData, resources
 
   const confirmDelete = () => {
     onDelete(formData.id);
-    setDeleteConfirmOpen(false); 
-    onClose(); 
+    setDeleteConfirmOpen(false);
+    onClose();
   };
 
   return (
@@ -227,9 +227,9 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                   {/* ⚡️ UPDATED TO USE DYNAMIC PROCEDURES LIST */}
                   <TextField select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><MedicalServicesIcon fontSize="small" /></InputAdornment> }}>
                     {proceduresList.length > 0 ? (
-                        proceduresList.map(p => <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>)
+                      proceduresList.map(p => <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>)
                     ) : (
-                        <MenuItem disabled>No Procedures Found</MenuItem>
+                      <MenuItem disabled>No Procedures Found</MenuItem>
                     )}
                   </TextField>
                 </Box>
@@ -240,14 +240,17 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 <Typography variant="caption" fontWeight="bold" color="#3b82f6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <AccessTimeIcon fontSize="small" /> SCHEDULE
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
+
+                {/* ⚡️ FIX: Stacks vertically on mobile (xs), horizontal on desktop (sm) */}
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+                  <Box sx={{ flex: 1, width: '100%' }}>
                     <DatePicker value={formData.date} onChange={(val) => setFormData({ ...formData, date: val })} renderInput={(params) => <TextField {...params} fullWidth size="small" sx={{ bgcolor: 'white' }} />} />
                   </Box>
-                  <Box sx={{ width: 140 }}>
+                  {/* ⚡️ FIX: Width is 100% on mobile, fixed to 140px on desktop */}
+                  <Box sx={{ width: { xs: '100%', sm: 140 } }}>
                     <TimePicker label="Start" value={formData.startTime} onChange={(val) => setFormData({ ...formData, startTime: val })} renderInput={(params) => <TextField {...params} fullWidth size="small" sx={{ bgcolor: 'white' }} />} minutesStep={15} ampm={false} />
                   </Box>
-                  <Box sx={{ width: 140 }}>
+                  <Box sx={{ width: { xs: '100%', sm: 140 } }}>
                     <TimePicker label="End" value={formData.endTime} onChange={(val) => setFormData({ ...formData, endTime: val })} renderInput={(params) => <TextField {...params} fullWidth size="small" sx={{ bgcolor: 'white' }} />} minutesStep={15} ampm={false} />
                   </Box>
                 </Box>
