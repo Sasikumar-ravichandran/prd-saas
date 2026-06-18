@@ -22,7 +22,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert'; // ⚡️ The "3 Dots" Icon
 
 import { useColorMode } from '../../context/ThemeContext';
-import api from '../../api/services/api';
+import { inventoryService } from '../../api/services/inventoryService';
 import { useToast } from '../../context/ToastContext';
 
 // --- STAT CARD ---
@@ -133,15 +133,15 @@ export default function InventoryPage() {
 	const fetchInventory = async () => {
 		setLoading(true);
 		try {
-			const res = await api.get('/inventory');
-			setInventory(res.data);
+			// ⚡️ Changed from api.get
+			const data = await inventoryService.getAll();
+			setInventory(data);
 		} catch (error) {
 			showToast('Failed to load inventory', 'error');
 		} finally {
 			setLoading(false);
 		}
 	};
-
 	useEffect(() => { fetchInventory(); }, []);
 
 	const stats = useMemo(() => {
@@ -160,47 +160,52 @@ export default function InventoryPage() {
 		if (action === 'delete') setOpenDeleteModal(true);
 	};
 
-	const handleSave = async (formData) => {
-		try {
-			if (formMode === 'edit') {
-				const res = await api.put(`/inventory/${selectedItem._id}`, formData);
-				setInventory(prev => prev.map(i => i._id === selectedItem._id ? res.data : i));
-				showToast('Updated successfully', 'success');
-			} else {
-				const res = await api.post('/inventory', formData);
-				if (formMode === 'create') setInventory(prev => [...prev, res.data]);
-				else fetchInventory();
-				showToast('Saved successfully', 'success');
-			}
-			setFormMode(null);
-		} catch (error) {
-			showToast(error.response?.data?.message || 'Error', 'error');
-		}
-	};
-
-	const handleConsume = async (qty, reason) => {
-		if (!selectedItem) return;
-		try {
-			const res = await api.post(`/inventory/${selectedItem._id}/consume`, { quantity: qty, reason });
-			setInventory(prev => prev.map(i => i._id === selectedItem._id ? res.data : i));
-			setOpenConsumeModal(false);
-			showToast('Stock updated', 'success');
-		} catch (error) {
-			showToast(error.response?.data?.message || 'Failed', 'error');
-		}
-	};
-
 	const handleDelete = async () => {
 		if (!selectedItem) return;
 		try {
-			await api.delete(`/inventory/${selectedItem._id}`);
+			// ⚡️ Changed from api.delete
+			await inventoryService.delete(selectedItem._id);
 			setInventory(prev => prev.filter(i => i._id !== selectedItem._id));
 			setOpenDeleteModal(false);
-			showToast('Deleted', 'success');
+			showToast('Deleted successfully', 'success');
 		} catch (error) {
 			showToast('Delete failed', 'error');
 		}
 	};
+
+
+	const handleSave = async (formData) => {
+        try {
+            if (formMode === 'edit') {
+                // ⚡️ FIXED: Replaced api.put with inventoryService.update
+                const updatedItem = await inventoryService.update(selectedItem._id, formData);
+                setInventory(prev => prev.map(i => i._id === selectedItem._id ? updatedItem : i));
+                showToast('Updated successfully', 'success');
+            } else {
+                // ⚡️ FIXED: Replaced api.post with inventoryService.add
+                const newItem = await inventoryService.add(formData);
+                if (formMode === 'create') setInventory(prev => [...prev, newItem]);
+                else fetchInventory();
+                showToast('Saved successfully', 'success');
+            }
+            setFormMode(null);
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Error saving item', 'error');
+        }
+    };
+
+    const handleConsume = async (qty, reason) => {
+        if (!selectedItem) return;
+        try {
+            // ⚡️ FIXED: Replaced api.post with inventoryService.consume
+            const updatedItem = await inventoryService.consume(selectedItem._id, { quantity: qty, reason });
+            setInventory(prev => prev.map(i => i._id === selectedItem._id ? updatedItem : i));
+            setOpenConsumeModal(false);
+            showToast('Stock updated', 'success');
+        } catch (error) {
+            showToast(error.response?.data?.message || 'Failed to consume stock', 'error');
+        }
+    };
 
 	// --- COLUMNS ---
 	const columns = [

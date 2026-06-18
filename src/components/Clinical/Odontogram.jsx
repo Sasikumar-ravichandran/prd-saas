@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Box, Typography, Stack, Popover, Button, Divider } from '@mui/material';
+import { Box, Typography, Stack, Popover, Button, Divider, Tooltip } from '@mui/material';
 import { useColorMode } from '../../context/ThemeContext';
-
 // Icons
 import CoronavirusIcon from '@mui/icons-material/Coronavirus'; 
 import EngineeringIcon from '@mui/icons-material/Engineering'; 
@@ -23,32 +22,34 @@ const STATUS_CONFIG = {
   missing:   { border: '#cbd5e1', bg: '#f1f5f9', icon: <VisibilityOffIcon sx={{ fontSize: 14, color: '#94a3b8' }} />, opacity: 0.5 },
 };
 
-const Tooth = ({ id, status = 'healthy', onClick, primaryColor, jaw }) => {
+const Tooth = ({ id, status = 'healthy', tooltipText, onClick, primaryColor, jaw }) => {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.healthy;
   const isMissing = status === 'missing';
 
   return (
-    <Box 
-      onClick={(e) => onClick(e, id)}
-      sx={{
-        width: { xs: 35, md: 48 }, height: { xs: 45, md: 65 }, 
-        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-        bgcolor: config.bg,
-        border: isMissing ? `1px dashed ${config.border}` : `1px solid ${config.border}`,
-        borderBottomWidth: jaw === 'upper' ? 4 : 1, borderTopWidth: jaw === 'lower' ? 4 : 1,
-        borderRadius: jaw === 'upper' ? '6px 6px 20px 20px' : '20px 20px 6px 6px',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.02)', transition: 'transform 0.2s', opacity: isMissing ? 0.6 : 1,
-        '&:hover': { transform: 'scale(1.1)', borderColor: primaryColor, zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
-      }}
-    >
-      <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{id}</Typography>
-      {config.icon && (<Box sx={{ position: 'absolute', bottom: jaw === 'upper' ? 6 : 'auto', top: jaw === 'lower' ? 6 : 'auto' }}>{config.icon}</Box>)}
-    </Box>
+    <Tooltip title={tooltipText || `Tooth #${id} - Healthy`} arrow placement="top" disableInteractive>
+        <Box 
+          onClick={(e) => onClick(e, id)}
+          sx={{
+            width: { xs: 35, md: 48 }, height: { xs: 45, md: 65 }, 
+            position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+            bgcolor: config.bg,
+            border: isMissing ? `1px dashed ${config.border}` : `1px solid ${config.border}`,
+            borderBottomWidth: jaw === 'upper' ? 4 : 1, borderTopWidth: jaw === 'lower' ? 4 : 1,
+            borderRadius: jaw === 'upper' ? '6px 6px 20px 20px' : '20px 20px 6px 6px',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.02)', transition: 'transform 0.2s', opacity: isMissing ? 0.6 : 1,
+            '&:hover': { transform: 'scale(1.1)', borderColor: primaryColor, zIndex: 10, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
+          }}
+        >
+          <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ fontSize: '0.75rem' }}>{id}</Typography>
+          {config.icon && (<Box sx={{ position: 'absolute', bottom: jaw === 'upper' ? 6 : 'auto', top: jaw === 'lower' ? 6 : 'auto' }}>{config.icon}</Box>)}
+        </Box>
+    </Tooltip>
   );
 };
 
 // --- UPDATED COMPONENT ---
-export default function Odontogram({ initialStates = {}, onAction }) { // Changed prop to onAction
+export default function Odontogram({ initialStates = {}, tooltips = {}, onAction }) { // Changed prop to onAction
   const { primaryColor } = useColorMode();
   
   // Local state for Visuals
@@ -82,7 +83,8 @@ export default function Odontogram({ initialStates = {}, onAction }) { // Change
       {teeth.map(id => (
         <Tooth 
             key={id} id={id} 
-            status={initialStates[id]} // Use props for state now, controlled by parent
+            status={initialStates[id]}
+            tooltipText={tooltips[id]}
             onClick={handleToothClick} primaryColor={primaryColor} jaw={jaw} 
         />
       ))}

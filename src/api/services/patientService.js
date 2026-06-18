@@ -95,5 +95,12 @@ export const patientService = {
       data: { fileUrl }
     });
     return response.data;
-  }
+  },
+
+  // Update tooth condition (decayed, missing, clear)
+  updateToothCondition: async (patientId, data) => {
+    // data = { tooth: '18', condition: 'decayed' }
+    const response = await api.put(`/patients/${patientId}/tooth`, data);
+    return response.data;
+  },
 };

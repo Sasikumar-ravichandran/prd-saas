@@ -28,9 +28,13 @@ const DataField = ({ label, value, icon, color = 'text.primary' }) => (
   </Box>
 );
 
-export default function PatientHeader({ patient, onEdit }) {
+// ⚡️ ADDED NEW PROPS: pendingDues, lastVisit, nextAppointment, onBillClick, onHistoryClick
+export default function PatientHeader({ patient, pendingDues, lastVisit, nextAppointment, onEdit, onBillClick, onHistoryClick }) {
   const { primaryColor } = useColorMode();
   const GenderIcon = patient.gender === 'Male' ? MaleIcon : FemaleIcon;
+
+  // Formatting helpers for dates
+  const formatDate = (date) => date ? new Date(date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'None';
 
   return (
     <Paper 
@@ -56,7 +60,7 @@ export default function PatientHeader({ patient, onEdit }) {
                   border: `1px solid ${alpha(primaryColor, 0.2)}`
                 }}
               >
-                {patient.fullName[0]}
+                {patient.fullName?.[0] || 'U'}
               </Avatar>
               <Box>
                  <Stack direction="row" alignItems="center" spacing={1}>
@@ -72,7 +76,7 @@ export default function PatientHeader({ patient, onEdit }) {
                  />
                  <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
                     <Chip icon={<PhoneIcon sx={{ width: 14 }} />} label={patient.mobile} size="small" variant="outlined" sx={{ height: 24, borderRadius: 1 }} />
-                    <IconButton size="small" href={`mailto:${patient.email}`}><EmailIcon sx={{ fontSize: 16, color: '#94a3b8' }} /></IconButton>
+                    {patient.email && <IconButton size="small" href={`mailto:${patient.email}`}><EmailIcon sx={{ fontSize: 16, color: '#94a3b8' }} /></IconButton>}
                  </Stack>
               </Box>
            </Box>
@@ -82,29 +86,31 @@ export default function PatientHeader({ patient, onEdit }) {
         <Grid item xs={12} md={3} sx={{ p: 2.5 }}>
            <Grid container spacing={2}>
               <Grid item xs={6}>
-                 <DataField label="Age / Gender" value={`${patient.age} Yrs / ${patient.gender}`} icon={<GenderIcon sx={{ fontSize: 16 }} />} />
+                 <DataField label="Age / Gender" value={`${patient.age || '-'} Yrs / ${patient.gender || '-'}`} icon={<GenderIcon sx={{ fontSize: 16 }} />} />
               </Grid>
               <Grid item xs={6}>
-                 <DataField label="Blood Group" value={patient?.bloodGroup} /> {/* Mock Data */}
+                 <DataField label="Blood Group" value={patient.bloodGroup || 'Unknown'} />
               </Grid>
               <Grid item xs={6}>
-                 <DataField label="Last Visit" value={patient.lastVisit} icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />} />
+                 {/* ⚡️ FIXED: Using dynamic lastVisit prop */}
+                 <DataField label="Last Visit" value={formatDate(lastVisit)} icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />} />
               </Grid>
               <Grid item xs={6}>
-                 <DataField label="Next Appointment" value="Not Scheduled" color="text.secondary" />
+                 {/* ⚡️ FIXED: Using dynamic nextAppointment prop */}
+                 <DataField label="Next Appointment" value={nextAppointment ? formatDate(nextAppointment) : "Not Scheduled"} color={nextAppointment ? primaryColor : "text.secondary"} />
               </Grid>
            </Grid>
         </Grid>
 
         {/* COL 3: CLINICAL ALERTS (20%) */}
-        <Grid item xs={12} md={2.5} sx={{ p: 2.5, bgcolor: patient.medicalConditions.length > 0 ? '#fffbfc' : 'transparent' }}>
+        <Grid item xs={12} md={2.5} sx={{ p: 2.5, bgcolor: patient.medicalConditions?.length > 0 ? '#fffbfc' : 'transparent' }}>
            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-              <WarningIcon color={patient.medicalConditions.length > 0 ? "error" : "disabled"} fontSize="small" />
+              <WarningIcon color={patient.medicalConditions?.length > 0 ? "error" : "disabled"} fontSize="small" />
               <Typography variant="caption" fontWeight="800" color="text.secondary">MEDICAL ALERTS</Typography>
            </Stack>
            
            <Stack spacing={0.8}>
-              {patient.medicalConditions.length > 0 ? (
+              {patient.medicalConditions?.length > 0 ? (
                  patient.medicalConditions.map((alert, i) => (
                     <Typography key={i} variant="body2" fontWeight="700" color="error.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                        • {alert}
@@ -119,13 +125,21 @@ export default function PatientHeader({ patient, onEdit }) {
         {/* COL 4: ACTIONS & FINANCE (20%) */}
         <Grid item xs={12} md={3} sx={{ p: 2.5, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <DataField label="Pending Dues" value={`₹ ${patient.balance}`} color={patient.balance > 0 ? '#c2410c' : 'success.main'} icon={<WalletIcon sx={{ fontSize: 16, color: patient.balance > 0 ? '#ea580c' : 'green' }} />} />
-              <Button size="small" variant="text" sx={{ fontWeight: 'bold' }}>History</Button>
+              {/* ⚡️ FIXED: Using calculated pendingDues */}
+              <DataField 
+                label="Pending Dues" 
+                value={`₹ ${(pendingDues || 0).toLocaleString()}`} 
+                color={pendingDues > 0 ? '#c2410c' : 'success.main'} 
+                icon={<WalletIcon sx={{ fontSize: 16, color: pendingDues > 0 ? '#ea580c' : 'green' }} />} 
+              />
+              {/* ⚡️ WIRED: History button */}
+              <Button size="small" variant="text" onClick={onHistoryClick} sx={{ fontWeight: 'bold' }}>History</Button>
            </Box>
 
            <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
               <Button fullWidth variant="outlined" startIcon={<PrintIcon />} sx={{ borderColor: '#cbd5e1', color: '#475569', fontWeight: 700 }}>Print</Button>
-              <Button fullWidth variant="contained" sx={{ bgcolor: primaryColor, fontWeight: 700 }}>Bill</Button>
+              {/* ⚡️ WIRED: Bill button */}
+              <Button fullWidth variant="contained" onClick={onBillClick} sx={{ bgcolor: primaryColor, fontWeight: 700 }}>Bill</Button>
            </Stack>
         </Grid>
 

@@ -350,7 +350,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                 )}
               />
 
-              <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 2, border: '1px solid #e0e0e0', opacity: !isEditing ? 0.7 : 1 }}>
+              {/* <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 2, border: '1px solid #e0e0e0', opacity: !isEditing ? 0.7 : 1 }}>
                 <Typography variant="caption" fontWeight="bold" sx={{ mb: 1, display: 'block' }}>PAIN SCALE (0 - 10)</Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   {[0, 2, 4, 6, 8, 10].map(level => (
@@ -360,7 +360,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                     />
                   ))}
                 </Box>
-              </Box>
+              </Box> */}
 
               <Controller
                 name="medicalConditions"

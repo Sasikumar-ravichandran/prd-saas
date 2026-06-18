@@ -110,7 +110,7 @@ export default function ServiceCatalogTab() {
   if (error) return <Box p={4}><Alert severity="error">{error}</Alert></Box>;
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box sx={{ p: 1 }}>
       <SettingsHeader title="Service Catalog" sub="Configure treatments and pricing." color={primaryColor}
         action={<Button variant="contained" onClick={handleAddClick} startIcon={<AddIcon />} sx={{ bgcolor: primaryColor }}>Add Procedure</Button>} />
 

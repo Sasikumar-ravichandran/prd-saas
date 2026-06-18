@@ -17,8 +17,9 @@ export const dashboardService = {
     return response.data;
   },
 
-  getAdminData: async () => {
-    const response = await api.get('/dashboard/admin');
+  getAdminData: async (date = null) => {
+    const url = date ? `/dashboard/admin?date=${date}` : '/dashboard/admin';
+    const response = await api.get(url);
     return response.data;
   },
 };

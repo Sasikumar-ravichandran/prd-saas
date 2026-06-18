@@ -49,7 +49,7 @@ export default function PatientProfile() {
     const [error, setError] = useState(null);
     const [patientData, setPatientData] = useState(null);
     const [tab, setTab] = useState(0);
-    
+
     // ⚡️ NEW: State for dynamic procedures
     const [proceduresList, setProceduresList] = useState([]);
 
@@ -58,7 +58,7 @@ export default function PatientProfile() {
     const [addTreatmentOpen, setAddTreatmentOpen] = useState(false);
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [createInvoiceModalOpen, setCreateInvoiceModalOpen] = useState(false);
-
+    const [activeInvoice, setActiveInvoice] = useState(null);
     // Form Input
     const [newTreatment, setNewTreatment] = useState({ tooth: '', procedure: '', cost: '' });
 
@@ -104,15 +104,35 @@ export default function PatientProfile() {
     // --- 2. DERIVED STATE ---
     const treatmentPlan = patientData?.treatmentPlan || [];
 
-    const toothStatus = useMemo(() => {
-        const statusMap = {};
-        treatmentPlan.forEach(item => {
-            if (item.status === 'Proposed') statusMap[item.tooth] = 'planned';       
-            else if (item.status === 'In Progress') statusMap[item.tooth] = 'active'; 
-            else if (item.status === 'Completed') statusMap[item.tooth] = 'completed'; 
+    // ⚡️ UPDATED: Now returns both colors (toothStatus) AND text (toothTooltips)
+    const { toothStatus, toothTooltips } = useMemo(() => {
+        const statusMap = { ...(patientData?.dentalChart || {}) };
+        const tooltipMap = {};
+
+        // 1. Basic conditions tooltips
+        Object.keys(statusMap).forEach(tooth => {
+            // Capitalize the word (e.g., "missing" -> "Missing")
+            tooltipMap[tooth] = statusMap[tooth].charAt(0).toUpperCase() + statusMap[tooth].slice(1);
         });
-        return statusMap;
-    }, [treatmentPlan]);
+
+        // 2. Treatment plan tooltips (these overwrite basic conditions)
+        treatmentPlan.forEach(item => {
+            if (item.status === 'Proposed') {
+                statusMap[item.tooth] = 'planned';
+                tooltipMap[item.tooth] = `Planned: ${item.procedure}`;
+            }
+            else if (item.status === 'In Progress') {
+                statusMap[item.tooth] = 'active';
+                tooltipMap[item.tooth] = `Active: ${item.procedure}`;
+            }
+            else if (item.status === 'Completed') {
+                statusMap[item.tooth] = 'completed';
+                tooltipMap[item.tooth] = `Completed: ${item.procedure}`;
+            }
+        });
+
+        return { toothStatus: statusMap, toothTooltips: tooltipMap };
+    }, [treatmentPlan, patientData]);
 
     const totalEstimate = treatmentPlan.reduce((sum, item) => sum + Number(item.cost), 0);
     const proposedItemsCount = treatmentPlan.filter(i => i.status === 'Proposed').length;
@@ -181,12 +201,95 @@ export default function PatientProfile() {
         showToast('Payment recorded successfully!', 'success');
     };
 
-    const handleChartAction = (action, toothId) => {
+    const handleChartAction = async (action, toothId) => {
         if (action === 'plan_treatment') {
             setNewTreatment({ tooth: toothId, procedure: '', cost: '' });
             setAddTreatmentOpen(true);
         }
+        // ⚡️ HANDLE CONDITIONS (Missing, Decay, Clear)
+        // ⚡️ HANDLE CONDITIONS (Missing, Decay, Clear)
+        else if (['mark_decay', 'mark_missing', 'clear'].includes(action)) {
+            try {
+                let condition = 'healthy';
+                if (action === 'mark_decay') condition = 'decayed';
+                if (action === 'mark_missing') condition = 'missing';
+
+                await patientService.updateToothCondition(id, {
+                    tooth: toothId,
+                    condition: condition
+                });
+
+                // ⚡️ THE FIX: Force a fresh database pull to guarantee instant UI sync!
+                fetchPatientDetails();
+                showToast(`Tooth #${toothId} updated`, 'success');
+            } catch (err) {
+                showToast('Failed to update tooth condition', 'error');
+            }
+        }
+        // ⚡️ HANDLE "MARK AS COMPLETED"
+        else if (action === 'mark_completed') {
+            // Find any pending/in-progress treatments for this exact tooth
+            const pendingTreatments = treatmentPlan.filter(
+                t => t.tooth.toString() === toothId.toString() && t.status !== 'Completed'
+            );
+
+            if (pendingTreatments.length === 0) {
+                showToast(`No pending treatments found for Tooth #${toothId}.`, 'info');
+                return;
+            }
+
+            try {
+                setSubmitting(true);
+                // Loop through and complete the treatments on this tooth using your existing API
+                for (const treatment of pendingTreatments) {
+                    await patientService.updateTreatmentStatus(id, treatment._id, 'Completed');
+                }
+                // Refresh the whole patient to update the ledger/billing
+                fetchPatientDetails();
+                showToast(`Treatments on Tooth #${toothId} marked completed!`, 'success');
+            } catch (error) {
+                showToast(`Failed to complete treatment.`, 'error');
+            } finally {
+                setSubmitting(false);
+            }
+        }
     };
+
+    const { lastVisit, nextAppointment, pendingDues } = useMemo(() => {
+        if (!patientData) return { lastVisit: null, nextAppointment: null, pendingDues: 0 };
+
+        const appointments = patientData.appointments || [];
+
+        // 1. Last Visit
+        const pastAppointments = appointments.filter(a => a.status === 'Completed');
+        const calculatedLastVisit = pastAppointments.length > 0
+            ? new Date(Math.max(...pastAppointments.map(a => new Date(a.start))))
+            : null;
+
+        // 2. Next Appointment
+        const pendingAppointments = appointments.filter(a => ['Scheduled', 'In Progress'].includes(a.status));
+        const calculatedNextAppointment = pendingAppointments.length > 0
+            ? new Date(Math.min(...pendingAppointments.map(a => new Date(a.start))))
+            : null;
+
+        // 3. Financials
+        const invoices = patientData.invoices || [];
+
+        const calculatedDues = invoices.reduce((sum, inv) => {
+            if (inv.status !== 'Void') {
+                return sum + (inv.balance || 0);
+            }
+            return sum;
+        }, 0);
+
+        // Return the calculated values as an object
+        return {
+            lastVisit: calculatedLastVisit,
+            nextAppointment: calculatedNextAppointment,
+            pendingDues: calculatedDues
+        };
+
+    }, [patientData]);
 
     // Zoom Handlers
     const handleZoom = (delta) => setTransform(prev => ({ ...prev, scale: Math.min(Math.max(prev.scale + delta, 0.5), 2.5) }));
@@ -214,6 +317,8 @@ export default function PatientProfile() {
         );
     }
 
+
+
     return (
         <Box sx={{ height: tab === 0 ? 'calc(100vh - 64px)' : 'auto', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
 
@@ -234,7 +339,15 @@ export default function PatientProfile() {
                         Back to Patients
                     </Button>
                 </Box>
-                <PatientHeader patient={patientData} onEdit={() => setEditModalOpen(true)} />
+                <PatientHeader
+                    patient={patientData}
+                    pendingDues={pendingDues}
+                    lastVisit={lastVisit}
+                    nextAppointment={nextAppointment}
+                    onEdit={() => setEditModalOpen(true)}
+                    onBillClick={() => setCreateInvoiceModalOpen(true)} // Opens the Invoice Modal!
+                    onHistoryClick={() => setTab(1)} // Switches to the History Tab!
+                />
             </Box>
 
             {/* TABS */}
@@ -269,7 +382,11 @@ export default function PatientProfile() {
                             >
                                 <Box sx={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`, transition: isDragging ? 'none' : 'transform 0.1s ease-out', transformOrigin: 'center center', pointerEvents: 'none' }}>
                                     <Box sx={{ pointerEvents: 'auto' }}>
-                                        <Odontogram initialStates={toothStatus} onAction={handleChartAction} />
+                                        <Odontogram
+                                            initialStates={toothStatus}
+                                            tooltips={toothTooltips}
+                                            onAction={handleChartAction}
+                                        />
                                     </Box>
                                 </Box>
                             </Box>
@@ -376,7 +493,10 @@ export default function PatientProfile() {
                         </Stack>
 
                         <Paper sx={{ p: 0, borderRadius: 3, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                            <PatientLedger onCollectPayment={() => setPaymentModalOpen(true)} patient={patientData} />
+                            <PatientLedger onCollectPayment={(invoice) => {
+                                setActiveInvoice(invoice);
+                                setPaymentModalOpen(true);
+                            }} patient={patientData} onRefresh={fetchPatientDetails} />
                         </Paper>
                     </Box>
                 )}
@@ -390,14 +510,14 @@ export default function PatientProfile() {
                 </DialogTitle>
                 <DialogContent sx={{ pt: 3, pb: 1, overflow: 'visible' }}>
                     <Stack spacing={3} sx={{ mt: 1 }}>
-                        <TextField 
-                            label="Tooth Number" 
-                            value={newTreatment.tooth} 
-                            onChange={(e) => setNewTreatment({ ...newTreatment, tooth: e.target.value })} 
-                            fullWidth 
-                            placeholder="e.g. 46" 
-                            autoFocus 
-                            InputProps={{ sx: { fontWeight: 'bold' } }} 
+                        <TextField
+                            label="Tooth Number"
+                            value={newTreatment.tooth}
+                            onChange={(e) => setNewTreatment({ ...newTreatment, tooth: e.target.value })}
+                            fullWidth
+                            placeholder="e.g. 46"
+                            autoFocus
+                            InputProps={{ sx: { fontWeight: 'bold' } }}
                         />
                         <FormControl fullWidth>
                             <InputLabel id="procedure-label">Select Procedure</InputLabel>
@@ -405,13 +525,13 @@ export default function PatientProfile() {
                                 labelId="procedure-label"
                                 value={newTreatment.procedure}
                                 label="Select Procedure"
-                                onChange={(e) => { 
+                                onChange={(e) => {
                                     // ⚡️ Find the procedure dynamically from the fetched list
-                                    const proc = proceduresList.find(p => p.name === e.target.value); 
-                                    if(proc) {
-                                        setNewTreatment({ 
-                                            ...newTreatment, 
-                                            procedure: proc.name, 
+                                    const proc = proceduresList.find(p => p.name === e.target.value);
+                                    if (proc) {
+                                        setNewTreatment({
+                                            ...newTreatment,
+                                            procedure: proc.name,
                                             cost: proc.price // Map DB 'price' to UI 'cost'
                                         });
                                     }
@@ -430,12 +550,12 @@ export default function PatientProfile() {
                                 )}
                             </Select>
                         </FormControl>
-                        <TextField 
-                            label="Estimated Cost" 
-                            value={newTreatment.cost} 
-                            type="number" 
-                            fullWidth 
-                            InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment>, readOnly: true, sx: { bgcolor: '#f8fafc', fontWeight: 'bold' } }} 
+                        <TextField
+                            label="Estimated Cost"
+                            value={newTreatment.cost}
+                            type="number"
+                            fullWidth
+                            InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment>, readOnly: true, sx: { bgcolor: '#f8fafc', fontWeight: 'bold' } }}
                         />
                     </Stack>
                 </DialogContent>
@@ -449,12 +569,17 @@ export default function PatientProfile() {
 
             {/* OTHER MODALS */}
             <AddPatientModal open={editModalOpen} onClose={() => setEditModalOpen(false)} initialData={patientData} onSubmit={fetchPatientDetails} />
-            <CollectPaymentModal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} patient={patientData} onPaymentSuccess={handlePaymentSuccess} />
+            <CollectPaymentModal
+                open={paymentModalOpen}
+                onClose={() => setPaymentModalOpen(false)}
+                patient={patientData}
+                initialInvoice={activeInvoice}
+                onPaymentSuccess={fetchPatientDetails} />
             <CreateInvoiceModal
                 open={createInvoiceModalOpen}
                 onClose={() => setCreateInvoiceModalOpen(false)}
                 patientId={patientData._id}
-                doctorId={patientData?.doctorId || patientData?.assignedDoctor}
+                doctorId={patientData?.appointments?.[0]?.doctorId || null}
                 onSuccess={() => {
                     fetchPatientDetails();
                 }}

@@ -105,7 +105,7 @@ export default function UserProfileTab() {
   const inputSx = { '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#fff' } };
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1000 }}>
+    <Box sx={{ p: 1, maxWidth: 1000 }}>
       
       {/* PAGE HEADER USING YOUR CUSTOM COMPONENT */}
       <SettingsHeader 

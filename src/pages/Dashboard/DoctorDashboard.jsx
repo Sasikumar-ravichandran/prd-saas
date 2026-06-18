@@ -434,7 +434,7 @@ export default function DoctorDashboard() {
 
             {/* Desktop: Table View */}
             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <TableContainer sx={{ maxHeight: 600, overflowY: 'auto' }}>
+              <TableContainer sx={{ maxHeight: 500, overflowY: 'auto' }}>
                 <Table stickyHeader sx={{ minWidth: 700 }}>
                   <TableHead>
                     <TableRow>

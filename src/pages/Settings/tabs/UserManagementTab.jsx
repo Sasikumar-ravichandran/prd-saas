@@ -124,7 +124,7 @@ export default function UserManagementTab() {
   if (error) return <Box p={4}><Alert severity="error">{error}</Alert></Box>;
 
   return (
-    <Box sx={{ width: '100%', display: 'block', p: 4 }}>
+    <Box sx={{ width: '100%', display: 'block', p: 1 }}>
       <SettingsHeader title="User Management" sub="Manage staff access and permissions." color={primaryColor}
         action={
           <Button

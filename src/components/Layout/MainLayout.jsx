@@ -38,7 +38,7 @@ export default function MainLayout() {
         component="main" 
         sx={{ 
           flexGrow: 1, 
-          p: 3, 
+          // p: 3, 
           width: { 
             xs: '100%', 
             md: `calc(100% - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)` 

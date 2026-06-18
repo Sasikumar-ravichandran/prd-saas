@@ -88,7 +88,7 @@ export default function RolesTab() {
 
   
   return (
-    <Box sx={{ p: 4, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ p: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
        <SettingsHeader 
          title="Roles & Permissions" 
          sub="Configure granular access control (RBAC)." 

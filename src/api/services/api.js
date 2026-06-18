@@ -37,10 +37,17 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('user');
-      localStorage.removeItem('activeBranchId'); // Clear branch on logout
-      window.location.href = '/login';
+      
+      // ⚡️ FIXED: Check if this error came from the login route
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      
+      // ⚡️ Only redirect and wipe data if it is NOT a login attempt
+      if (!isLoginRequest) {
+        // Token expired or invalid during normal app usage
+        localStorage.removeItem('user');
+        localStorage.removeItem('activeBranchId'); // Clear branch on logout
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

@@ -5,7 +5,11 @@ import {
   Checkbox, Typography, Box, Stack, TextField, Chip, Divider, Paper
 } from '@mui/material';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import api from '../../api/services/api'; // Your Axios instance
+
+// ⚡️ IMPORT SERVICES INSTEAD OF API
+import { patientService } from '../../api/services/patientService';
+import { invoiceService } from '../../api/services/invoiceService'; // Create this service if you haven't!
+
 import { useToast } from '../../context/ToastContext';
 import { useColorMode } from '../../context/ThemeContext';
 
@@ -22,16 +26,25 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
   // 1. Fetch Unbilled Treatments for this Patient
   useEffect(() => {
     if (open && patientId) {
-      // Assuming you have an endpoint to get patient details including treatment plan
-      api.get(`/patients/${patientId}`)
-        .then(res => {
+      // ⚡️ REPLACED api.get WITH patientService
+      patientService.getById(patientId)
+        .then(data => {
           // Filter only treatments that are completed but NOT billed yet
-          const unbilled = (res.data.treatmentPlan || []).filter(
+          const unbilled = (data.treatmentPlan || []).filter(
             t => t.status === 'Completed' && !t.billed
           );
           setTreatments(unbilled);
+          
+          // ⚡️ UX FIX: Automatically check all boxes so the total isn't 0!
+          setSelectedItems(unbilled.map(t => t._id));
         })
         .catch(err => console.error("Error fetching treatments", err));
+    } else {
+      // Clean up when modal closes
+      setTreatments([]);
+      setSelectedItems([]);
+      setDiscount(0);
+      setNotes('');
     }
   }, [open, patientId]);
 
@@ -69,10 +82,9 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
 
     setLoading(true);
     try {
-      // Prepare the payload for your new createInvoice controller
       const payload = {
         patientId,
-        doctorId, // Passed from parent (who performed these treatments)
+        doctorId, 
         items: selectedTreatments.map(t => ({
           treatmentId: t._id,
           procedureName: t.procedure,
@@ -80,19 +92,16 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
         })),
         discount: Number(discount),
         notes,
-        dueDate: new Date() // Default to due today
+        dueDate: new Date()
       };
 
-      await api.post('/invoices', payload);
+      // ⚡️ REPLACED api.post WITH invoiceService
+      await invoiceService.create(payload);
       
       showToast('Invoice generated successfully!', 'success');
-      onSuccess(); // Refresh parent data
-      onClose();   // Close modal
+      onSuccess(); 
+      onClose();   
       
-      // Reset State
-      setSelectedItems([]);
-      setDiscount(0);
-      setNotes('');
     } catch (error) {
       console.error("Invoice Error:", error);
       showToast('Failed to generate invoice', 'error');

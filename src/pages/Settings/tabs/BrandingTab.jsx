@@ -78,7 +78,7 @@ export default function BrandingTab() {
   if (loading) return <Box p={4}><CircularProgress /></Box>;
 
   return (
-    <Box sx={{ p: 4, maxWidth: '100%' }}>
+    <Box sx={{ p: 1, maxWidth: '100%' }}>
        <SettingsHeader 
          title="Website Branding" 
          sub="Customize your patient booking portal." 
