@@ -7,6 +7,8 @@ import {
 import { useColorMode } from '../../context/ThemeContext';
 
 // Icons
+import PaidIcon from '@mui/icons-material/Paid';
+import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
@@ -16,6 +18,9 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import LogoutIcon from '@mui/icons-material/Logout';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
+import { logout } from '../../redux/slices/authSlice';
+import { useDispatch } from 'react-redux';
+
 
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 80;
@@ -25,6 +30,8 @@ const MENU_ITEMS = [
 	{ text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
 	{ text: 'Calendar', icon: <CalendarMonthIcon />, path: '/calendar' },
 	{ text: 'Patient List', icon: <PeopleIcon />, path: '/patients' },
+	{ text: 'Payroll & P&L', icon: <PaidIcon />, path: '/payroll', },
+    { text: 'Expense Ledger', icon: <AccountBalanceWalletIcon />, path: '/expenses' },
 	{ text: 'Inventory', icon: <Inventory2Icon />, path: '/inventory' },
 	{ text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
@@ -32,9 +39,15 @@ const MENU_ITEMS = [
 export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, setIsCollapsed }) {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const dispatch = useDispatch();
 	const { primaryColor, clinicName, clinicLogo } = useColorMode();
 
 	const handleCollapseToggle = () => setIsCollapsed(!isCollapsed);
+
+	const handleLogout = () => {
+		dispatch(logout());
+		navigate('/login');
+	};
 
 	// The internal content of the drawer
 	const DrawerContent = (
@@ -185,6 +198,7 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 							primary="Logout"
 							primaryTypographyProps={{ fontWeight: 600, fontSize: '0.9rem' }}
 							sx={{ opacity: isCollapsed ? 0 : 1 }}
+							onClick={handleLogout}
 						/>
 					</ListItemButton>
 				</Tooltip>

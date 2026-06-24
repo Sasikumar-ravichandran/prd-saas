@@ -109,7 +109,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
         {/* ================= LEFT SECTION ================= */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 2 }, flex: 1 }}>
           <IconButton color="inherit" edge="start" onClick={handleDrawerToggle} sx={{ display: { md: 'none' } }}>
-            <MenuIcon />
+            <MenuIcon/>
           </IconButton>
           
           <Button 

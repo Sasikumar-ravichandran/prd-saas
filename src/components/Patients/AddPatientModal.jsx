@@ -3,7 +3,7 @@ import { useForm, Controller } from 'react-hook-form';
 import {
   Dialog, DialogContent, DialogActions, Button, TextField, Grid, Typography, Box,
   IconButton, Autocomplete, Chip, useTheme, useMediaQuery, InputAdornment,
-  Divider, Stack, RadioGroup, FormControlLabel, Radio, MenuItem
+  Divider, Stack, RadioGroup, FormControlLabel, Radio, MenuItem, DialogTitle, CircularProgress
 } from '@mui/material';
 
 import CloseIcon from '@mui/icons-material/Close';
@@ -16,6 +16,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import WaterDropIcon from '@mui/icons-material/WaterDrop';
 import BadgeOutlinedIcon from '@mui/icons-material/BadgeOutlined'; // Icon for ID
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 
 import { patientService } from '../../api/services/patientService';
 import api from '../../api/services/api';
@@ -75,8 +76,12 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
   const [isEditing, setIsEditing] = useState(false);
 
   const [doctorList, setDoctorList] = useState([]);
+  const [isScanning, setIsScanning] = useState(false);
 
-  // ⚡️ ADDED patientId to defaultValues
+  const [showAiConsent, setShowAiConsent] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
+
+  // ADDED patientId to defaultValues
   const { register, handleSubmit, control, setValue, watch, reset, formState: { errors } } = useForm({
     defaultValues: {
       patientId: '', // Custom ID field
@@ -86,6 +91,64 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
       referredBy: '', communication: 'WhatsApp', notes: ''
     }
   });
+
+  const handleFileSelect = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Check if they have already consented in the past
+    const hasConsented = localStorage.getItem('clinic_ai_consent');
+
+    if (!hasConsented) {
+      // Pause the upload and show the terms
+      setPendingFile(file);
+      setShowAiConsent(true);
+      event.target.value = null; // Reset input
+    } else {
+      // Already consented, proceed directly to upload
+      executeAiScan(file);
+      event.target.value = null;
+    }
+  };
+
+  // 2. The actual scanning logic (separated from the input event)
+  const executeAiScan = async (fileToScan) => {
+    const formData = new FormData();
+    formData.append('formImage', fileToScan);
+
+    try {
+      setIsScanning(true);
+      showToast('Scanning form with AI... This takes a few seconds.', 'info');
+
+      const res = await api.post('/patients/scan', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (res.data.success && res.data.data) {
+        const extracted = res.data.data;
+        Object.keys(extracted).forEach(key => {
+          if (extracted[key]) {
+            setValue(key, extracted[key], { shouldValidate: true, shouldDirty: true });
+          }
+        });
+        showToast('Form data extracted successfully!', 'success');
+      }
+    } catch (error) {
+      showToast('Failed to read the form. Please check the image quality.', 'error');
+    } finally {
+      setIsScanning(false);
+      setPendingFile(null);
+    }
+  };
+
+  // 3. Handle the "I Agree" button click
+  const handleAcceptTerms = () => {
+    localStorage.setItem('clinic_ai_consent', 'true');
+    setShowAiConsent(false);
+    if (pendingFile) {
+      executeAiScan(pendingFile);
+    }
+  };
 
   // 1. FETCH DOCTORS
   useEffect(() => {
@@ -176,7 +239,19 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
           </Typography>
         </Box>
 
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* {!initialData && isEditing && (
+            <Button
+              variant="contained"
+              component="label"
+              disabled={isScanning}
+              startIcon={isScanning ? <CircularProgress size={16} color="inherit" /> : <DocumentScannerIcon />}
+              sx={{ bgcolor: '#6366f1', '&:hover': { bgcolor: '#4f46e5' }, fontWeight: 'bold', borderRadius: 2 }}
+            >
+              {isScanning ? 'Scanning...' : 'Auto-Fill from Form'}
+              <input type="file" hidden accept="image/*" onChange={handleFileSelect} />
+            </Button>
+          )} */}
           {initialData && !isEditing && (
             <Button
               variant="outlined"
@@ -202,11 +277,11 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
 
               {/* ⚡️ CUSTOM PATIENT ID FIELD */}
               <TextField
-                fullWidth 
-                placeholder="Physical File ID (Optional)" 
+                fullWidth
+                placeholder="Physical File ID (Optional)"
                 // We only allow editing the ID if it's a completely new patient.
                 // You shouldn't be able to edit an existing patient's ID.
-                disabled={!isEditing || !!initialData} 
+                disabled={!isEditing || !!initialData}
                 {...register("patientId")}
                 helperText={!initialData ? "Leave blank to auto-generate (e.g. PID-1001)" : ""}
                 InputProps={{
@@ -344,6 +419,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                     {...field} disabled={!isEditing}
                     options={DENTAL_CONCERNS}
                     value={field.value || null}
+                    freeSolo
                     onChange={(_, data) => field.onChange(data)}
                     renderInput={(params) => <TextField {...params} label="Primary Complaint" sx={{ bgcolor: 'white' }} />}
                   />
@@ -370,6 +446,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
                     {...field} multiple disabled={!isEditing} options={MEDICAL_CONDITIONS}
                     value={field.value || []}
                     onChange={(_, data) => field.onChange(data)}
+                    freeSolo
                     renderInput={(params) => <TextField {...params} label="Medical Alerts" sx={{ bgcolor: 'white' }} />}
                     renderTags={(value, getTagProps) =>
                       value.map((option, index) => <Chip size="small" label={option} {...getTagProps({ index })} color="error" variant="soft" />)
@@ -420,6 +497,47 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
           </Button>
         )}
       </DialogActions>
+      {/* ================= AI CONSENT DIALOG ================= */}
+      <Dialog open={showAiConsent} onClose={() => setShowAiConsent(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: '800', color: '#0f172a' }}>
+          <DocumentScannerIcon color="primary" /> AI Document Scanner
+        </DialogTitle>
+        <DialogContent dividers sx={{ bgcolor: '#f8fafc' }}>
+          <Typography variant="body2" sx={{ mb: 2, color: '#334155' }}>
+            To magically extract text from physical forms, ClinicOS utilizes <strong>Google Gemini AI Vision</strong>. Before using this feature, please review the following terms:
+          </Typography>
+
+          <Box sx={{ bgcolor: 'white', p: 2, borderRadius: 2, border: '1px solid #e2e8f0', mb: 2 }}>
+            <Typography variant="subtitle2" fontWeight="bold" color="primary" gutterBottom>
+              1. Usage Limits
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Your clinic is currently on the Free AI Tier, which allows up to <strong>1,500 document scans per day</strong>. Exceeding this limit will temporarily disable the scanner until midnight.
+            </Typography>
+
+            <Typography variant="subtitle2" fontWeight="bold" color="primary" gutterBottom>
+              2. Data Privacy & Processing
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Images uploaded via this tool are sent securely to Google's API for processing. The images are analyzed in real-time and are <strong>not</strong> retained or used by Google to train public models. However, please ensure no highly sensitive government IDs are scanned unless necessary.
+            </Typography>
+          </Box>
+
+          <Typography variant="caption" color="text.secondary">
+            By clicking "I Agree", you consent to these terms on behalf of your clinic.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setShowAiConsent(false)} color="inherit">Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleAcceptTerms}
+            sx={{ bgcolor: '#6366f1', fontWeight: 'bold' }}
+          >
+            I Agree & Scan Document
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

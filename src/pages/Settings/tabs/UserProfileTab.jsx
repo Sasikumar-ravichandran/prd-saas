@@ -19,7 +19,7 @@ import EmailIcon from '@mui/icons-material/Email';
 import { useColorMode } from '../../../context/ThemeContext';
 import { useToast } from '../../../context/ToastContext';
 import api from '../../../api/services/api';
-import { settingService } from '../../../api/services/settingService'; 
+import { settingService } from '../../../api/services/settingService';
 
 // IMPORT YOUR HEADER COMPONENT HERE (Adjust the path as needed)
 import SettingsHeader from '../components/SettingsHeader';
@@ -35,8 +35,8 @@ export default function UserProfileTab() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [showPassword, setShowPassword] = useState({ current: false, new: false, confirm: false });
-  const [clinicData, setClinicData] = useState(null); 
-  
+  const [clinicData, setClinicData] = useState(null);
+
   const hasFetched = useRef(false);
 
   const { register: regProfile, handleSubmit: submitProfile, reset: resetProfile } = useForm();
@@ -52,23 +52,23 @@ export default function UserProfileTab() {
           api.get('/users/me'),
           settingService.getClinic()
         ]);
-        
+
         resetProfile(userRes.data);
         setClinicData(clinicRes);
-        
+
         hasFetched.current = true;
       } catch (err) {
-        if (user) resetProfile(user); 
+        if (user) resetProfile(user);
         showToast("Loaded profile from cache", "info");
       } finally {
         setLoading(false);
       }
     };
-    
+
     fetchProfileAndClinic();
-    
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, []);
 
   const onSaveProfile = async (data) => {
     try {
@@ -90,7 +90,7 @@ export default function UserProfileTab() {
         newPassword: data.newPassword
       });
       showToast("Password changed successfully", "success");
-      resetPassword(); 
+      resetPassword();
     } catch (err) {
       showToast(err.response?.data?.message || "Incorrect current password", "error");
     } finally {
@@ -106,20 +106,20 @@ export default function UserProfileTab() {
 
   return (
     <Box sx={{ p: 1, maxWidth: 1000 }}>
-      
+
       {/* PAGE HEADER USING YOUR CUSTOM COMPONENT */}
-      <SettingsHeader 
+      <SettingsHeader
         title="Account Settings"
         sub="Manage your personal profile, workspace details, and security preferences."
         color={primaryColor}
       />
 
       <Stack spacing={4}>
-        
+
         {/* ================= SECTION 1: PERSONAL INFO ================= */}
         <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
           {/* Card Header */}
-          <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', bgcolor: '#fbfcfd' }}>
+          <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', bgcolor: '#fbfcfd', textAlign: 'left' }}>
             <Typography variant="subtitle1" fontWeight="700" color="#1e293b">Personal Information</Typography>
             <Typography variant="body2" color="text.secondary">Update your name and contact details.</Typography>
           </Box>
@@ -137,28 +137,44 @@ export default function UserProfileTab() {
                   <Typography variant="caption" color="text.secondary" fontWeight="600" display="block">Your system avatar.</Typography>
                 </Box>
               </Stack>
-              
+
               {/* Form Grid */}
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">FULL NAME</Typography>
-                  <TextField fullWidth size="small" {...regProfile("fullName", { required: true })} sx={inputSx} />
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">MOBILE NUMBER</Typography>
-                  <TextField fullWidth size="small" {...regProfile("mobile")} sx={inputSx} />
-                </Grid>
-                <Grid item xs={12}>
-                  <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">EMAIL ADDRESS</Typography>
-                  <TextField 
-                    fullWidth size="small" disabled {...regProfile("email")} 
+              <Box>
+                {/* TOP ROW: 50/50 Split */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+
+                  {/* Left Side (50%) */}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">
+                      FULL NAME
+                    </Typography>
+                    <TextField fullWidth size="small" {...regProfile("fullName", { required: true })} sx={inputSx} />
+                  </Box>
+
+                  {/* Right Side (50%) */}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">
+                      MOBILE NUMBER
+                    </Typography>
+                    <TextField fullWidth size="small" {...regProfile("mobile")} sx={inputSx} />
+                  </Box>
+
+                </Box>
+
+                {/* BOTTOM ROW: 100% Width */}
+                <Box>
+                  <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">
+                    EMAIL ADDRESS
+                  </Typography>
+                  <TextField
+                    fullWidth size="small" disabled {...regProfile("email")}
                     sx={{ '& .MuiOutlinedInput-root': { borderRadius: 1.5, bgcolor: '#f8fafc' } }}
                     InputProps={{
-                      startAdornment: <InputAdornment position="start"><EmailIcon fontSize="small" sx={{ color: '#94a3b8' }}/></InputAdornment>
+                      startAdornment: <InputAdornment position="start"><EmailIcon fontSize="small" sx={{ color: '#94a3b8' }} /></InputAdornment>
                     }}
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
             </Box>
 
             {/* Card Footer */}
@@ -177,7 +193,7 @@ export default function UserProfileTab() {
         {/* ================= SECTION 2: WORKSPACE INFO ================= */}
         <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
           {/* Card Header */}
-          <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', bgcolor: '#fbfcfd' }}>
+          <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', bgcolor: '#fbfcfd', textAlign: 'left' }}>
             <Typography variant="subtitle1" fontWeight="700" color="#1e293b">Workspace & Role</Typography>
             <Typography variant="body2" color="text.secondary">Your current clinic assignment and system privileges (Read-only).</Typography>
           </Box>
@@ -186,16 +202,16 @@ export default function UserProfileTab() {
           <Box sx={{ p: 3 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
-                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%' }}>
+                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%', textAlign: 'left' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="800" display="block" mb={0.5}>CLINIC NAME</Typography>
                   <Typography variant="body2" fontWeight="700" color="#1e293b" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <BusinessIcon sx={{ fontSize: 18, color: primaryColor }} /> {clinicData?.name || 'Loading...'}
                   </Typography>
                 </Box>
               </Grid>
-              
+
               <Grid item xs={12} sm={6}>
-                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%' }}>
+                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%', textAlign: 'left' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="800" display="block" mb={0.5}>CLINIC ID</Typography>
                   <Typography variant="body2" fontWeight="700" color="#1e293b" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <KeyIcon sx={{ fontSize: 18, color: '#64748b' }} /> {clinicData?.clinicId || 'Loading...'}
@@ -204,7 +220,7 @@ export default function UserProfileTab() {
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%' }}>
+                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%', textAlign: 'left' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="800" display="block" mb={0.5}>SYSTEM ROLE</Typography>
                   <Typography variant="body2" fontWeight="700" color="#1e293b" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <BadgeIcon sx={{ fontSize: 18, color: '#64748b' }} /> {user?.role || 'Staff'}
@@ -213,10 +229,10 @@ export default function UserProfileTab() {
               </Grid>
 
               <Grid item xs={12} sm={6}>
-                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%' }}>
+                <Box sx={{ p: 2, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #f1f5f9', height: '100%', textAlign: 'left' }}>
                   <Typography variant="caption" color="text.secondary" fontWeight="800" display="block" mb={0.5}>ACCESS LEVEL</Typography>
                   <Typography variant="body2" fontWeight="700" sx={{ display: 'flex', alignItems: 'center', gap: 1, color: user?.role === 'Administrator' ? '#10b981' : '#f59e0b' }}>
-                    <SecurityIcon sx={{ fontSize: 18 }} /> 
+                    <SecurityIcon sx={{ fontSize: 18 }} />
                     {user?.role === 'Administrator' ? 'Full Administrator' : 'Restricted Staff'}
                   </Typography>
                 </Box>
@@ -228,7 +244,7 @@ export default function UserProfileTab() {
         {/* ================= SECTION 3: SECURITY ================= */}
         <Paper elevation={0} sx={{ border: '1px solid #e2e8f0', borderRadius: 2, overflow: 'hidden' }}>
           {/* Card Header */}
-          <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', bgcolor: '#fbfcfd' }}>
+          <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', bgcolor: '#fbfcfd', textAlign: 'left' }}>
             <Typography variant="subtitle1" fontWeight="700" color="#1e293b">Security Settings</Typography>
             <Typography variant="body2" color="text.secondary">Ensure your account is using a strong, random password.</Typography>
           </Box>
@@ -258,11 +274,15 @@ export default function UserProfileTab() {
 
                 <Divider sx={{ borderColor: '#f1f5f9' }} />
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">NEW PASSWORD</Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+
+                  {/* Left Side (50%) */}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">
+                      NEW PASSWORD
+                    </Typography>
                     <TextField
-                      fullWidth size="small" type={showPassword.new ? 'text' : 'password'} 
+                      fullWidth size="small" type={showPassword.new ? 'text' : 'password'}
                       {...regPassword("newPassword", { minLength: { value: 6, message: "At least 6 characters" } })}
                       error={!!passErrors.newPassword} helperText={passErrors.newPassword?.message}
                       sx={inputSx}
@@ -276,9 +296,13 @@ export default function UserProfileTab() {
                         )
                       }}
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">CONFIRM PASSWORD</Typography>
+                  </Box>
+
+                  {/* Right Side (50%) */}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="caption" fontWeight="800" color="#475569" mb={0.5} display="block">
+                      CONFIRM PASSWORD
+                    </Typography>
                     <TextField
                       fullWidth size="small" type={showPassword.confirm ? 'text' : 'password'}
                       {...regPassword("confirmPassword", { validate: (val) => watchPassword("newPassword") === val || "Passwords don't match" })}
@@ -294,8 +318,9 @@ export default function UserProfileTab() {
                         )
                       }}
                     />
-                  </Grid>
-                </Grid>
+                  </Box>
+
+                </Box>
               </Stack>
             </Box>
 

@@ -229,7 +229,7 @@ export default function DoctorDashboard() {
   };
 
   return (
-    <Box sx={{ bgcolor: '#f8fafc', minHeight: 'calc(100vh - 64px)', p: { xs: 2, md: 4 } }}>
+    <Box sx={{p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
       {/* HEADER SECTION */}
       <Box sx={{ mb: 4 }}>

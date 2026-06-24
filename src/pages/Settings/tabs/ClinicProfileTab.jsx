@@ -5,7 +5,7 @@ import {
   Box, Grid, TextField, Button, CircularProgress, InputAdornment,
   Divider, Typography, Card, CardContent, IconButton, Stack, Dialog,
   DialogTitle, DialogContent, DialogActions, Chip, Alert, Tooltip,
-  Switch, FormControlLabel // ⚡️ ADDED FOR WHATSAPP
+  Switch, FormControlLabel, FormGroup
 } from '@mui/material';
 
 // Icons
@@ -18,8 +18,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import BusinessIcon from '@mui/icons-material/Business';
 import WarningIcon from '@mui/icons-material/Warning';
 import EventSeatIcon from '@mui/icons-material/EventSeat';
-import WhatsAppIcon from '@mui/icons-material/WhatsApp'; // ⚡️ NEW
-import SendIcon from '@mui/icons-material/Send'; // ⚡️ NEW
+import WhatsAppIcon from '@mui/icons-material/WhatsApp';
+import SendIcon from '@mui/icons-material/Send';
+import DocumentScannerIcon from '@mui/icons-material/DocumentScanner';
 
 // Context & Services
 import SettingsHeader from '../components/SettingsHeader';
@@ -29,6 +30,7 @@ import { useToast } from '../../../context/ToastContext';
 import api from '../../../api/services/api';
 import { setBranches } from '../../../redux/slices/authSlice';
 import { whatsappService } from '../../../api/services/whatsappService';
+import { AVAILABLE_EVENTS } from "../../../constants"
 
 export default function ClinicProfileTab() {
   const { primaryColor } = useColorMode();
@@ -58,7 +60,7 @@ export default function ClinicProfileTab() {
   const [branchToDelete, setBranchToDelete] = useState(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
 
-  // Main Clinic Form (⚡️ Extracted watch, setValue, getValues for WhatsApp)
+  // Main Clinic Form ( Extracted watch, setValue, getValues for WhatsApp)
   const { register, handleSubmit, reset, watch, setValue, getValues } = useForm();
 
   // Watch the switch state to show/hide the Twilio fields
@@ -222,32 +224,52 @@ export default function ClinicProfileTab() {
         />
 
         {/* CLINIC DETAILS */}
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={6}>
-            <TextField fullWidth label="Clinic ID" disabled InputLabelProps={{ shrink: true }} {...register("clinicId")} InputProps={{ startAdornment: (<InputAdornment position="start"><KeyIcon color="action" /></InputAdornment>) }} sx={{ '& .MuiInputBase-root': { bgcolor: '#f1f5f9' } }} />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField fullWidth label="Legal Name" placeholder="Smile Care Pvt Ltd" InputLabelProps={{ shrink: true }} {...register("legalName")} />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField fullWidth label="Brand Name" placeholder="Smile Care" InputLabelProps={{ shrink: true }} {...register("name", { required: true })} />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField fullWidth label="GSTIN" placeholder="33AABC..." InputLabelProps={{ shrink: true }} {...register("gstin")} />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <TextField fullWidth label="Phone" placeholder="+91..." InputLabelProps={{ shrink: true }} {...register("phone")} />
-          </Grid>
-        </Grid>
+        <Box sx={{ mb: 4 }}>
+
+          {/* ROW 1: Clinic ID & Legal Name */}
+          <Box sx={{ display: 'flex', gap: 3, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+            <Box sx={{ flex: 1 }}>
+              <TextField
+                fullWidth label="Clinic ID" disabled InputLabelProps={{ shrink: true }}
+                {...register("clinicId")}
+                InputProps={{ startAdornment: (<InputAdornment position="start"><KeyIcon color="action" /></InputAdornment>) }}
+                sx={{ '& .MuiInputBase-root': { bgcolor: '#f1f5f9' } }}
+              />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <TextField fullWidth label="Legal Name" placeholder="Smile Care Pvt Ltd" InputLabelProps={{ shrink: true }} {...register("legalName")} />
+            </Box>
+          </Box>
+
+          {/* ROW 2: Brand Name & GSTIN */}
+          <Box sx={{ display: 'flex', gap: 3, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+            <Box sx={{ flex: 1 }}>
+              <TextField fullWidth label="Brand Name" placeholder="Smile Care" InputLabelProps={{ shrink: true }} {...register("name", { required: true })} />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <TextField fullWidth label="GSTIN" placeholder="33AABC..." InputLabelProps={{ shrink: true }} {...register("gstin")} />
+            </Box>
+          </Box>
+
+          {/* ROW 3: Phone (Odd item out) */}
+          <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+            <Box sx={{ flex: 1 }}>
+              <TextField fullWidth label="Phone" placeholder="+91..." InputLabelProps={{ shrink: true }} {...register("phone")} />
+            </Box>
+            {/* Empty Box to force the Phone field to stay at 50% width on desktop */}
+            <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }} />
+          </Box>
+
+        </Box>
 
         <Divider sx={{ my: 4 }} />
 
         {/* ⚡️ WHATSAPP AUTOMATION SECTION */}
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{ mb: 3, }}>
           <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
             <WhatsAppIcon sx={{ color: '#25D366' }} /> WhatsApp Automation
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2, display: 'flex' }}>
             Configure your custom Twilio gateway parameters to send automated notifications to patients.
           </Typography>
 
@@ -259,8 +281,8 @@ export default function ClinicProfileTab() {
                 color="success"
               />
             }
-            label={<Typography fontWeight={600}>Enable Automated WhatsApp Notifications</Typography>}
-            sx={{ mb: 3 }}
+            label={<Typography fontWeight={600}  >Enable Automated WhatsApp Notifications</Typography>}
+            sx={{ mb: 3, display: 'flex' }}
           />
 
           {whatsappEnabled && (
@@ -295,9 +317,141 @@ export default function ClinicProfileTab() {
                   </Box>
                 </Grid>
               </Grid>
+
+              <Divider sx={{ my: 4, borderColor: '#e2e8f0' }} />
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 0.5, color: '#0f172a' }}>
+                  Message Templates & Triggers
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Select which events trigger an automated message. The template text MUST match your pre-approved Twilio templates exactly.
+                </Typography>
+              </Box>
+
+              <FormGroup sx={{ gap: 2.5 }}>
+                {AVAILABLE_EVENTS.map((event) => {
+                  const isEventEnabled = watch(`whatsappConfig.triggers.${event.id}.enabled`);
+
+                  return (
+                    <Box
+                      key={event.id}
+                      sx={{
+                        p: 3,
+                        bgcolor: isEventEnabled ? 'white' : '#f1f5f9',
+                        borderRadius: 3,
+                        border: '1px solid',
+                        borderColor: isEventEnabled ? primaryColor : '#e2e8f0',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+                        <Box sx={{ textAlign: 'left' }}>
+                          <Typography variant="body1" fontWeight="800" color={isEventEnabled ? '#0f172a' : 'text.secondary'}>
+                            {event.title}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {event.desc}
+                          </Typography>
+                        </Box>
+                        <FormControlLabel
+                          control={
+                            <Switch
+                              color="primary"
+                              {...register(`whatsappConfig.triggers.${event.id}.enabled`)}
+                            />
+                          }
+                          label={<Typography variant="caption" fontWeight="bold">{isEventEnabled ? "ON" : "OFF"}</Typography>}
+                          labelPlacement="start"
+                          sx={{ m: 0 }}
+                        />
+                      </Box>
+
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        placeholder="Enter your approved Twilio template here..."
+                        InputLabelProps={{ shrink: true }}
+                        {...register(`whatsappConfig.triggers.${event.id}.template`)}
+                        disabled={!isEventEnabled}
+                        sx={{
+                          mb: 2,
+                          '& .MuiInputBase-root': { bgcolor: isEventEnabled ? '#f8fafc' : '#e2e8f0' }
+                        }}
+                      />
+
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mr: 1 }}>
+                          Usable Variables:
+                        </Typography>
+                        {event.variables.map(v => (
+                          <Chip
+                            key={v}
+                            size="small"
+                            label={v}
+                            sx={{
+                              fontSize: '0.65rem',
+                              fontWeight: 'bold',
+                              bgcolor: isEventEnabled ? `${primaryColor}15` : '#cbd5e1',
+                              color: isEventEnabled ? primaryColor : '#475569',
+                              borderRadius: 1
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </FormGroup>
+
             </Box>
           )}
         </Box>
+
+        {/* <Divider sx={{ my: 4 }} /> */}
+
+        {/* <Box sx={{ mb: 3 }}> */}
+          {/* <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <DocumentScannerIcon sx={{ color: '#6366f1' }} /> Document AI (OCR)
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Enable automated form scanning. You get 1,500 free scans per day by generating your own Google Gemini API key. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Get your free key here</a>.
+          </Typography> */}
+
+          {/* <FormControlLabel
+            control={
+              <Switch
+                checked={watch("aiConfig.enabled") || false}
+                onChange={(e) => setValue("aiConfig.enabled", e.target.checked, { shouldDirty: true })}
+                color="primary"
+              />
+            }
+            label={<Typography fontWeight={600}>Enable AI Form Scanner</Typography>}
+            sx={{ mb: 3, display: 'flex' }}
+          /> */}
+
+          {/* Only show the key input if they enable it */}
+          {/* {watch("aiConfig.enabled") && (
+            <Box sx={{ bgcolor: '#f8fafc', p: 3, borderRadius: 3, border: '1px solid #e2e8f0' }}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={8}>
+                  <TextField
+                    fullWidth
+                    type="password"
+                    label="Google AI Studio API Key"
+                    placeholder="AIzaSy..."
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ bgcolor: 'white' }}
+                    {...register("aiConfig.geminiApiKey")}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )} */}
+        {/* </Box> */}
+
+
       </form>
       {/* ================= END OF MAIN FORM ================= */}
 

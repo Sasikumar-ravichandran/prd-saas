@@ -199,8 +199,10 @@ export default function AdminDashboard() {
           {/* 2. FINANCIAL METRICS */}
           <Box sx={{
             display: 'grid',
-            gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
-            gap: 3
+            // xs handles mobile & tablet (2 columns), lg handles desktop (4 columns)
+            gridTemplateColumns: { xs: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
+            // Slightly tighter gap on mobile so the cards fit nicely side-by-side
+            gap: { xs: 1.5, lg: 3 }
           }}>
             <FinCard
               label="Monthly Revenue"

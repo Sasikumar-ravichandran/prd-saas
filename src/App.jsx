@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'rea
 import { ThemeWrapper } from './context/ThemeContext';
 import { ToastProvider } from './context/ToastContext';
 import { GlobalStyles } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux'; 
+import { useDispatch, useSelector } from 'react-redux';
 import { setBranches } from './redux/slices/authSlice';
 import api from './api/services/api';
 // --- LAYOUTS ---
@@ -15,6 +15,8 @@ import SignupPage from './pages/SignupPage';
 import SetupBranch from './pages/Onboarding/SetupBranch';
 import ChangePasswordScreen from './pages/Auth/ChangePasswordScreen';
 import InventoryPage from './pages/Inventory/InventoryPage';
+import AdminPayrollPage from './components/Admin/AdminPayrollPage';
+import ExpensesPage from './components/Admin/ExpencesPage';
 
 // --- DASHBOARD PAGES ---
 import DashboardRouter from './pages/Dashboard/DashboardRouter';
@@ -51,14 +53,14 @@ function App() {
   const dispatch = useDispatch(); // ⚡️ 4. Initialize Dispatch
   const { user } = useSelector((state) => state.auth); // ⚡️ 5. Get current user
 
-  const userId = user?._id; 
+  const userId = user?._id;
 
   useEffect(() => {
     // Only run if we have a valid User ID
     if (userId) {
       api.get('/branches')
         .then((response) => {
-          dispatch(setBranches(response.data)); 
+          dispatch(setBranches(response.data));
         })
         .catch((error) => console.error("Failed to sync branches on load", error));
     }
@@ -105,6 +107,8 @@ function App() {
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="inventory" element={<InventoryPage />} />
+                  <Route path="payroll" element={<AdminPayrollPage />} />
+                  <Route path="expenses" element={<ExpensesPage />} />
                 </Route>
               </Route>
             </Route>
