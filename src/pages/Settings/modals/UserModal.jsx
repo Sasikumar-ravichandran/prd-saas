@@ -8,7 +8,6 @@ import CloseIcon from '@mui/icons-material/Close'; // ⚡️ Add this
 
 export default function UserModal({ open, onClose, onSave, user, branches, primaryColor }) {
 
-  console.log(user,'+++++++')
 
   const { register, handleSubmit, reset, watch, setValue } = useForm();
 

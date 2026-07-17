@@ -180,13 +180,6 @@ export default function AdminDashboard() {
           >
             Export CSV
           </Button>
-          <Button
-            variant="contained"
-            disableElevation
-            sx={{ borderRadius: 2.5, px: 3, fontWeight: '700', textTransform: 'none', bgcolor: primaryColor, color: 'white' }}
-          >
-            Add Expense
-          </Button>
         </Stack>
       </Box>
 
@@ -240,7 +233,7 @@ export default function AdminDashboard() {
 
             <Box sx={{ p: 3, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'white' }}>
               <Typography variant="h6" fontWeight="800" color="#0f172a">Recent Transactions</Typography>
-              <Button size="small" endIcon={<ArrowForwardIcon fontSize="small" />} sx={{ fontWeight: '700', textTransform: 'none', color: primaryColor }}>
+              <Button size="small" endIcon={<ArrowForwardIcon fontSize="small" />} sx={{ fontWeight: '700', textTransform: 'none', color: primaryColor }} onClick={() => navigate('/financial')}>
                 View All
               </Button>
             </Box>
@@ -266,11 +259,41 @@ export default function AdminDashboard() {
                   ) : (
                     data.transactions.map((row, i) => (
                       <TableRow key={i} hover sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                        <TableCell sx={{ py: 2, borderBottom: '1px solid #f1f5f9' }}>
+                        <TableCell>
                           <Typography variant="subtitle2" fontWeight="800" color="#0f172a">{row.patient}</Typography>
-                          <Typography variant="caption" color="#64748b" fontWeight="500">
-                            {row.type === 'Expense' ? 'Vendor / Category' : 'Patient Bill'} • {new Date(row.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </Typography>
+                            {row.type === 'Expense' ? (
+                              <>
+                                <Typography variant="subtitle2" fontWeight="800" color="#0f172a">
+                                  {row.category}
+                                </Typography>
+                                <Typography variant="caption" color="#64748b" fontWeight="500" sx={{ display: 'block' }}>
+                                  {row.details || 'No details provided'}
+                                </Typography>
+                              </>
+                            ) : (
+                              // ⚡️ PAYMENT VIEW: Patient Title on top, 'Patient Bill' below
+                              <>
+                                <Typography variant="subtitle2" fontWeight="800" color="#0f172a">
+                                  {row.title}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                  Patient Bill
+                                </Typography>
+                              </>
+                            )}
+
+                            {/* Add the timestamp at the bottom for both */}
+                            <Typography variant="caption" color="#94a3b8" sx={{ display: 'block', mt: 0.5 }}>
+                              <Typography variant="caption" color="#94a3b8" sx={{ display: 'block', mt: 0.5 }}>
+                                {new Date(row.date).toLocaleString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </Typography>
+                            </Typography>
                         </TableCell>
                         <TableCell sx={{ borderBottom: '1px solid #f1f5f9' }}>
                           <Typography variant="body2" color="#475569" fontWeight="600">{row.method}</Typography>
@@ -282,10 +305,15 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell sx={{ borderBottom: '1px solid #f1f5f9' }}>
                           <Chip
-                            label={row.status}
+                            label={row.type === 'Expense' ? 'PAID' : (row.status || 'COMPLETED')}
                             size="small"
                             sx={{
-                              borderRadius: 1.5, fontWeight: '800', height: 26, fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+                              borderRadius: 1.5,
+                              fontWeight: '800',
+                              height: 26,
+                              fontSize: '0.7rem',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.05em',
                               bgcolor: row.type === 'Expense' ? '#fef2f2' : '#ecfdf5',
                               color: row.type === 'Expense' ? '#dc2626' : '#059669'
                             }}

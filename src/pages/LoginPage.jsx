@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Paper, Typography, TextField, Button, InputAdornment,
   Alert, CircularProgress, Divider, Link, CssBaseline,
@@ -19,11 +19,12 @@ import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
 import SecurityIcon from '@mui/icons-material/Security';
 
-import { useColorMode } from '../context/ThemeContext';
 import { authService } from '../api/services/authService';
 import { useDispatch } from 'react-redux';
-import { setCredentials } from '../redux/slices/authSlice'; 
+import { setCredentials } from '../redux/slices/authSlice';
+import { useColorMode } from '../context/ThemeContext'
 
+const defaultColor = '#1976d2';
 // Custom style for premium SaaS inputs
 const premiumInputSx = {
   '& .MuiOutlinedInput-root': {
@@ -41,7 +42,6 @@ const premiumInputSx = {
 };
 
 export default function LoginPage() {
-  const { primaryColor } = useColorMode();
   const navigate = useNavigate(); //  INITIALIZED ROUTER
   const dispatch = useDispatch();
 
@@ -49,6 +49,8 @@ export default function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '', clinicShortId: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const { loadBranding, changePrimaryColor } = useColorMode(); // ⚡️ Extract it here
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,10 +69,10 @@ export default function LoginPage() {
         return;
       }
       dispatch(setCredentials({ user: data }));
+      await loadBranding();
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials. Please try again.");
-      // ⚡️ FIXED: Clear ONLY the password field, keep the email/ID, and stay on the page
       setFormData(prev => ({ ...prev, password: '' }));
     } finally {
       setLoading(false);
@@ -83,6 +85,12 @@ export default function LoginPage() {
     { icon: <MonitorHeartIcon />, title: "Clinical Records", desc: "Interactive odontograms & history." },
     { icon: <InsertChartOutlinedIcon />, title: "Real-Time Analytics", desc: "Track revenue & clinic growth." },
   ];
+
+  useEffect(() => {
+    if (changePrimaryColor) {
+      changePrimaryColor(defaultColor);
+    }
+  }, []);
 
   return (
     <>
@@ -114,11 +122,11 @@ export default function LoginPage() {
           overflow: 'hidden'
         }}>
           {/* Abstract background glow */}
-          <Box sx={{ position: 'absolute', top: '10%', left: '-10%', width: '60%', height: '60%', background: `radial-gradient(circle, ${primaryColor}35 0%, transparent 60%)`, filter: 'blur(60px)' }} />
+          <Box sx={{ position: 'absolute', top: '10%', left: '-10%', width: '60%', height: '60%', background: `radial-gradient(circle, ${defaultColor}35 0%, transparent 60%)`, filter: 'blur(60px)' }} />
 
           {/* 1. Header / Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, zIndex: 1 }}>
-            <Box sx={{ bgcolor: primaryColor, p: 1.5, borderRadius: 3, display: 'flex', boxShadow: `0 4px 30px ${primaryColor}70` }}>
+            <Box sx={{ bgcolor: defaultColor, p: 1.5, borderRadius: 3, display: 'flex', boxShadow: `0 4px 30px ${defaultColor}70` }}>
               <MedicalServicesIcon sx={{ fontSize: 40, color: 'white' }} />
             </Box>
             <Typography variant="h2" sx={{ fontWeight: 900, letterSpacing: '-2px' }}>
@@ -144,7 +152,7 @@ export default function LoginPage() {
                   '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', transform: 'translateY(-2px)' }
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                    <Box sx={{ color: primaryColor, display: 'flex' }}>{adv.icon}</Box>
+                    <Box sx={{ color: defaultColor, display: 'flex' }}>{adv.icon}</Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1, color: '#f8fafc' }}>
                       {adv.title}
                     </Typography>
@@ -180,7 +188,7 @@ export default function LoginPage() {
           <Box sx={{ width: '100%', maxWidth: 440, p: { xs: 3, sm: 5 }, my: 'auto' }}>
 
             <Box sx={{ mb: 4 }}>
-              <Typography variant="h4" fontWeight="800" sx={{ mb: 1, color: primaryColor, letterSpacing: '-0.5px' }}>
+              <Typography variant="h4" fontWeight="800" sx={{ mb: 1, color: defaultColor, letterSpacing: '-0.5px' }}>
                 Welcome back
               </Typography>
               <Typography color="text.secondary" fontWeight={500}>
@@ -242,7 +250,7 @@ export default function LoginPage() {
                 }} InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon color="action" /></InputAdornment> }} />
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                  <Link href="#" variant="body2" sx={{ color: primaryColor, fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                  <Link href="#" variant="body2" sx={{ color: defaultColor, fontWeight: 600, textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                     Forgot password?
                   </Link>
                 </Box>
@@ -250,10 +258,10 @@ export default function LoginPage() {
 
               <Button type="submit" fullWidth size="large" variant="contained" disabled={loading} sx={{
                 borderRadius: '12px', py: 1.8, mt: 1, fontSize: '1rem', fontWeight: 700,
-                bgcolor: primaryColor, textTransform: 'none',
-                boxShadow: `0 8px 24px -6px ${primaryColor}`,
+                bgcolor: defaultColor, textTransform: 'none',
+                boxShadow: `0 8px 24px -6px ${defaultColor}`,
                 transition: 'all 0.2s',
-                '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 12px 28px -8px ${primaryColor}` }
+                '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 12px 28px -8px ${defaultColor}` }
               }}>
                 {loading ? <CircularProgress size={24} color="inherit" /> : "Sign In"}
               </Button>

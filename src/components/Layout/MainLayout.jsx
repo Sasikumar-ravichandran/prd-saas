@@ -18,39 +18,49 @@ export default function MainLayout() {
 
   return (
     <Box sx={{ display: 'flex' }}>
-      
+
       {/* 1. TOP BAR */}
-      <Header 
-        isCollapsed={isCollapsed} 
-        handleDrawerToggle={handleDrawerToggle} 
+      <Header
+        isCollapsed={isCollapsed}
+        handleDrawerToggle={handleDrawerToggle}
       />
 
       {/* 2. SIDE NAVIGATION */}
-      <Sidebar 
-        mobileOpen={mobileOpen} 
-        handleDrawerToggle={handleDrawerToggle} 
+      <Sidebar
+        mobileOpen={mobileOpen}
+        handleDrawerToggle={handleDrawerToggle}
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
       />
 
       {/* 3. MAIN CONTENT */}
-      <Box 
-        component="main" 
-        sx={{ 
-          flexGrow: 1, 
+
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
           // p: 3, 
-          width: { 
-            xs: '100%', 
-            md: `calc(100% - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)` 
+          width: {
+            xs: '100%',
+            md: `calc(100% - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)`
           },
-          mt: `${HEADER_HEIGHT}px`, 
+          mt: `${HEADER_HEIGHT}px`,
+
+          // ⚡️ FIX 1: Constrain height to exact remaining viewport space
+          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+
+          // ⚡️ FIX 2: Tell this specific box to handle vertical scrolling
+          overflowY: 'auto',
+          overflowX: 'hidden',
+
           transition: 'width 0.3s',
-          minHeight: '100vh',          
           minWidth: 0,
-          overflowX: 'hidden'
+
+          // Optional: Add smooth scrolling for the main content area
+          WebkitOverflowScrolling: 'touch',
         }}
       >
-        <Outlet /> 
+        <Outlet />
       </Box>
     </Box>
   );

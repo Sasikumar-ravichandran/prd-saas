@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Avatar, Typography, Chip, Stack, Tooltip, IconButton, CircularProgress, Alert,
-  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions // <--- Added Dialog imports
+  Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Pagination
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 import AddIcon from '@mui/icons-material/Add';
@@ -16,13 +16,20 @@ import { useColorMode } from '../../../context/ThemeContext';
 import { userService } from '../../../api/services/userService';
 import { useToast } from '../../../context/ToastContext';
 import api from '../../../api/services/api';
+import { TextField, InputAdornment } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import { useSearchParams } from 'react-router-dom';
 
 export default function UserManagementTab() {
   const { primaryColor } = useColorMode();
   const { activeBranchId } = useSelector((state) => state.auth);
 
+  // ⚡️ 1. INITIALIZE SEARCH PARAMS
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+
   const [users, setUsers] = useState([]);
-  const [branches, setBranches] = useState([]); 
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { showToast } = useToast();
@@ -30,21 +37,43 @@ export default function UserManagementTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
 
-  // ⚡️ DELETE CONFIRMATION STATE
+  const { user: currentUser } = useSelector((state) => state.auth);
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
+
+  // ⚡️ 2. USE THE URL TERM AS THE DEFAULT STATE
+  const [inputValue, setInputValue] = useState(initialSearch);
+  const [activeSearch, setActiveSearch] = useState(initialSearch);
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  // 1. Fetch Users AND Branches together
-  const fetchData = async () => {
+  // ⚡️ 3. LISTEN FOR URL CHANGES (Cross-page sync)
+  useEffect(() => {
+    const queryFromUrl = searchParams.get('search') || '';
+
+    if (queryFromUrl !== activeSearch) {
+      setInputValue(queryFromUrl);
+      setActiveSearch(queryFromUrl);
+      setPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  const fetchData = async (currentPage, currentSearch) => {
     try {
       setLoading(true);
       const [userData, branchData] = await Promise.all([
-        userService.getAll(),
+        userService.getAll({ page: currentPage, limit, search: currentSearch }),
         api.get('/branches')
       ]);
 
-      setUsers(userData);
-      setBranches(branchData.data); 
+      setUsers(userData.users || []);
+      setTotalPages(userData.totalPages || 1);
+
+      if (branches.length === 0) setBranches(branchData.data);
     } catch (err) {
       console.error("Failed to load data", err);
       setError("Failed to load user list");
@@ -54,8 +83,20 @@ export default function UserManagementTab() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const timer = setTimeout(() => {
+      if (activeSearch !== inputValue) {
+        setPage(1);
+        setActiveSearch(inputValue);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [inputValue, activeSearch]);
+
+  useEffect(() => {
+    fetchData(page, activeSearch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, activeSearch]);
 
   const handleAddClick = () => {
     setEditingUser(null);
@@ -67,13 +108,11 @@ export default function UserManagementTab() {
     setModalOpen(true);
   };
 
-  // ⚡️ Step 1: Open Delete Dialog
   const requestDelete = (user) => {
     setUserToDelete(user);
     setDeleteDialogOpen(true);
   };
 
-  // ⚡️ Step 2: Confirm Delete
   const confirmDelete = async () => {
     if (!userToDelete) return;
 
@@ -120,7 +159,8 @@ export default function UserManagementTab() {
     }
   };
 
-  if (loading) return <Box p={4}><CircularProgress /></Box>;
+  // ⚡️ REMOVED THE HARD RETURN THAT DESTROYED THE UI
+  // if (loading) return <Box p={4}><CircularProgress /></Box>;
   if (error) return <Box p={4}><Alert severity="error">{error}</Alert></Box>;
 
   return (
@@ -137,11 +177,38 @@ export default function UserManagementTab() {
           </Button>
         }
       />
-
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-start' }}>
+        <TextField
+          placeholder="Search users by name, email, or role..."
+          variant="outlined"
+          size="small"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          sx={{
+            width: '100%',
+            maxWidth: 400,
+            bgcolor: 'white',
+            '& .MuiOutlinedInput-root': { borderRadius: 2 }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: '#94a3b8' }} />
+              </InputAdornment>
+            ),
+            // ⚡️ ADDED INLINE SPINNER: Shows loading indicator directly inside the search bar
+            endAdornment: loading && (
+              <InputAdornment position="end">
+                <CircularProgress size={18} thickness={5} sx={{ color: '#94a3b8' }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
       <TableContainer sx={{
         width: '100%',
         maxWidth: '100%',
-        overflowX: 'auto', 
+        overflowX: 'auto',
         layout: 'fixed',
         border: '1px solid #e2e8f0',
         borderRadius: 2
@@ -151,85 +218,116 @@ export default function UserManagementTab() {
             <TableRow>
               <TableCell sx={{ fontWeight: 'bold' }}>USER</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>ROLE</TableCell>
-              <TableCell sx={{ fontWeight: 'bold' }}>BRANCH</TableCell> 
+              <TableCell sx={{ fontWeight: 'bold' }}>BRANCH</TableCell>
               <TableCell sx={{ fontWeight: 'bold' }}>STATUS</TableCell>
               <TableCell align="right" sx={{ fontWeight: 'bold' }}>ACTIONS</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user) => {
-              const statusStyle = getStatusColor(user.status);
-              const branchName = user.defaultBranch?.branchName || user.defaultBranch?.name || 'Unassigned';
+            {/* ⚡️ ADDED GRACEFUL EMPTY/LOADING STATES FOR THE TABLE */}
+            {loading && users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                  <CircularProgress size={30} />
+                </TableCell>
+              </TableRow>
+            ) : users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                  <Typography variant="body1" color="text.secondary">No users found.</Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              users.map((user) => {
+                const statusStyle = getStatusColor(user.status);
+                const branchName = user.defaultBranch?.branchName || user.defaultBranch?.name || 'Unassigned';
 
-              return (
-                <TableRow key={user._id} hover>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Avatar sx={{ width: 32, height: 32, bgcolor: primaryColor, fontSize: 14 }}>
-                        {user.name ? user.name[0] : 'U'}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="body2" fontWeight="bold">{user.name}</Typography>
-                        <Typography variant="caption" color="text.secondary">{user.email}</Typography>
+                return (
+                  <TableRow key={user._id} hover>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Avatar sx={{ width: 32, height: 32, bgcolor: primaryColor, fontSize: 14 }}>
+                          {user.name ? user.name[0] : 'U'}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" fontWeight="bold">{user.name}</Typography>
+                          <Typography variant="caption" color="text.secondary">{user.email}</Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  </TableCell>
+                    </TableCell>
 
-                  <TableCell>
-                    <Stack alignItems="flex-start" spacing={0.5}>
+                    <TableCell>
+                      <Stack alignItems="flex-start" spacing={0.5}>
                         <Chip label={user.role} size="small" variant="outlined" sx={{ fontWeight: 500 }} />
-                        {/* ⚡️ DOCTOR DETAILS SHOWN HERE */}
                         {user.role === 'Doctor' && user.doctorConfig && (
-                        <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                             {user.doctorConfig.specialization || 'General'}
                             {user.doctorConfig.commissionPercentage > 0 && (
-                                <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
-                                    • {user.doctorConfig.commissionPercentage}% Comm.
-                                </span>
+                              <span style={{ color: '#16a34a', fontWeight: 'bold' }}>
+                                • {user.doctorConfig.commissionPercentage}% Comm.
+                              </span>
                             )}
-                        </Typography>
+                          </Typography>
                         )}
-                    </Stack>
-                  </TableCell>
+                      </Stack>
+                    </TableCell>
 
-                  <TableCell>
-                    <Chip
-                      label={branchName}
-                      size="small"
-                      sx={{ bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 600, borderRadius: 1 }}
-                    />
-                  </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={branchName}
+                        size="small"
+                        sx={{ bgcolor: '#eff6ff', color: '#1d4ed8', fontWeight: 600, borderRadius: 1 }}
+                      />
+                    </TableCell>
 
-                  <TableCell>
-                    <Chip
-                      label={user.status}
-                      size="small"
-                      sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 'bold' }}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" justifyContent="flex-end" spacing={1}>
-                      <Tooltip title="Edit">
-                        <IconButton size="small" onClick={() => handleEditClick(user)}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        {/* ⚡️ CALL requestDelete instead of window.confirm */}
-                        <IconButton size="small" color="error" onClick={() => requestDelete(user)}>
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+                    <TableCell>
+                      <Chip
+                        label={user.status}
+                        size="small"
+                        sx={{ bgcolor: statusStyle.bg, color: statusStyle.color, fontWeight: 'bold' }}
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                        <Tooltip title="Edit">
+                          <IconButton size="small" onClick={() => handleEditClick(user)}>
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={user._id === currentUser?._id ? "Cannot delete yourself" : "Delete"}>
+                          <span>
+                            <IconButton size="small" color="error" onClick={() => requestDelete(user)} disabled={user._id === currentUser?._id}>
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
+        {totalPages > 1 && (
+          <Box sx={{
+            display: 'flex',
+            justifyContent: 'center',
+            p: 2,
+            bgcolor: '#f8fafc',
+            borderTop: '1px solid #e2e8f0'
+          }}>
+            <Pagination
+              count={totalPages}
+              page={page}
+              onChange={(e, value) => setPage(value)}
+              color="primary"
+              shape="rounded"
+            />
+          </Box>
+        )}
       </TableContainer>
 
-      {/* MODAL FOR ADD/EDIT */}
       <UserModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -239,7 +337,6 @@ export default function UserManagementTab() {
         primaryColor={primaryColor}
       />
 
-      {/* ⚡️ DELETE CONFIRMATION DIALOG ⚡️ */}
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
@@ -250,8 +347,8 @@ export default function UserManagementTab() {
         </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Are you sure you want to remove <b>{userToDelete?.name}</b>? 
-            <br/>
+            Are you sure you want to remove <b>{userToDelete?.name}</b>?
+            <br />
             This action cannot be undone.
           </DialogContentText>
         </DialogContent>
@@ -259,18 +356,17 @@ export default function UserManagementTab() {
           <Button onClick={() => setDeleteDialogOpen(false)} sx={{ fontWeight: 600, color: '#64748b' }}>
             Cancel
           </Button>
-          <Button 
-            onClick={confirmDelete} 
-            variant="contained" 
-            color="error" 
-            autoFocus 
+          <Button
+            onClick={confirmDelete}
+            variant="contained"
+            color="error"
+            autoFocus
             sx={{ fontWeight: 'bold', borderRadius: 2 }}
           >
             Yes, Delete
           </Button>
         </DialogActions>
       </Dialog>
-
     </Box>
   );
 }

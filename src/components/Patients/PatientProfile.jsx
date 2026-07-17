@@ -134,8 +134,18 @@ export default function PatientProfile() {
         return { toothStatus: statusMap, toothTooltips: tooltipMap };
     }, [treatmentPlan, patientData]);
 
-    const totalEstimate = treatmentPlan.reduce((sum, item) => sum + Number(item.cost), 0);
-    const proposedItemsCount = treatmentPlan.filter(i => i.status === 'Proposed').length;
+
+    // BUCKET 1: Estimated Cost (Only 'Proposed' items)
+    const estimatedCost = treatmentPlan
+        .filter(item => item.status === 'Proposed')
+        .reduce((sum, item) => sum + Number(item.cost), 0);
+
+    // BUCKET 2: Incurred Cost (Work actually started or finished)
+    const incurredCost = treatmentPlan
+        .filter(item => ['In Progress', 'Completed'].includes(item.status))
+        .reduce((sum, item) => sum + Number(item.cost), 0);
+
+    const proposedItemsCount = treatmentPlan.filter(i => i.status === 'Proposed').length
 
     // --- 3. API HANDLERS ---
     const handleAddTreatment = async () => {
@@ -445,8 +455,8 @@ export default function PatientProfile() {
 
                             <Box sx={{ p: 2, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
                                 <Stack direction="row" justifyContent="space-between" sx={{ mb: 2 }}>
-                                    <Typography variant="body2" color="text.secondary" fontWeight="600">Total Estimate</Typography>
-                                    <Typography variant="h6" fontWeight="900" color={primaryColor}>₹ {totalEstimate.toLocaleString()}</Typography>
+                                    <Typography variant="body2" color="text.secondary" fontWeight="600">Proposed Plan (Quote)</Typography>
+                                    <Typography variant="h6" fontWeight="900" color={primaryColor}>₹ {estimatedCost.toLocaleString()}</Typography>
                                 </Stack>
                                 <Button
                                     fullWidth
@@ -454,7 +464,7 @@ export default function PatientProfile() {
                                     startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : (proposedItemsCount > 0 ? <CheckCircleIcon /> : <PlayArrowIcon />)}
                                     onClick={handleApproveAndStart}
                                     disabled={proposedItemsCount === 0 || submitting}
-                                    sx={{ bgcolor: '#0f172a', py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
+                                    sx={{ bgcolor: primaryColor, py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
                                 >
                                     {submitting ? "Processing..." : (proposedItemsCount > 0 ? `Approve & Start` : 'All Active')}
                                 </Button>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
 	Box, Paper, Typography, Stack, Table, TableBody, TableCell, TableContainer,
 	TableHead, TableRow, Chip, Button, Dialog, DialogTitle, DialogContent,
-	IconButton, CircularProgress, Alert, Divider, Grid, MenuItem, TextField, Avatar
+	IconButton, CircularProgress, Alert, Divider, Grid, MenuItem, TextField, Avatar, TablePagination
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PaidIcon from '@mui/icons-material/Paid';
@@ -12,16 +12,17 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import GroupsIcon from '@mui/icons-material/Groups';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
-import api from '../../api/services/api';
 import AddExpenseModal from '../../pages/modal/AddExpenseModal';
 import { payrollService } from '../../api/services/payrollService';
 import { useColorMode } from '../../context/ThemeContext';
-
+import StaffPayrollDrawer from './StaffPayrollDrawer';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 
 export default function AdminPayrollPage() {
 	const [loading, setLoading] = useState(true);
 	const [data, setData] = useState(null);
-
+	const [drawerOpen, setDrawerOpen] = useState(false);
+	const [selectedStaff, setSelectedStaff] = useState(null);
 	const { primaryColor } = useColorMode();
 
 	const now = new Date();
@@ -33,6 +34,21 @@ export default function AdminPayrollPage() {
 		start: new Date().toISOString().split('T')[0],
 		end: new Date().toISOString().split('T')[0]
 	});
+
+	const [page, setPage] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(10);
+
+	const handleChangePage = (event, newPage) => setPage(newPage);
+	const handleChangeRowsPerPage = (event) => {
+		setRowsPerPage(parseInt(event.target.value, 10));
+		setPage(0);
+	};
+
+	// SLICE DATA FOR PAGINATION
+	const paginatedPayroll = (data?.payroll || []).slice(
+		page * rowsPerPage,
+		page * rowsPerPage + rowsPerPage
+	);
 
 	const [ledgerOpen, setLedgerOpen] = useState(false);
 	const [selectedDoc, setSelectedDoc] = useState(null);
@@ -61,7 +77,6 @@ export default function AdminPayrollPage() {
 			};
 
 			const res = await payrollService.getPayrollReport(params);
-			console.log(res,'+++++++++++')
 			setData(res);
 		} catch (error) {
 			console.error("Failed to load financials", error);
@@ -85,6 +100,11 @@ export default function AdminPayrollPage() {
 			paymentMethod: 'Bank Transfer'
 		});
 		setExpenseModalOpen(true);
+	};
+
+	const handleRowClick = (staff) => {
+		setSelectedStaff(staff);
+		setDrawerOpen(true);
 	};
 
 	if (loading && !data) return <Box sx={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>;
@@ -199,56 +219,55 @@ export default function AdminPayrollPage() {
 			</Grid>
 
 			{/* PAYROLL DETAILS TABLE */}
-			
-			<Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #e2e8f0', overflow: 'hidden', bgcolor: 'white', boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1)' }}>
+			<Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #e2e8f0', overflow: 'hidden', bgcolor: 'white' }}>
 				<TableContainer>
 					<Table sx={{ minWidth: 800 }}>
 						<TableHead>
 							<TableRow sx={{ bgcolor: '#f8fafc' }}>
-								{['STAFF MEMBER', 'ROLE', 'COMPENSATION PLAN', 'REVENUE GENERATED', 'PAYOUT DUE', 'ACTIONS'].map(h => (
-									<TableCell key={h} sx={{ fontWeight: '800', color: '#64748b', fontSize: '0.75rem', letterSpacing: '0.05em', borderBottom: '2px solid #e2e8f0' }}>{h}</TableCell>
+								{['STAFF MEMBER', 'ROLE', 'COMPENSATION', 'REVENUE', 'PAYOUT DUE', 'ACTIONS'].map(h => (
+									<TableCell key={h} sx={{ fontWeight: 800, color: '#64748b', fontSize: '0.7rem', letterSpacing: '0.1em', py: 2 }}>{h}</TableCell>
 								))}
+								<TableCell sx={{ bgcolor: '#f8fafc' }} />
 							</TableRow>
 						</TableHead>
 						<TableBody>
-							{/* ⚡️ Professional Empty State */}
 							{(!data?.payroll || data.payroll.length === 0) ? (
 								<TableRow>
-									<TableCell colSpan={6} align="center" sx={{ py: 8 }}>
-										<Avatar sx={{ width: 64, height: 64, bgcolor: '#f1f5f9', color: '#94a3b8', mx: 'auto', mb: 2 }}>
-											<AssignmentIndIcon fontSize="large" />
-										</Avatar>
-										<Typography variant="subtitle1" fontWeight="700" color="#334155">No active staff found</Typography>
-										<Typography variant="body2" color="text.secondary">Make sure staff are assigned to this branch and have active contracts.</Typography>
+									<TableCell colSpan={7} align="center" sx={{ py: 8 }}>
+										<Typography color="#94a3b8" fontWeight="600">No active staff found.</Typography>
 									</TableCell>
 								</TableRow>
 							) : (
-								data.payroll.map((staff) => (
-									<TableRow key={staff.staffId} hover sx={{ transition: 'background-color 0.2s' }}>
-										<TableCell sx={{ fontWeight: 700, color: '#0f172a', borderBottom: '1px solid #f1f5f9' }}>{staff.name}</TableCell>
-										<TableCell sx={{ borderBottom: '1px solid #f1f5f9' }}>
-											<Chip label={staff.role} size="small" sx={{ bgcolor: staff.role === 'doctor' ? '#e0e7ff' : '#f3e8ff', color: staff.role === 'doctor' ? '#4f46e5' : '#9333ea', fontWeight: 700, fontSize: '0.7rem' }} />
+								// ⚡️ MAP OVER paginatedPayroll INSTEAD OF data.payroll
+								paginatedPayroll.map((staff) => (
+									<TableRow key={staff.staffId} hover onClick={() => handleRowClick(staff)} sx={{ cursor: 'pointer' }}>
+										<TableCell sx={{ py: 2 }}><Typography variant="subtitle2" fontWeight="800" color="#0f172a">{staff.name}</Typography></TableCell>
+										<TableCell>
+											<Chip label={staff.role} size="small" sx={{ bgcolor: staff.role === 'doctor' ? '#e0e7ff' : '#f3e8ff', color: staff.role === 'doctor' ? '#4f46e5' : '#9333ea', fontWeight: 800, fontSize: '0.7rem' }} />
 										</TableCell>
-										<TableCell sx={{ fontWeight: 600, color: '#475569', borderBottom: '1px solid #f1f5f9' }}>
-											<Chip label={staff.compType} size="small" variant="outlined" sx={{ fontWeight: 700, borderRadius: 1.5, borderColor: '#cbd5e1', color: '#475569', fontSize: '0.7rem' }} />
+										<TableCell>
+											<Chip label={staff.compType} size="small" variant="outlined" sx={{ fontWeight: 700, borderColor: '#cbd5e1', color: '#475569', fontSize: '0.7rem' }} />
 										</TableCell>
-										<TableCell sx={{ fontWeight: 600, color: '#64748b', borderBottom: '1px solid #f1f5f9' }}>
+										<TableCell sx={{ fontWeight: 600, color: '#64748b' }}>
 											{staff.revenueGenerated > 0 ? `₹ ${staff.revenueGenerated.toLocaleString()}` : '-'}
 										</TableCell>
-										<TableCell sx={{ fontWeight: 800, color: '#0f172a', fontSize: '1.05rem', borderBottom: '1px solid #f1f5f9' }}>
+										<TableCell sx={{ fontWeight: 800, color: '#0f172a', fontFamily: 'monospace', fontSize: '1rem' }}>
 											₹ {staff.payoutDue.toLocaleString()}
 										</TableCell>
-										<TableCell sx={{ borderBottom: '1px solid #f1f5f9' }}>
-											<Stack direction="row" spacing={1}>
+										<TableCell align="center">
+											<Stack direction="row" spacing={1} >
 												{(staff.role === 'doctor' || staff.totalCommission > 0) && (
-													<Button size="small" variant="outlined" startIcon={<ReceiptLongIcon />} onClick={() => handleOpenLedger(staff)} sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5, color: '#475569', borderColor: '#cbd5e1' }}>
+													<Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); handleOpenLedger(staff); }} sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 1.5 }}>
 														Inspect
 													</Button>
 												)}
-												<Button size="small" variant="contained" startIcon={<PaidIcon />} onClick={() => handlePayStaff(staff)} sx={{ bgcolor: '#10b981', '&:hover': { bgcolor: '#059669' }, textTransform: 'none', fontWeight: 700, borderRadius: 1.5, boxShadow: 'none' }}>
+												<Button size="small" variant="contained" onClick={(e) => { e.stopPropagation(); handlePayStaff(staff); }} sx={{ bgcolor: '#10b981', borderRadius: 1.5, textTransform: 'none', fontWeight: 700 }}>
 													Pay
 												</Button>
 											</Stack>
+										</TableCell>
+										<TableCell align="right" sx={{ color: '#94a3b8' }}>
+											<ChevronRightIcon />
 										</TableCell>
 									</TableRow>
 								))
@@ -256,6 +275,17 @@ export default function AdminPayrollPage() {
 						</TableBody>
 					</Table>
 				</TableContainer>
+
+				{/* ⚡️ PAGINATION COMPONENT */}
+				<TablePagination
+					component="div"
+					count={data?.payroll?.length || 0}
+					page={page}
+					onPageChange={handleChangePage}
+					rowsPerPage={rowsPerPage}
+					onRowsPerPageChange={handleChangeRowsPerPage}
+					rowsPerPageOptions={[5, 10, 25]}
+				/>
 			</Paper>
 
 			{/* DRILL-DOWN LEDGER MODAL */}
@@ -318,6 +348,11 @@ export default function AdminPayrollPage() {
 			</Dialog>
 
 			<AddExpenseModal open={expenseModalOpen} onClose={() => setExpenseModalOpen(false)} initialData={expenseDefaults} onSuccess={loadFinancials} />
+			<StaffPayrollDrawer
+				open={drawerOpen}
+				onClose={() => setDrawerOpen(false)}
+				staffData={selectedStaff} // Passes all the calculated data
+			/>
 		</Box>
 	);
 }

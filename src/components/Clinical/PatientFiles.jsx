@@ -95,7 +95,7 @@ export default function PatientFiles({ patient, onRefresh }) {
 
 			{/* HEADER & UPLOAD BUTTON */}
 			<Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-				<Box>
+				<Box sx={{textAlign:'start'}}>
 					<Typography variant="h6" fontWeight="800" color="#0f172a">Images & Documents</Typography>
 					<Typography variant="body2" color="text.secondary">
 						{images.length} files attached

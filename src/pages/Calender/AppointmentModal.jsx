@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
-  TextField, MenuItem, Stack, Autocomplete, Typography, IconButton, Box, InputAdornment,
+  TextField, MenuItem, Stack, Typography, IconButton, Box, InputAdornment,
   DialogContentText
 } from '@mui/material';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -16,18 +16,18 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { useColorMode } from '../../context/ThemeContext';
-import api from '../../api/services/api'; // ⚡️ IMPORT API
+import api from '../../api/services/api'; 
+import AsyncPatientSelect from '../../components/Patients/AsyncPatientSelect';
 
 export default function AppointmentModal({ open, onClose, initialData, resources, doctors, patients, onSave, onDelete }) {
 
   const { primaryColor } = useColorMode();
 
-  // ⚡️ THE FIX: Safely extract the array whether it's passed directly, or inside a pagination object
-  const safePatients = Array.isArray(patients) ? patients : (patients?.patients || []);
-
-  // --- NEW STATE FOR DYNAMIC PROCEDURES ---
   const [proceduresList, setProceduresList] = useState([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+
+  // ⚡️ NEW STATE: Holds the full object specifically for the Async dropdown visual
+  const [selectedPatientObj, setSelectedPatientObj] = useState(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -35,7 +35,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
     phone: '',
     docId: '',
     docName: '',
-    type: '', // Default to empty until procedures load
+    type: '', 
     date: new Date(),
     startTime: new Date(),
     endTime: new Date(),
@@ -45,7 +45,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
   const selectedDoctor = doctors?.find(d => d._id === formData.docId);
   const doctorPhone = selectedDoctor?.mobile || '';
 
-  // ⚡️ FETCH PROCEDURES ON MOUNT
+  // FETCH PROCEDURES ON MOUNT
   useEffect(() => {
     const fetchProcedures = async () => {
       try {
@@ -53,7 +53,6 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         const activeProcedures = (res.data || []).filter(p => p.isActive !== false);
         setProceduresList(activeProcedures);
 
-        // Auto-select first procedure if this is a new appointment
         if (!initialData?.id && activeProcedures.length > 0 && !formData.type) {
           setFormData(prev => ({ ...prev, type: activeProcedures[0].name }));
         }
@@ -86,16 +85,34 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         phone: initialData.phone || '',
         docId: matchedDocId,
         docName: incomingDocName,
-        type: initialData.type || '', // Wait for procedure list to load or use existing
+        type: initialData.type || '',
         date: initialData.date || initialData.start || new Date(),
         startTime: initialData.startTime || initialData.start || new Date(),
         endTime: initialData.endTime || initialData.end || new Date(),
         resourceId: initialData.resourceId || 1
       });
+
+      // ⚡️ 3. INITIALIZE ASYNC PATIENT DROPDOWN FOR EDIT MODE
+      if (initialData.patientId) {
+        setSelectedPatientObj({
+          _id: initialData.patientId,
+          fullName: initialData.title || initialData.patientName || 'Unknown Patient',
+          mobile: initialData.phone || ''
+        });
+      } else {
+        setSelectedPatientObj(null);
+      }
+
+    } else {
+       // Reset if it's a completely new blank appointment
+       setSelectedPatientObj(null);
     }
   }, [initialData, open, doctors]);
 
-  const handlePatientChange = (event, newValue) => {
+  // ⚡️ UPDATED HANDLER: Keeps both the Dropdown UI and Form Data perfectly synced
+  const handlePatientChange = (newValue) => {
+    setSelectedPatientObj(newValue); // Updates the visual box
+
     if (newValue) {
       setFormData(prev => ({
         ...prev,
@@ -171,15 +188,15 @@ export default function AppointmentModal({ open, onClose, initialData, resources
 
               {/* ROW 1: PATIENT */}
               <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ width: 180 }}>
+                <Box sx={{ width: 220 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PATIENT</Typography>
-                  <Autocomplete
-                    options={safePatients}
-                    getOptionLabel={(option) => option.fullName || ''}
-                    value={safePatients.find(p => p._id === formData.patientId) || null}
-                    onChange={handlePatientChange}
-                    renderInput={(params) => <TextField {...params} placeholder="Select..." fullWidth size="small" />}
+                  
+                  {/* ⚡️ THE NEW ASYNC COMPONENT IN ACTION */}
+                  <AsyncPatientSelect 
+                     value={selectedPatientObj}
+                     onChange={handlePatientChange}
                   />
+
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PATIENT CONTACT</Typography>
@@ -224,7 +241,6 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PROCEDURE TYPE</Typography>
-                  {/* ⚡️ UPDATED TO USE DYNAMIC PROCEDURES LIST */}
                   <TextField select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><MedicalServicesIcon fontSize="small" /></InputAdornment> }}>
                     {proceduresList.length > 0 ? (
                       proceduresList.map(p => <MenuItem key={p._id} value={p.name}>{p.name}</MenuItem>)
@@ -241,12 +257,10 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                   <AccessTimeIcon fontSize="small" /> SCHEDULE
                 </Typography>
 
-                {/* ⚡️ FIX: Stacks vertically on mobile (xs), horizontal on desktop (sm) */}
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                   <Box sx={{ flex: 1, width: '100%' }}>
                     <DatePicker value={formData.date} onChange={(val) => setFormData({ ...formData, date: val })} renderInput={(params) => <TextField {...params} fullWidth size="small" sx={{ bgcolor: 'white' }} />} />
                   </Box>
-                  {/* ⚡️ FIX: Width is 100% on mobile, fixed to 140px on desktop */}
                   <Box sx={{ width: { xs: '100%', sm: 140 } }}>
                     <TimePicker label="Start" value={formData.startTime} onChange={(val) => setFormData({ ...formData, startTime: val })} renderInput={(params) => <TextField {...params} fullWidth size="small" sx={{ bgcolor: 'white' }} />} minutesStep={15} ampm={false} />
                   </Box>
@@ -281,7 +295,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
             <Button
               variant="contained"
               onClick={handleSubmit}
-              disabled={!formData.patientId || !formData.docId}
+              disabled={!formData.patientId || !formData.docId || !formData.type}
               sx={{ fontWeight: 'bold', px: 4, bgcolor: primaryColor, borderRadius: 1.5 }}
             >
               {initialData?.id ? 'Update Schedule' : 'Book Now'}

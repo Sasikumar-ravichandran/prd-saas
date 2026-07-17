@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Button, Paper, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Chip, Avatar, Stack, IconButton, InputBase, Grid,
-  Tabs, Tab, Tooltip, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, 
+  Tabs, Tab, Tooltip, CircularProgress, Alert, Dialog, DialogTitle, DialogContent,
   DialogContentText, DialogActions, TablePagination, MenuItem, Select, FormControl, InputLabel, Divider
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
@@ -18,20 +18,21 @@ import FemaleIcon from '@mui/icons-material/Female';
 import MaleIcon from '@mui/icons-material/Male';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'; 
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import FilterListIcon from '@mui/icons-material/FilterList';
 
 import { useColorMode } from '../../context/ThemeContext';
-import { useToast } from '../../context/ToastContext'; 
+import { useToast } from '../../context/ToastContext';
 import { patientService } from '../../api/services/patientService';
-import api from '../../api/services/api'; 
+import api from '../../api/services/api';
+import { useSearchParams } from 'react-router-dom';
 
 import AddPatientModal from '../../components/Patients/AddPatientModal';
 
 export default function PatientList() {
   const navigate = useNavigate();
   const { primaryColor } = useColorMode();
-  const { showToast } = useToast(); 
+  const { showToast } = useToast();
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState(null);
@@ -39,26 +40,30 @@ export default function PatientList() {
   const [patientToDelete, setPatientToDelete] = useState(null);
 
   const [patients, setPatients] = useState([]);
-  const [doctorsList, setDoctorsList] = useState([]); 
-  
-  const [totalCount, setTotalCount] = useState(0); 
-  const [globalStats, setGlobalStats] = useState({ total: 0, pending: 0 }); 
+  const [doctorsList, setDoctorsList] = useState([]);
+
+  const [totalCount, setTotalCount] = useState(0);
+  const [globalStats, setGlobalStats] = useState({ total: 0, pending: 0 });
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const [tabValue, setTabValue] = useState('all');
-  const [searchInput, setSearchInput] = useState(''); 
-  const [debouncedSearch, setDebouncedSearch] = useState(''); 
   const [doctorFilter, setDoctorFilter] = useState('');
-  
-  const [page, setPage] = useState(0); 
+
+  const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+
+  const [searchInput, setSearchInput] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
 
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const res = await api.get('/users?role=Doctor'); 
+        const res = await api.get('/users?role=Doctor');
         setDoctorsList(res.data || []);
       } catch (err) {
         console.error("Failed to load doctors list", err);
@@ -71,35 +76,46 @@ export default function PatientList() {
     const timer = setTimeout(() => {
       if (searchInput.length >= 3 || searchInput.length === 0) {
         setDebouncedSearch(searchInput);
-        setPage(0); 
+        setPage(0);
       }
     }, 500);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
+  useEffect(() => {
+    const queryFromUrl = searchParams.get('search') || '';
+
+    if (queryFromUrl !== debouncedSearch) {
+      setSearchInput(queryFromUrl);
+      setDebouncedSearch(queryFromUrl);
+      setPage(0); // Reset to the first page (MUI tables use 0-based indexing)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const fetchPatients = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const params = {
-          page: page + 1, 
-          limit: rowsPerPage,
-          search: debouncedSearch,
-          filter: tabValue,
-          doctor: doctorFilter
+        page: page + 1,
+        limit: rowsPerPage,
+        search: debouncedSearch,
+        filter: tabValue,
+        doctor: doctorFilter
       };
 
       const data = await patientService.getAll(params);
-      
+
       setPatients(data.patients || []);
       setTotalCount(data.totalCount || 0);
-      
+
       setGlobalStats({
-          total: data.globalTotal || 0,
-          pending: data.globalPending || 0
+        total: data.globalTotal || 0,
+        pending: data.globalPending || 0
       });
-      
+
     } catch (err) {
       console.error("Failed to fetch patients", err);
       setError("Failed to load patient directory.");
@@ -114,20 +130,20 @@ export default function PatientList() {
   }, [fetchPatients]);
 
   const handlePageChange = (event, newPage) => setPage(newPage);
-  
+
   const handleRowsPerPageChange = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
   const handleTabChange = (event, newValue) => {
-      setTabValue(newValue);
-      setPage(0); 
+    setTabValue(newValue);
+    setPage(0);
   };
 
   const handleDoctorChange = (event) => {
-      setDoctorFilter(event.target.value);
-      setPage(0);
+    setDoctorFilter(event.target.value);
+    setPage(0);
   };
 
   const handleAddNew = () => {
@@ -144,7 +160,7 @@ export default function PatientList() {
   const handleModalSubmit = () => fetchPatients();
 
   const handleDeleteClick = (e, patientId) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     setPatientToDelete(patientId);
     setDeleteDialogOpen(true);
   };
@@ -154,7 +170,7 @@ export default function PatientList() {
     try {
       await patientService.delete(patientToDelete);
       showToast('Patient record deleted successfully', 'success');
-      fetchPatients(); 
+      fetchPatients();
     } catch (err) {
       showToast('Failed to delete patient record', 'error');
     } finally {
@@ -162,6 +178,7 @@ export default function PatientList() {
       setPatientToDelete(null);
     }
   };
+
 
   const handleCancelDelete = () => {
     setDeleteDialogOpen(false);
@@ -186,21 +203,21 @@ export default function PatientList() {
   if (error) return <Box sx={{ p: 5 }}><Alert severity="error">{error}</Alert></Box>;
 
   return (
-    <Box sx={{p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+    <Box sx={{ p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
       {/* 1. HEADER */}
       <Box>
         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
           <Box sx={{ textAlign: 'left' }}>
-            <Typography variant="h5" fontWeight="900" color={primaryColor}  sx={{ letterSpacing: -0.5 }}>Patient Directory</Typography>
+            <Typography variant="h5" fontWeight="900" color={primaryColor} sx={{ letterSpacing: -0.5 }}>Patient Directory</Typography>
             <Typography variant="body2" color="text.secondary" fontWeight="500">Manage your patient records and clinical files</Typography>
           </Box>
           <Stack direction="row" spacing={1.5}>
             {/* ⚡️ HIDDEN TEXT ON MOBILE FOR CLEANER LOOK */}
-            <Button variant="outlined" onClick={fetchPatients} sx={{ bgcolor: 'white', color: '#475569', borderColor: '#cbd5e1', fontWeight: 'bold', minWidth: { xs: 'auto', sm: '100px' }, px: { xs: 1, sm: 2 } }}>
+            {/* <Button variant="outlined" onClick={fetchPatients} sx={{ bgcolor: 'white', color: '#475569', borderColor: '#cbd5e1', fontWeight: 'bold', minWidth: { xs: 'auto', sm: '100px' }, px: { xs: 1, sm: 2 } }}>
                <RefreshIcon sx={{ mr: { xs: 0, sm: 0.5 } }} />
                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Refresh</Box>
-            </Button>
+            </Button> */}
             <Button
               variant="contained"
               onClick={handleAddNew}
@@ -263,8 +280,8 @@ export default function PatientList() {
                 sx={{ borderRadius: 2, bgcolor: '#f8fafc', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#f1f5f9' } }}
               >
                 <MenuItem value=""><em>All Doctors</em></MenuItem>
-                {doctorsList.map(doc => (
-                    <MenuItem key={doc._id} value={doc.fullName}>{doc.fullName}</MenuItem>
+                {doctorsList?.users?.map(doc => (
+                  <MenuItem key={doc._id} value={doc.fullName}>{doc.fullName}</MenuItem>
                 ))}
               </Select>
             </FormControl>
@@ -298,78 +315,78 @@ export default function PatientList() {
             </TableHead>
             <TableBody>
               {loading ? (
-                 <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                        <CircularProgress sx={{ color: primaryColor }} />
-                    </TableCell>
-                 </TableRow>
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                    <CircularProgress sx={{ color: primaryColor }} />
+                  </TableCell>
+                </TableRow>
               ) : patients.length === 0 ? (
-                 <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                        <FilterListIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
-                        <Typography variant="h6" color="#64748b" fontWeight="700">No Patients Found</Typography>
-                        <Typography variant="body2" color="text.secondary">Try adjusting your search or filters.</Typography>
-                    </TableCell>
-                 </TableRow>
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                    <FilterListIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
+                    <Typography variant="h6" color="#64748b" fontWeight="700">No Patients Found</Typography>
+                    <Typography variant="body2" color="text.secondary">Try adjusting your search or filters.</Typography>
+                  </TableCell>
+                </TableRow>
               ) : patients.map((row) => (
-                  <TableRow
-                    key={row._id}
-                    hover
-                    onClick={() => navigate(`/patients/${row.patientId || row._id}`)}
-                    sx={{ cursor: 'pointer', '& td': { borderBottom: '1px solid #f1f5f9' }, '&:hover': { bgcolor: (primaryColor, 0.03) } }}
-                  >
-                    <TableCell sx={{ pl: 3 }}>
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Avatar sx={{ bgcolor: row.gender === 'Female' ? '#fce7f3' : '#e0f2fe', color: row.gender === 'Female' ? '#db2777' : '#0284c7', width: 40, height: 40, fontWeight: 'bold' }}>
-                          {row.fullName.charAt(0)}
-                        </Avatar>
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight="800" color="#0f172a">{row.fullName}</Typography>
-                          <Stack direction="row" alignItems="center" spacing={0.5}>
-                            {row.gender === 'Female' ? <FemaleIcon sx={{ fontSize: 14, color: '#ec4899' }} /> : <MaleIcon sx={{ fontSize: 14, color: primaryColor }} />}
-                            <Typography variant="caption" color="text.secondary" fontWeight="600">{row.age} yrs</Typography>
-                          </Stack>
-                        </Box>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="700" color="#334155">{row.mobile}</Typography>
-                      <Typography variant="caption" color="text.secondary" fontWeight="600">{row.patientId}</Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <CalendarTodayIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
-                        <Typography variant="body2" fontWeight="600" color="#475569">
-                          {new Date(row.updatedAt).toLocaleDateString()}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                       <Chip label={row.assignedDoctor || 'Unassigned'} size="small" sx={{ bgcolor: '#f1f5f9', color: '#475569', fontWeight: '700', borderRadius: 1.5 }} />
-                    </TableCell>
-                    <TableCell>
-                      {getPaymentChip(row.totalCost || 0, row.totalPaid || 0)}
-                    </TableCell>
-                    <TableCell align="right" sx={{ pr: 3 }}>
-                      <Stack direction="row" justifyContent="flex-end" spacing={0.5}>
-                        <Tooltip title="View Profile">
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/patients/${row.patientId || row._id}`) }}>
-                            <VisibilityIcon fontSize="small" sx={{ color: '#94a3b8' }} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit Patient">
-                          <IconButton size="small" onClick={(e) => handleEdit(e, row)}>
-                            <EditIcon sx={{ fontSize: 18, color: '#94a3b8' }} />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete Patient">
-                          <IconButton size="small" onClick={(e) => handleDeleteClick(e, row._id)} sx={{ '&:hover': { color: '#ef4444', bgcolor: '#fee2e2' } }}>
-                            <DeleteOutlineIcon fontSize="small" sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' } }} />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
+                <TableRow
+                  key={row._id}
+                  hover
+                  onClick={() => navigate(`/patients/${row.patientId || row._id}`)}
+                  sx={{ cursor: 'pointer', '& td': { borderBottom: '1px solid #f1f5f9' }, '&:hover': { bgcolor: (primaryColor, 0.03) } }}
+                >
+                  <TableCell sx={{ pl: 3 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Avatar sx={{ bgcolor: row.gender === 'Female' ? '#fce7f3' : '#e0f2fe', color: row.gender === 'Female' ? '#db2777' : '#0284c7', width: 40, height: 40, fontWeight: 'bold' }}>
+                        {row.fullName.charAt(0)}
+                      </Avatar>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight="800" color="#0f172a">{row.fullName}</Typography>
+                        <Stack direction="row" alignItems="center" spacing={0.5}>
+                          {row.gender === 'Female' ? <FemaleIcon sx={{ fontSize: 14, color: '#ec4899' }} /> : <MaleIcon sx={{ fontSize: 14, color: primaryColor }} />}
+                          <Typography variant="caption" color="text.secondary" fontWeight="600">{row.age} yrs</Typography>
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="700" color="#334155">{row.mobile}</Typography>
+                    <Typography variant="caption" color="text.secondary" fontWeight="600">{row.patientId}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CalendarTodayIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                      <Typography variant="body2" fontWeight="600" color="#475569">
+                        {new Date(row.updatedAt).toLocaleDateString()}
+                      </Typography>
+                    </Stack>
+                  </TableCell>
+                  <TableCell>
+                    <Chip label={row.assignedDoctor || 'Unassigned'} size="small" sx={{ bgcolor: '#f1f5f9', color: '#475569', fontWeight: '700', borderRadius: 1.5 }} />
+                  </TableCell>
+                  <TableCell>
+                    {getPaymentChip(row.totalCost || 0, row.totalPaid || 0)}
+                  </TableCell>
+                  <TableCell align="right" sx={{ pr: 3 }}>
+                    <Stack direction="row" justifyContent="flex-end" spacing={0.5}>
+                      <Tooltip title="View Profile">
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/patients/${row.patientId || row._id}`) }}>
+                          <VisibilityIcon fontSize="small" sx={{ color: '#94a3b8' }} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit Patient">
+                        <IconButton size="small" onClick={(e) => handleEdit(e, row)}>
+                          <EditIcon sx={{ fontSize: 18, color: '#94a3b8' }} />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete Patient">
+                        <IconButton size="small" onClick={(e) => handleDeleteClick(e, row._id)} sx={{ '&:hover': { color: '#ef4444', bgcolor: '#fee2e2' } }}>
+                          <DeleteOutlineIcon fontSize="small" sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' } }} />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
               ))}
             </TableBody>
           </Table>
@@ -383,64 +400,64 @@ export default function PatientList() {
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress sx={{ color: primaryColor }} /></Box>
           ) : patients.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 5 }}>
-               <FilterListIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
-               <Typography variant="h6" color="#64748b" fontWeight="700">No Patients Found</Typography>
+              <FilterListIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
+              <Typography variant="h6" color="#64748b" fontWeight="700">No Patients Found</Typography>
             </Box>
           ) : patients.map((row) => (
-             <Paper 
-                key={row._id} 
-                elevation={0} 
-                sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 1.5, cursor: 'pointer' }} 
-                onClick={() => navigate(`/patients/${row.patientId || row._id}`)}
-             >
-                {/* Header Row */}
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                   <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Avatar sx={{ bgcolor: row.gender === 'Female' ? '#fce7f3' : '#e0f2fe', color: row.gender === 'Female' ? '#db2777' : '#0284c7', width: 40, height: 40, fontWeight: 'bold' }}>
-                         {row.fullName.charAt(0)}
-                      </Avatar>
-                      <Box>
-                         <Typography variant="subtitle1" fontWeight="800" color="#0f172a" lineHeight={1.2}>{row.fullName}</Typography>
-                         <Stack direction="row" alignItems="center" spacing={0.5}>
-                            {row.gender === 'Female' ? <FemaleIcon sx={{ fontSize: 14, color: '#ec4899' }} /> : <MaleIcon sx={{ fontSize: 14, color: primaryColor }} />}
-                            <Typography variant="caption" color="text.secondary" fontWeight="600">{row.age} yrs • {row.patientId}</Typography>
-                         </Stack>
-                      </Box>
-                   </Stack>
-                   <Box>
-                      {getPaymentChip(row.totalCost || 0, row.totalPaid || 0)}
-                   </Box>
-                </Stack>
-
-                <Divider sx={{ borderStyle: 'dashed' }} />
-
-                {/* Details Row */}
-                <Grid container spacing={1}>
-                   <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary" display="block" fontWeight="600">Contact</Typography>
-                      <Typography variant="body2" fontWeight="700" color="#334155">{row.mobile}</Typography>
-                   </Grid>
-                   <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary" display="block" fontWeight="600">Doctor</Typography>
-                      <Typography variant="body2" fontWeight="700" color="#334155" noWrap>{row.assignedDoctor || 'Unassigned'}</Typography>
-                   </Grid>
-                </Grid>
-
-                {/* Actions Row */}
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mt={0.5}>
-                    <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                        <CalendarTodayIcon sx={{ fontSize: 14 }}/> Last: {new Date(row.updatedAt).toLocaleDateString()}
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <IconButton size="small" onClick={(e) => handleEdit(e, row)} sx={{ bgcolor: '#f1f5f9' }}>
-                          <EditIcon sx={{ fontSize: 18, color: '#64748b' }} />
-                        </IconButton>
-                        <IconButton size="small" onClick={(e) => handleDeleteClick(e, row._id)} sx={{ bgcolor: '#fee2e2', color: '#ef4444' }}>
-                          <DeleteOutlineIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
+            <Paper
+              key={row._id}
+              elevation={0}
+              sx={{ p: 2, border: '1px solid #e2e8f0', borderRadius: 3, display: 'flex', flexDirection: 'column', gap: 1.5, cursor: 'pointer' }}
+              onClick={() => navigate(`/patients/${row.patientId || row._id}`)}
+            >
+              {/* Header Row */}
+              <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Avatar sx={{ bgcolor: row.gender === 'Female' ? '#fce7f3' : '#e0f2fe', color: row.gender === 'Female' ? '#db2777' : '#0284c7', width: 40, height: 40, fontWeight: 'bold' }}>
+                    {row.fullName.charAt(0)}
+                  </Avatar>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight="800" color="#0f172a" lineHeight={1.2}>{row.fullName}</Typography>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      {row.gender === 'Female' ? <FemaleIcon sx={{ fontSize: 14, color: '#ec4899' }} /> : <MaleIcon sx={{ fontSize: 14, color: primaryColor }} />}
+                      <Typography variant="caption" color="text.secondary" fontWeight="600">{row.age} yrs • {row.patientId}</Typography>
                     </Stack>
+                  </Box>
                 </Stack>
-             </Paper>
+                <Box>
+                  {getPaymentChip(row.totalCost || 0, row.totalPaid || 0)}
+                </Box>
+              </Stack>
+
+              <Divider sx={{ borderStyle: 'dashed' }} />
+
+              {/* Details Row */}
+              <Grid container spacing={1}>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block" fontWeight="600">Contact</Typography>
+                  <Typography variant="body2" fontWeight="700" color="#334155">{row.mobile}</Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="caption" color="text.secondary" display="block" fontWeight="600">Doctor</Typography>
+                  <Typography variant="body2" fontWeight="700" color="#334155" noWrap>{row.assignedDoctor || 'Unassigned'}</Typography>
+                </Grid>
+              </Grid>
+
+              {/* Actions Row */}
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mt={0.5}>
+                <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <CalendarTodayIcon sx={{ fontSize: 14 }} /> Last: {new Date(row.updatedAt).toLocaleDateString()}
+                </Typography>
+                <Stack direction="row" spacing={1}>
+                  <IconButton size="small" onClick={(e) => handleEdit(e, row)} sx={{ bgcolor: '#f1f5f9' }}>
+                    <EditIcon sx={{ fontSize: 18, color: '#64748b' }} />
+                  </IconButton>
+                  <IconButton size="small" onClick={(e) => handleDeleteClick(e, row._id)} sx={{ bgcolor: '#fee2e2', color: '#ef4444' }}>
+                    <DeleteOutlineIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Stack>
+              </Stack>
+            </Paper>
           ))}
         </Box>
 
@@ -459,7 +476,7 @@ export default function PatientList() {
 
       {/* Modals */}
       <AddPatientModal open={openModal} onClose={() => setOpenModal(false)} onSubmit={handleModalSubmit} initialData={selectedPatient} />
-      
+
       <Dialog open={deleteDialogOpen} onClose={handleCancelDelete} PaperProps={{ sx: { borderRadius: 3, p: 1 } }}>
         <DialogTitle sx={{ fontWeight: '800', color: '#1e293b' }}>Delete Patient Record?</DialogTitle>
         <DialogContent>

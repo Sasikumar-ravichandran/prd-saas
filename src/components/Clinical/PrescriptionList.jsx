@@ -73,7 +73,7 @@ export default function PrescriptionList({ patientId }) {
 
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
-        <Box>
+        <Box sx={{textAlign: 'start'}}>
           <Typography variant="h6" fontWeight="800">Prescriptions</Typography>
           <Typography variant="body2" color="text.secondary">Manage medication history for this patient.</Typography>
         </Box>

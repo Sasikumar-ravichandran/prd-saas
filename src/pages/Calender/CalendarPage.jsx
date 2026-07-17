@@ -13,7 +13,8 @@ import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 // Material UI
 import {
   Box, Typography, Button, IconButton, Stack, Tooltip, Zoom,
-  GlobalStyles, Card, CardContent, Avatar, Chip, Fade, useMediaQuery, useTheme, Tabs, Tab
+  GlobalStyles, Card, CardContent, Avatar, Chip, Fade, useMediaQuery, useTheme, Tabs, Tab,
+  CircularProgress // ⚡️ ADDED LOADER IMPORT
 } from '@mui/material';
 
 // Icons
@@ -32,13 +33,13 @@ const localizer = momentLocalizer(moment);
 const DnDCalendar = withDragAndDrop(Calendar);
 
 const EVENT_COLORS = {
-  default: { bg: '#eff6ff', border: '#3b82f6', text: '#1e3a8a' }, // Blue
-  surgery: { bg: '#fef2f2', border: '#ef4444', text: '#7f1d1d' }, // Red
-  checkup: { bg: '#ecfdf5', border: '#10b981', text: '#064e3b' }, // Green
+  default: { bg: '#eff6ff', border: '#3b82f6', text: '#1e3a8a' },
+  surgery: { bg: '#fef2f2', border: '#ef4444', text: '#7f1d1d' },
+  checkup: { bg: '#ecfdf5', border: '#10b981', text: '#064e3b' },
 };
 
-// --- 1. RICH TOOLTIP CARD ---
-const RichTooltip = ({ event }) => (
+// --- 1. RICH TOOLTIP CARD (⚡️ Memoized & Optimized) ---
+const RichTooltip = React.memo(({ event }) => (
   <Card sx={{ minWidth: { xs: 260, sm: 280 }, maxWidth: { xs: 300, sm: 320 }, boxShadow: '0 8px 16px rgba(0,0,0,0.15)', borderRadius: 3 }}>
     <Box sx={{ bgcolor: '#f8fafc', p: { xs: 1.5, sm: 2 }, borderBottom: '1px solid #e2e8f0' }}>
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
@@ -61,10 +62,10 @@ const RichTooltip = ({ event }) => (
         <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><AccessTimeIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
         <Box>
           <Typography variant="body2" fontWeight="600" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            {moment(event.start).format('h:mm A')} - {moment(event.end).format('h:mm A')}
+            {event.formattedTimeRange} {/* ⚡️ Reads pre-calculated string */}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            Duration: {moment(event.end).diff(moment(event.start), 'minutes')} mins
+            Duration: {event.durationMins} mins {/* ⚡️ Reads pre-calculated number */}
           </Typography>
         </Box>
       </Stack>
@@ -87,16 +88,15 @@ const RichTooltip = ({ event }) => (
       </Typography>
     </Box>
   </Card>
-);
+));
 
-// --- 2. MODERN EVENT COMPONENT ---
-const ModernEvent = ({ event }) => {
+// --- 2. MODERN EVENT COMPONENT (⚡️ Memoized & Optimized) ---
+const ModernEvent = React.memo(({ event }) => {
   let style = EVENT_COLORS.default;
   if (event.title.toLowerCase().includes('surgery')) style = EVENT_COLORS.surgery;
   if (event.title.toLowerCase().includes('checkup')) style = EVENT_COLORS.checkup;
 
-  const duration = moment(event.end).diff(moment(event.start), 'minutes');
-  const isCompact = duration <= 30;
+  const isCompact = event.durationMins <= 30; // ⚡️ Uses pre-calculated data
 
   return (
     <Tooltip
@@ -120,14 +120,14 @@ const ModernEvent = ({ event }) => {
         {!isCompact && (
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
             <Typography variant="caption" sx={{ color: style.text, opacity: 0.8, fontWeight: 600, fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
-              {moment(event.start).format('h:mm A')}
+              {event.formattedTime} {/* ⚡️ Reads pre-calculated string */}
             </Typography>
           </Stack>
         )}
       </Box>
     </Tooltip>
   );
-};
+});
 
 // --- MAIN PAGE ---
 export default function CalendarPage() {
@@ -135,6 +135,7 @@ export default function CalendarPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
   
+  const [isLoading, setIsLoading] = useState(true); // ⚡️ NEW LOADING STATE
   const [view, setView] = useState(Views.DAY);
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -152,6 +153,7 @@ export default function CalendarPage() {
   const { primaryColor } = useColorMode();
 
   const fetchAllData = useCallback(async () => {
+    setIsLoading(true); // ⚡️ START LOADING
     try {
       const [patRes, userRes, apptRes, branchRes] = await Promise.all([
         api.get('/patients'),
@@ -161,7 +163,7 @@ export default function CalendarPage() {
       ]);
       
       setPatients(patRes.data);
-      setDoctors(userRes.data.filter(u => u.role === 'Doctor' || u.role === 'doctor'));
+      setDoctors(userRes.data.users.filter(u => u.role === 'Doctor' || u.role === 'doctor'));
 
       const branches = branchRes.data;
       const currentBranch = branches.find(b => b._id === activeBranchId);
@@ -174,19 +176,33 @@ export default function CalendarPage() {
       setResources(dynamicChairs);
 
       const branchEvents = apptRes.data.filter(evt => evt.branchId === activeBranchId);
-      setEvents(branchEvents.map(evt => ({
-        ...evt,
-        id: evt._id,
-        title: evt.title || evt.patientName || 'Appointment',
-        start: new Date(evt.start),
-        end: new Date(evt.end),
-        doc: evt.doctorName,
-        resourceId: evt.resourceId || 1,
-        phone: evt.phone || 'N/A',
-        type: evt.type || 'Consultation'
-      })));
-    } catch (err) { console.error(err); }
-  }, [activeBranchId]);
+      setEvents(branchEvents.map(evt => {
+        const start = new Date(evt.start);
+        const end = new Date(evt.end);
+        
+        // ⚡️ PRE-CALCULATING EXPENSIVE MATH ONCE DURING FETCH
+        return {
+          ...evt,
+          id: evt._id,
+          title: evt.title || evt.patientName || 'Appointment',
+          start,
+          end,
+          doc: evt.doctorName,
+          resourceId: evt.resourceId || 1,
+          phone: evt.phone || 'N/A',
+          type: evt.type || 'Consultation',
+          durationMins: moment(end).diff(moment(start), 'minutes'),
+          formattedTime: moment(start).format('h:mm A'),
+          formattedTimeRange: `${moment(start).format('h:mm A')} - ${moment(end).format('h:mm A')}`
+        };
+      }));
+    } catch (err) { 
+      console.error(err); 
+      showToast('Failed to load data', 'error');
+    } finally {
+      setIsLoading(false); // ⚡️ STOP LOADING
+    }
+  }, [activeBranchId, showToast]);
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
 
@@ -197,7 +213,17 @@ export default function CalendarPage() {
   };
 
   const onEventDrop = useCallback(({ event, start, end, resourceId }) => {
-    const updatedEvent = { ...event, start, end, resourceId };
+    // ⚡️ UPDATE THE PRE-CALCULATED MATH ON DROP
+    const updatedEvent = { 
+      ...event, 
+      start, 
+      end, 
+      resourceId,
+      durationMins: moment(end).diff(moment(start), 'minutes'),
+      formattedTime: moment(start).format('h:mm A'),
+      formattedTimeRange: `${moment(start).format('h:mm A')} - ${moment(end).format('h:mm A')}`
+    };
+    
     setEvents(prev => prev.map(ev => ev.id === event.id ? updatedEvent : ev)); 
 
     api.put(`/appointments/${event.id}`, { start, end, resourceId })
@@ -213,13 +239,13 @@ export default function CalendarPage() {
       const payload = { ...data, branchId: activeBranchId };
       if (selectedSlot?.id) {
         await api.put(`/appointments/${selectedSlot.id}`, payload);
-        setEvents(prev => prev.map(ev => ev.id === selectedSlot.id ? { ...ev, ...payload, start: new Date(payload.start), end: new Date(payload.end) } : ev));
+        fetchAllData(); // Refresh to recalculate math easily
       } else {
         await api.post('/appointments', payload);
         fetchAllData();
       }
       setModalOpen(false); showToast('Saved', 'success');
-    } catch (e) { showToast('Error', 'error'); }
+    } catch (e) { showToast( e || 'Failed to save', 'error'); }
   };
 
   const handleDelete = async (id) => {
@@ -236,22 +262,17 @@ export default function CalendarPage() {
 
   return (
     <Box sx={{
-      // ⚡️ EDGE-TO-EDGE MOBILE FIX:
-      // Negative margins on mobile pull the calendar out of the MainLayout padding,
-      // giving you 100% full screen width edge-to-edge!
       mx: { xs: -2, sm: 0 }, 
       mt: { xs: -2, sm: 0 },
       height: { xs: 'calc(100vh - 70px)', sm: 'calc(100vh - 100px)' },
-      
       display: 'flex', flexDirection: 'column',
       bgcolor: '#fff', 
       borderRadius: { xs: 0, sm: 3 }, 
-      p: { xs: 0, sm: 2 }, // 0 padding on mobile
+      p: { xs: 0, sm: 2 },
       overflow: 'hidden',
       minWidth: 0,
     }}>
 
-      {/* ⚡️ RESPONSIVE GRID STYLES */}
       <GlobalStyles styles={{
         '.rbc-time-content': { overflowY: 'auto !important', scrollbarWidth: 'thin' },
         '.rbc-time-view': { border: 'none !important' },
@@ -272,34 +293,21 @@ export default function CalendarPage() {
         '.rbc-event-label': { display: 'none !important' },
       }} />
 
-      {/* Toolbar - Added padding back in just for the text/buttons on mobile */}
+      {/* Toolbar */}
       <Box sx={{
-        display: 'flex',
-        flexDirection: { xs: 'column', sm: 'column', md: 'row' },
-        justifyContent: 'space-between',
-        alignItems: { xs: 'stretch', md: 'center' },
-        px: { xs: 2, sm: 0 }, // Pad the text so it doesn't touch the edge
-        py: { xs: 1.5, sm: 0 },
-        pb: { sm: 2 },
-        borderBottom: '1px solid #e2e8f0',
-        gap: { xs: 1.5, sm: 2 }
+        display: 'flex', flexDirection: { xs: 'column', sm: 'column', md: 'row' },
+        justifyContent: 'space-between', alignItems: { xs: 'stretch', md: 'center' },
+        px: { xs: 2, sm: 0 }, py: { xs: 1.5, sm: 0 }, pb: { sm: 2 },
+        borderBottom: '1px solid #e2e8f0', gap: { xs: 1.5, sm: 2 }
       }}>
-
-        {/* LEFT SIDE: Navigation & Title */}
-        <Stack 
-          direction={{ xs: 'column', sm: 'row' }} 
-          alignItems={{ xs: 'flex-start', sm: 'center' }} 
-          spacing={{ xs: 1.5, sm: 3 }}
-        >
+        <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={{ xs: 1.5, sm: 3 }}>
           <Stack direction="row" alignItems="center" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-start' } }}>
             <Button
-              onClick={() => setDate(new Date())}
-              variant="outlined"
+              onClick={() => setDate(new Date())} variant="outlined"
               sx={{ color: '#0f172a', borderColor: '#e2e8f0', fontWeight: 'bold', textTransform: 'none', minWidth: 'auto', px: { xs: 1.5, sm: 2 }, py: { xs: 0.5, sm: 0.75 }, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
             >
               Today
             </Button>
-
             <Box sx={{ display: 'flex', bgcolor: '#f1f5f9', borderRadius: 2 }}>
               <IconButton onClick={() => setDate(moment(date).subtract(1, view === Views.MONTH ? 'month' : 'day').toDate())} size="small" sx={{ color: '#475569' }}>
                 <ChevronLeftIcon fontSize="small" />
@@ -310,7 +318,6 @@ export default function CalendarPage() {
               </IconButton>
             </Box>
           </Stack>
-
           <Box>
             <Typography variant="h5" fontWeight="800" sx={{ color: '#0f172a', lineHeight: 1, letterSpacing: '-0.5px', fontSize: { xs: '1.1rem', sm: '1.25rem', md: '1.5rem' } }}>
               {view === Views.DAY ? moment(date).format('MMMM Do') : moment(date).format('MMMM YYYY')}
@@ -322,14 +329,7 @@ export default function CalendarPage() {
             )}
           </Box>
         </Stack>
-
-        {/* RIGHT SIDE: View Switcher & Actions */}
-        <Stack 
-          direction={{ xs: 'row', sm: 'row' }} 
-          alignItems="center" 
-          spacing={{ xs: 1, sm: 2 }}
-          sx={{ justifyContent: { xs: 'space-between', md: 'flex-end' } }}
-        >
+        <Stack direction={{ xs: 'row', sm: 'row' }} alignItems="center" spacing={{ xs: 1, sm: 2 }} sx={{ justifyContent: { xs: 'space-between', md: 'flex-end' } }}>
           <Box sx={{ p: 0.5, bgcolor: '#f1f5f9', borderRadius: 2, display: 'flex' }}>
             <Button
               onClick={() => setView(Views.DAY)}
@@ -352,10 +352,8 @@ export default function CalendarPage() {
               Month
             </Button>
           </Box>
-
           <Button
-            variant="contained"
-            startIcon={!isSmallMobile && <AddIcon />}
+            variant="contained" startIcon={!isSmallMobile && <AddIcon />}
             onClick={() => { setSelectedSlot(null); setModalOpen(true); }}
             sx={{
               bgcolor: primaryColor, borderRadius: 2, textTransform: 'none', fontWeight: 'bold', 
@@ -368,19 +366,14 @@ export default function CalendarPage() {
         </Stack>
       </Box>
 
-      {/* ⚡️ MOBILE CHAIR SWITCHER */}
+      {/* MOBILE CHAIR SWITCHER */}
       {isMobile && view === Views.DAY && resources.length > 0 && (
         <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f8fafc', px: { xs: 2, sm: 0 } }}>
           <Tabs 
             value={selectedMobileChair} 
             onChange={(e, newValue) => setSelectedMobileChair(newValue)}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{
-              minHeight: 40,
-              '& .MuiTab-root': { minHeight: 40, py: 0, textTransform: 'none', fontWeight: '700', fontSize: '0.85rem' },
-              '& .Mui-selected': { color: primaryColor }
-            }}
+            variant="scrollable" scrollButtons="auto"
+            sx={{ minHeight: 40, '& .MuiTab-root': { minHeight: 40, py: 0, textTransform: 'none', fontWeight: '700', fontSize: '0.85rem' }, '& .Mui-selected': { color: primaryColor } }}
           >
             {resources.map(res => (
               <Tab key={res.id} label={res.title} value={res.id} />
@@ -389,8 +382,20 @@ export default function CalendarPage() {
         </Box>
       )}
 
-      {/* Calendar Container - Touches exact edges on mobile */}
-      <Box sx={{ flex: 1, overflow: 'hidden', minHeight: { xs: 400, sm: 500, md: 'auto' } }}>
+      {/* ⚡️ Calendar Container with Loading Overlay */}
+      <Box sx={{ flex: 1, overflow: 'hidden', minHeight: { xs: 400, sm: 500, md: 'auto' }, position: 'relative' }}>
+        
+        {/* ⚡️ THE LOADER OVERLAY */}
+        <Fade in={isLoading} unmountOnExit>
+          <Box sx={{
+            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+            bgcolor: 'rgba(255, 255, 255, 0.7)', zIndex: 10,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <CircularProgress size={40} sx={{ color: primaryColor }} />
+          </Box>
+        </Fade>
+
         <DnDCalendar
           localizer={localizer}
           events={events}
@@ -406,7 +411,7 @@ export default function CalendarPage() {
           resizable={!isMobile} 
           step={15}
           timeslots={4}
-          scrollToTime={new Date(new Date().setHours(8, 0, 0, 0))}
+          scrollToTime={moment().subtract(1, 'hours').toDate()}
           onSelectSlot={handleSelectSlot}
           onSelectEvent={(e) => { setSelectedSlot(e); setModalOpen(true); }}
           onEventDrop={isMobile ? undefined : onEventDrop}
@@ -416,14 +421,9 @@ export default function CalendarPage() {
       </Box>
 
       <AppointmentModal
-        open={modalOpen} 
-        onClose={() => setModalOpen(false)}
-        initialData={selectedSlot} 
-        onSave={handleSave} 
-        onDelete={handleDelete}
-        doctors={doctors} 
-        patients={patients} 
-        resources={resources} 
+        open={modalOpen} onClose={() => setModalOpen(false)}
+        initialData={selectedSlot} onSave={handleSave} onDelete={handleDelete}
+        doctors={doctors} patients={patients} resources={resources} 
       />
     </Box>
   );

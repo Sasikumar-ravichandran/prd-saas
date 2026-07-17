@@ -20,8 +20,9 @@ import MonitorHeartIcon from '@mui/icons-material/MonitorHeart';
 import InsertChartOutlinedIcon from '@mui/icons-material/InsertChartOutlined';
 import SecurityIcon from '@mui/icons-material/Security';
 
-import { useColorMode } from '../context/ThemeContext';
 import { authService } from '../api/services/authService';
+
+const defaultColor = '#1976d2'
 
 // Custom style for premium SaaS inputs
 const premiumInputSx = {
@@ -40,7 +41,6 @@ const premiumInputSx = {
 };
 
 export default function SignupPage() {
-  const { primaryColor } = useColorMode();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -112,11 +112,11 @@ export default function SignupPage() {
           background: `linear-gradient(145deg, #0f172a 0%, #1e293b 100%)`, color: 'white',
           overflow: 'hidden'
         }}>
-          <Box sx={{ position: 'absolute', top: '10%', left: '-10%', width: '60%', height: '60%', background: `radial-gradient(circle, ${primaryColor}35 0%, transparent 60%)`, filter: 'blur(60px)' }} />
+          <Box sx={{ position: 'absolute', top: '10%', left: '-10%', width: '60%', height: '60%', background: `radial-gradient(circle, ${defaultColor}35 0%, transparent 60%)`, filter: 'blur(60px)' }} />
 
           {/* Header / Logo */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, zIndex: 1 }}>
-            <Box sx={{ bgcolor: primaryColor, p: 1.5, borderRadius: 3, display: 'flex', boxShadow: `0 4px 30px ${primaryColor}70` }}>
+            <Box sx={{ bgcolor: defaultColor, p: 1.5, borderRadius: 3, display: 'flex', boxShadow: `0 4px 30px ${defaultColor}70` }}>
               <MedicalServicesIcon sx={{ fontSize: 40, color: 'white' }} />
             </Box>
             <Typography variant="h2" sx={{ fontWeight: 900, letterSpacing: '-2px' }}>
@@ -137,7 +137,7 @@ export default function SignupPage() {
                   transition: 'transform 0.2s', '&:hover': { bgcolor: 'rgba(255,255,255,0.06)', transform: 'translateY(-2px)' }
                 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-                    <Box sx={{ color: primaryColor, display: 'flex' }}>{adv.icon}</Box>
+                    <Box sx={{ color: defaultColor, display: 'flex' }}>{adv.icon}</Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1, color: '#f8fafc' }}>
                       {adv.title}
                     </Typography>
@@ -167,7 +167,7 @@ export default function SignupPage() {
           <Box sx={{ width: '100%', maxWidth: 440, p: { xs: 3, sm: 5 }, my: 'auto' }}>
 
             <Box sx={{ mb: 4 }}>
-              <Typography variant="h4" fontWeight="800" sx={{ mb: 1, color: primaryColor, letterSpacing: '-0.5px' }}>
+              <Typography variant="h4" fontWeight="800" sx={{ mb: 1, color: defaultColor, letterSpacing: '-0.5px' }}>
                 Create Your Workspace
               </Typography>
               <Typography color="text.secondary" fontWeight={500}>
@@ -215,8 +215,8 @@ export default function SignupPage() {
 
               <Button type="submit" fullWidth size="large" variant="contained" disabled={loading} sx={{
                 borderRadius: '12px', py: 1.8, mt: 1, fontSize: '1rem', fontWeight: 700,
-                bgcolor: primaryColor, textTransform: 'none', boxShadow: `0 8px 24px -6px ${primaryColor}`,
-                transition: 'all 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 12px 28px -8px ${primaryColor}` }
+                bgcolor: defaultColor, textTransform: 'none', boxShadow: `0 8px 24px -6px ${defaultColor}`,
+                transition: 'all 0.2s', '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 12px 28px -8px ${defaultColor}` }
               }}>
                 {loading ? <CircularProgress size={24} color="inherit" /> : "Create Clinic Workspace"}
               </Button>

@@ -18,6 +18,10 @@ import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArro
 import LogoutIcon from '@mui/icons-material/Logout';
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 import Inventory2Icon from '@mui/icons-material/Inventory2';
+import CoPresentIcon from '@mui/icons-material/CoPresent';
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
+import ChatIcon from '@mui/icons-material/Chat';
+
 import { logout } from '../../redux/slices/authSlice';
 import { useDispatch } from 'react-redux';
 
@@ -29,11 +33,15 @@ const HEADER_HEIGHT = 74;
 const MENU_ITEMS = [
 	{ text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
 	{ text: 'Calendar', icon: <CalendarMonthIcon />, path: '/calendar' },
+	{ text: 'My Stats', icon: <QueryStatsIcon />, path: '/my-stats' },
+	{ text: 'Messages',icon: <ChatIcon />, path: '/messages' },
 	{ text: 'Patient List', icon: <PeopleIcon />, path: '/patients' },
+	{ text: 'Attendance', icon: <CoPresentIcon />, path: '/attendance' },
 	{ text: 'Payroll & P&L', icon: <PaidIcon />, path: '/payroll', },
-    { text: 'Expense Ledger', icon: <AccountBalanceWalletIcon />, path: '/expenses' },
+	{ text: 'Financial Ledger', icon: <AccountBalanceWalletIcon />, path: '/financial' },
 	{ text: 'Inventory', icon: <Inventory2Icon />, path: '/inventory' },
 	{ text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
+	
 ];
 
 export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, setIsCollapsed }) {
@@ -129,7 +137,23 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 			)}
 
 			{/* 2. NAVIGATION LINKS */}
-			<List sx={{ px: 2, pt: 2, flex: 1 }}>
+			<List sx={{
+				px: 2,
+				pt: 2,
+				flex: 1,
+				overflowY: 'auto',
+				overflowX: 'hidden',
+
+				// ⚡️ FIX 1: SMOOTH SCROLLING ENGINES
+				overscrollBehavior: 'contain', // Stops the main page from scrolling when you reach the bottom of the sidebar
+				WebkitOverflowScrolling: 'touch', // Enables momentum "flick" scrolling on Apple devices/trackpads
+				willChange: 'transform', // Tells the GPU to handle this container, offloading it from the CPU
+
+				// Scrollbar styling (keep your existing ones)
+				'&::-webkit-scrollbar': { width: '4px' },
+				'&::-webkit-scrollbar-thumb': { bgcolor: '#cbd5e1', borderRadius: '4px' },
+				'&::-webkit-scrollbar-track': { bgcolor: 'transparent' }
+			}}>
 				{MENU_ITEMS.map((item) => {
 					const isActive = item.path === '/'
 						? location.pathname === '/'

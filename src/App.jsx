@@ -16,7 +16,10 @@ import SetupBranch from './pages/Onboarding/SetupBranch';
 import ChangePasswordScreen from './pages/Auth/ChangePasswordScreen';
 import InventoryPage from './pages/Inventory/InventoryPage';
 import AdminPayrollPage from './components/Admin/AdminPayrollPage';
-import ExpensesPage from './components/Admin/ExpencesPage';
+import FinancePage from './components/Admin/FinancePage';
+import AttendancePage from './pages/Attendance/AttendancePage';
+import MyStats from './pages/MyStats';
+import Messages from './pages/Messages';
 
 // --- DASHBOARD PAGES ---
 import DashboardRouter from './pages/Dashboard/DashboardRouter';
@@ -70,10 +73,8 @@ function App() {
   return (
     <ThemeWrapper>
       <GlobalStyles styles={{
-        // Removes the default focus outline from ALL buttons and inputs
         ':focus': { outline: 'none !important' },
         'button:focus': { outline: 'none !important' },
-        // Removes the dotted line in Firefox
         'button::-moz-focus-inner': { border: '0 !important' }
       }} />
       <ToastProvider>
@@ -108,12 +109,14 @@ function App() {
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="inventory" element={<InventoryPage />} />
                   <Route path="payroll" element={<AdminPayrollPage />} />
-                  <Route path="expenses" element={<ExpensesPage />} />
+                  <Route path="financial" element={<FinancePage />} />
+                  <Route path="attendance" element={<AttendancePage />} />
+                  <Route path="/my-stats" element={<MyStats />} />
+                  <Route path="/messages" element={<Messages />} />
                 </Route>
               </Route>
             </Route>
 
-            {/* --- CATCH ALL --- */}
             <Route path="*" element={<Navigate to="/" replace />} />
 
           </Routes>

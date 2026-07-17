@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Checkbox, Typography, Box, Stack, TextField, Chip, Divider, Paper
+  Checkbox, Typography, Box, Stack, TextField, Chip, Divider, Paper, IconButton
 } from '@mui/material';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
+import CloseIcon from '@mui/icons-material/Close';
 
 // ⚡️ IMPORT SERVICES INSTEAD OF API
 import { patientService } from '../../api/services/patientService';
@@ -19,7 +20,7 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
   const [discount, setDiscount] = useState(0);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
-  
+
   const { showToast } = useToast();
   const { primaryColor } = useColorMode();
 
@@ -34,7 +35,7 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
             t => t.status === 'Completed' && !t.billed
           );
           setTreatments(unbilled);
-          
+
           // ⚡️ UX FIX: Automatically check all boxes so the total isn't 0!
           setSelectedItems(unbilled.map(t => t._id));
         })
@@ -84,7 +85,7 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
     try {
       const payload = {
         patientId,
-        doctorId, 
+        doctorId,
         items: selectedTreatments.map(t => ({
           treatmentId: t._id,
           procedureName: t.procedure,
@@ -97,11 +98,11 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
 
       // ⚡️ REPLACED api.post WITH invoiceService
       await invoiceService.create(payload);
-      
+
       showToast('Invoice generated successfully!', 'success');
-      onSuccess(); 
-      onClose();   
-      
+      onSuccess();
+      onClose();
+
     } catch (error) {
       console.error("Invoice Error:", error);
       showToast('Failed to generate invoice', 'error');
@@ -112,24 +113,31 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, borderBottom: '1px solid #f1f5f9' }}>
-        <ReceiptLongIcon sx={{ color: primaryColor }} />
-        <Typography variant="h6" fontWeight="800">Generate Invoice</Typography>
-      </DialogTitle>
+      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', px: 3, py: 2 }}>
+        {/* LEFT: Icon and Title */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ReceiptLongIcon sx={{ color: primaryColor }} />
+          <Typography variant="h6" fontWeight="800">Generate Invoice</Typography>
+        </Box>
 
+        {/* RIGHT: Close Icon */}
+        <IconButton onClick={onClose} size="small" sx={{ color: '#94a3b8', '&:hover': { color: '#0f172a' } }}>
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
       <DialogContent sx={{ minHeight: 400, p: 0 }}>
         <Stack direction="row" sx={{ height: '100%' }}>
-          
+
           {/* LEFT: Treatment Selection List */}
           <Box sx={{ flex: 2, p: 2, borderRight: '1px solid #f1f5f9' }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 2, textTransform: 'uppercase', letterSpacing: 0.5 }}>
               Select Completed Treatments
             </Typography>
-            
+
             {treatments.length === 0 ? (
-               <Box sx={{ p: 4, textAlign: 'center', bgcolor: '#f8fafc', borderRadius: 2, border: '1px dashed #e2e8f0' }}>
-                 <Typography color="text.secondary">No unbilled treatments found.</Typography>
-               </Box>
+              <Box sx={{ p: 4, textAlign: 'center', bgcolor: '#f8fafc', borderRadius: 2, border: '1px dashed #e2e8f0' }}>
+                <Typography color="text.secondary">No unbilled treatments found.</Typography>
+              </Box>
             ) : (
               <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid #e2e8f0' }}>
                 <Table size="small">
@@ -144,10 +152,10 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
                     {treatments.map((row) => {
                       const isSelected = selectedItems.indexOf(row._id) !== -1;
                       return (
-                        <TableRow 
-                          hover 
-                          key={row._id} 
-                          role="checkbox" 
+                        <TableRow
+                          hover
+                          key={row._id}
+                          role="checkbox"
                           selected={isSelected}
                           onClick={() => handleSelect(row._id)}
                           sx={{ cursor: 'pointer' }}
@@ -174,18 +182,18 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
           {/* RIGHT: Invoice Summary Panel */}
           <Box sx={{ flex: 1, p: 3, bgcolor: '#fbfcfd' }}>
             <Typography variant="subtitle1" fontWeight="800" gutterBottom>Summary</Typography>
-            
+
             <Stack spacing={2} sx={{ mt: 2 }}>
               <Stack direction="row" justifyContent="space-between">
                 <Typography color="text.secondary">Subtotal ({selectedItems.length} items):</Typography>
                 <Typography fontWeight="600">₹{subTotal}</Typography>
               </Stack>
 
-              <TextField 
-                label="Discount Amount" 
-                size="small" 
-                type="number" 
-                value={discount} 
+              <TextField
+                label="Discount Amount"
+                size="small"
+                type="number"
+                value={discount}
                 onChange={(e) => setDiscount(e.target.value)}
                 InputProps={{ startAdornment: <Typography color="text.secondary" mr={1}>₹</Typography> }}
               />
@@ -212,9 +220,9 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
 
       <DialogActions sx={{ p: 2, borderTop: '1px solid #f1f5f9' }}>
         <Button onClick={onClose} disabled={loading} color="inherit">Cancel</Button>
-        <Button 
-          variant="contained" 
-          onClick={handleCreateInvoice} 
+        <Button
+          variant="contained"
+          onClick={handleCreateInvoice}
           disabled={loading || selectedItems.length === 0}
           sx={{ bgcolor: primaryColor, px: 4, fontWeight: 'bold' }}
         >
