@@ -13,9 +13,8 @@ export const attendanceService = {
 		const response = await api.get('/attendance/monthly', { params: { month, year } });
 		return response.data; // Should return an array of all attendance records for that month
 	},
-	saveMonthlyBulk: async (records) => {
-		// records is a flat array of { userId, date, status, notes }
-		const response = await api.post('/attendance/monthly-bulk', { records });
-		return response.data;
-	}
+	saveMonthlyBulk: async (payload) => {
+        const response = await api.post('/attendance/monthly-bulk', payload);
+        return response.data;
+    }
 };
