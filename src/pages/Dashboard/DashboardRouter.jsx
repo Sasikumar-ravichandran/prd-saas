@@ -18,8 +18,7 @@ export default function DashboardRouter() {
   }
 
   // Safely check the role (handling case sensitivity just in case)
-  // const USER_ROLE = user.role ? user.role.toLowerCase() : '';
-  const USER_ROLE = 'doctor';
+  const USER_ROLE = user.role ? user.role.toLowerCase() : '';
 
   // Logic to switch views
   const renderDashboard = () => {
