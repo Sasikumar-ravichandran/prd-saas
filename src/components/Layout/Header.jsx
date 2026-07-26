@@ -4,7 +4,7 @@ import {
   Typography, Avatar, Stack, Tooltip, Badge, Divider, alpha, ListItemIcon,
   Collapse, Paper, List, ListItem, ListItemText, Chip, CircularProgress
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useColorMode } from '../../context/ThemeContext';
 import { switchBranch, logout } from '../../redux/slices/authSlice';
@@ -26,7 +26,6 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 import CloseIcon from '@mui/icons-material/Close';
-import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import io from 'socket.io-client';
 import api from '../../api/services/api';
@@ -39,6 +38,7 @@ const HEADER_HEIGHT = 70;
 
 export default function Header({ isCollapsed, handleDrawerToggle }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { primaryColor } = useColorMode();
   const searchInputRef = useRef(null);
@@ -69,7 +69,6 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
   useEffect(() => {
     if (!loggedInUser || loggedInUser._id === 'REPLACE_ME') return;
 
-    // 1. Fetch initial unread count from the database
     const fetchUnreadCount = async () => {
       try {
         const { data } = await api.get('/messages/unread-count');
@@ -80,18 +79,15 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     };
     fetchUnreadCount();
 
-    // 2. Connect Header to Socket.io to listen for live updates
     const socket = io(ENDPOINT);
     socket.emit("setup", loggedInUser);
 
-    // 3. If a new message arrives and we are NOT on the messages page, bump the counter
-    socket.on("message recieved", (newMessageRecieved) => {
+    socket.on("message recieved", () => {
       if (location.pathname !== '/messages') {
         setUnreadCount(prev => prev + 1);
       }
     });
 
-    // 4. If we mark messages as read inside the Messages app, refresh the count
     socket.on("messages read", () => {
       fetchUnreadCount();
     });
@@ -105,13 +101,10 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
   const fetchSearchResults = useCallback(async (query) => {
     try {
       const [patientsRes, usersRes] = await Promise.all([
-        // ⚡️ UPDATED: Uses your patientService
         patientService.getAll({ search: query, limit: 5 }),
-        // ⚡️ UPDATED: Uses your userService and passes the role parameter
         userService.getAll({ search: query, role: 'Doctor', limit: 5 }),
       ]);
 
-      // ⚡️ UPDATED: Matches the response structure of your services (.patients and .users)
       const patients = patientsRes?.patients || [];
       const doctors = usersRes?.users || [];
 
@@ -143,7 +136,6 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     }, 300);
   }, [fetchSearchResults]);
 
-  // flat list for keyboard nav
   const allResults = [
     ...searchResults.patients.map(p => ({ type: 'patient', data: p })),
     ...searchResults.doctors.map(d => ({ type: 'doctor', data: d })),
@@ -153,17 +145,47 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     setSearchOpen(false);
     setSearchQuery('');
     setSearchResults({ patients: [], doctors: [] });
+    setMobileSearchOpen(false);
+    searchInputRef.current?.blur(); // Removes focus
 
     if (result.type === 'patient') {
-      // patient → go to patients list page filtered by id
-      navigate(`/patients?search=${encodeURIComponent(result.data.fullName)}`);
+      navigate(`/patients?search=${encodeURIComponent(result.data.fullName || result.data.name)}`);
     } else if (result.type === 'doctor') {
-      // doctor → go to user management page filtered by name
       navigate(`/settings?tab=users&search=${encodeURIComponent(result.data.name)}`);
     }
   }, [navigate]);
 
+  const handleItemSelect = (e, type, data) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    handleResultClick({ type, data });
+  };
+
+  // ⚡️ THE NUCLEAR KEYDOWN HANDLER
   const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();    // Stop standard behavior
+      e.stopPropagation(); 
+      if (activeIndex >= 0 && allResults[activeIndex]) {
+        handleResultClick(allResults[activeIndex]);
+      } else if (searchResults.patients?.length > 0) {
+        handleResultClick({ type: 'patient', data: searchResults.patients[0] });
+      } else if (searchResults.doctors?.length > 0) {
+        handleResultClick({ type: 'doctor', data: searchResults.doctors[0] });
+      } else if (searchQuery.trim()) {
+        navigate(`/patients?search=${encodeURIComponent(searchQuery.trim())}`);
+        setSearchOpen(false);
+        setSearchQuery('');
+        searchInputRef.current?.blur();
+      } else {
+        setSearchOpen(false);
+        searchInputRef.current?.blur();
+      }
+      return;
+    }
+
     if (!searchOpen) return;
 
     if (e.key === 'ArrowDown') {
@@ -172,23 +194,13 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setActiveIndex(prev => Math.max(prev - 1, 0));
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      if (activeIndex >= 0 && allResults[activeIndex]) {
-        handleResultClick(allResults[activeIndex]);
-      } else if (searchQuery.trim()) {
-        navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-        setSearchOpen(false);
-        setSearchQuery('');
-      }
     } else if (e.key === 'Escape') {
       setSearchOpen(false);
       setSearchQuery('');
       searchInputRef.current?.blur();
     }
-  }, [searchOpen, activeIndex, allResults, searchQuery, handleResultClick, navigate]);
+  }, [searchOpen, activeIndex, allResults, searchResults, searchQuery, handleResultClick, navigate]);
 
-  // close on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (searchBoxRef.current && !searchBoxRef.current.contains(e.target)) {
@@ -199,20 +211,18 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // ─── Cmd+K shortcut ───────────────────────────────────────────
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleCmdK = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setMobileSearchOpen(true);
         setTimeout(() => searchInputRef.current?.focus(), 100);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleCmdK);
+    return () => window.removeEventListener('keydown', handleCmdK);
   }, []);
 
-  // ─── Other handlers ───────────────────────────────────────────
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
@@ -226,11 +236,8 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
 
   const safeUser = user || { fullName: 'Guest', name: 'Guest', role: 'Staff' };
   const displayName = safeUser.fullName || safeUser.name;
+  const getInitials = (name) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
 
-  const getInitials = (name) =>
-    name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'U';
-
-  // ─── Highlight matching text ──────────────────────────────────
   const highlightMatch = (text, query) => {
     if (!text || !query) return text;
     const idx = text.toLowerCase().indexOf(query.toLowerCase());
@@ -335,29 +342,37 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
           </Menu>
         </Box>
 
-        {/* ── CENTER SEARCH ── */}
+        {/* ── CENTER SEARCH (DESKTOP) ── */}
         <Box
           ref={searchBoxRef}
           sx={{ display: { xs: 'none', md: 'flex' }, justifyContent: 'center', flex: 1.5, position: 'relative' }}
         >
-          <Box sx={{
-            width: '100%', maxWidth: 420, height: 40,
-            bgcolor: '#f1f5f9', borderRadius: '10px',
-            display: 'flex', alignItems: 'center', px: 1.5,
-            border: '1px solid transparent', transition: 'all 0.2s ease',
-            '&:hover': { bgcolor: '#e2e8f0' },
-            '&:focus-within': {
-              bgcolor: 'white', border: `1px solid ${primaryColor}`,
-              boxShadow: `0 0 0 3px ${alpha(primaryColor, 0.15)}`,
-              '&:hover': { bgcolor: 'white' },
-            },
-          }}>
+          <Box
+            sx={{
+              width: '100%', maxWidth: 420, height: 40,
+              bgcolor: '#f1f5f9', borderRadius: '10px',
+              display: 'flex', alignItems: 'center', px: 1.5,
+              border: '1px solid transparent', transition: 'all 0.2s ease',
+              '&:hover': { bgcolor: '#e2e8f0' },
+              '&:focus-within': {
+                bgcolor: 'white', border: `1px solid ${primaryColor}`,
+                boxShadow: `0 0 0 3px ${alpha(primaryColor, 0.15)}`,
+                '&:hover': { bgcolor: 'white' },
+              },
+            }}
+          >
             <SearchIcon sx={{ color: '#64748b', mr: 1, fontSize: 18 }} />
             <InputBase
               inputRef={searchInputRef}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+                handleKeyDown(e);
+              }}
               onFocus={() => { if (searchQuery.trim()) setSearchOpen(true); }}
               placeholder="Search patients, doctors..."
               fullWidth
@@ -389,14 +404,12 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                 overflow: 'hidden', maxHeight: 420, overflowY: 'auto',
               }}
             >
-              {/* Loading */}
               {searchLoading && (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
                   <CircularProgress size={22} sx={{ color: primaryColor }} />
                 </Box>
               )}
 
-              {/* No results */}
               {!searchLoading && allResults.length === 0 && (
                 <Box sx={{ p: 3, textAlign: 'center' }}>
                   <SearchIcon sx={{ color: '#cbd5e1', fontSize: 32, mb: 1 }} />
@@ -406,7 +419,6 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                 </Box>
               )}
 
-              {/* Patients section */}
               {!searchLoading && searchResults.patients.length > 0 && (
                 <>
                   <Typography variant="caption" sx={{
@@ -420,7 +432,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                       <ListItem
                         key={patient._id}
                         button
-                        onClick={() => handleResultClick({ type: 'patient', data: patient })}
+                        onMouseDown={(e) => handleItemSelect(e, 'patient', patient)}
                         sx={{
                           px: 2, py: 1, cursor: 'pointer',
                           bgcolor: activeIndex === i ? '#f1f5f9' : 'transparent',
@@ -429,8 +441,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                       >
                         <ListItemIcon sx={{ minWidth: 42 }}>
                           <Avatar sx={{
-                            width: 34, height: 34,
-                            bgcolor: alpha(primaryColor, 0.1),
+                            width: 34, height: 34, bgcolor: alpha(primaryColor, 0.1),
                             color: primaryColor, fontSize: 13, fontWeight: 700,
                           }}>
                             {(patient.fullName || patient.name || 'P').charAt(0).toUpperCase()}
@@ -443,8 +454,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                           secondaryTypographyProps={{ fontSize: '0.73rem', color: '#64748b' }}
                         />
                         <Chip
-                          label="Patient"
-                          size="small"
+                          label="Patient" size="small"
                           sx={{
                             bgcolor: alpha(primaryColor, 0.08), color: primaryColor,
                             fontWeight: 700, fontSize: '0.68rem', height: 22, ml: 1,
@@ -456,12 +466,10 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                 </>
               )}
 
-              {/* Divider between sections */}
               {!searchLoading && searchResults.patients.length > 0 && searchResults.doctors.length > 0 && (
                 <Divider sx={{ my: 0.5 }} />
               )}
 
-              {/* Doctors section */}
               {!searchLoading && searchResults.doctors.length > 0 && (
                 <>
                   <Typography variant="caption" sx={{
@@ -477,7 +485,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                         <ListItem
                           key={doctor._id}
                           button
-                          onClick={() => handleResultClick({ type: 'doctor', data: doctor })}
+                          onMouseDown={(e) => handleItemSelect(e, 'doctor', doctor)}
                           sx={{
                             px: 2, py: 1, cursor: 'pointer',
                             bgcolor: activeIndex === globalIndex ? '#f1f5f9' : 'transparent',
@@ -486,8 +494,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                         >
                           <ListItemIcon sx={{ minWidth: 42 }}>
                             <Avatar sx={{
-                              width: 34, height: 34,
-                              bgcolor: '#dcfce7', color: '#166534',
+                              width: 34, height: 34, bgcolor: '#dcfce7', color: '#166534',
                               fontSize: 13, fontWeight: 700,
                             }}>
                               {(doctor.fullName || doctor.name || 'D').charAt(0).toUpperCase()}
@@ -500,8 +507,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                             secondaryTypographyProps={{ fontSize: '0.73rem', color: '#64748b' }}
                           />
                           <Chip
-                            label="Doctor"
-                            size="small"
+                            label="Doctor" size="small"
                             sx={{
                               bgcolor: '#dcfce7', color: '#166534',
                               fontWeight: 700, fontSize: '0.68rem', height: 22, ml: 1,
@@ -512,27 +518,6 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                     })}
                   </List>
                 </>
-              )}
-
-              {/* Footer keyboard hints */}
-              {!searchLoading && allResults.length > 0 && (
-                <Box sx={{
-                  px: 2, py: 1, borderTop: '1px solid #f1f5f9',
-                  display: 'flex', gap: 2, bgcolor: '#f8fafc', alignItems: 'center',
-                }}>
-                  {[['↑↓', 'navigate'], ['↵', 'open'], ['esc', 'close']].map(([key, label]) => (
-                    <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Box sx={{
-                        border: '1px solid #cbd5e1', borderRadius: '4px',
-                        px: 0.8, py: 0.2, bgcolor: 'white',
-                        fontSize: '11px', fontWeight: 700, color: '#64748b',
-                      }}>
-                        {key}
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">{label}</Typography>
-                    </Box>
-                  ))}
-                </Box>
               )}
             </Paper>
           )}
@@ -557,7 +542,6 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
             </Badge>
           </IconButton>
 
-          {/* Quick Add */}
           <Tooltip title="Quick Actions">
             <IconButton
               onClick={(e) => setQuickAddAnchor(e.currentTarget)}
@@ -612,7 +596,6 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
 
           <Divider orientation="vertical" flexItem sx={{ height: 24, alignSelf: 'center', mx: { xs: 0, sm: 0.5 } }} />
 
-          {/* User profile */}
           <Button
             onClick={(e) => setUserAnchor(e.currentTarget)}
             sx={{
@@ -669,27 +652,34 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
       {/* ── MOBILE SEARCH BAR ── */}
       <Collapse in={mobileSearchOpen} timeout="auto" unmountOnExit sx={{ display: { md: 'none' } }}>
         <Box sx={{ p: 1.5, bgcolor: 'white', borderTop: '1px solid #e2e8f0' }}>
-          <Box sx={{
-            display: 'flex', alignItems: 'center', bgcolor: '#f1f5f9',
-            borderRadius: '10px', px: 1.5, height: 44, border: '1px solid #e2e8f0',
-            '&:focus-within': {
-              borderColor: primaryColor, bgcolor: 'white',
-              boxShadow: `0 0 0 3px ${alpha(primaryColor, 0.15)}`,
-            },
-          }}>
+          <Box
+            sx={{
+              display: 'flex', alignItems: 'center', bgcolor: '#f1f5f9',
+              borderRadius: '10px', px: 1.5, height: 44, border: '1px solid #e2e8f0',
+              '&:focus-within': {
+                borderColor: primaryColor, bgcolor: 'white',
+                boxShadow: `0 0 0 3px ${alpha(primaryColor, 0.15)}`,
+              },
+            }}
+          >
             <SearchIcon sx={{ color: '#64748b', fontSize: 20, mr: 1 }} />
             <InputBase
               inputRef={searchInputRef}
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Search patients, doctors... (Enter)"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+                handleKeyDown(e);
+              }}
+              placeholder="Search patients, doctors..."
               fullWidth
               sx={{ fontSize: '0.95rem' }}
             />
           </Box>
 
-          {/* Mobile dropdown */}
           {searchOpen && (
             <Paper
               elevation={4}
@@ -715,7 +705,12 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                   </Typography>
                   <List disablePadding>
                     {searchResults.patients.map((patient) => (
-                      <ListItem key={patient._id} button onClick={() => { handleResultClick({ type: 'patient', data: patient }); setMobileSearchOpen(false); }} sx={{ px: 2, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}>
+                      <ListItem
+                        key={patient._id}
+                        button
+                        onMouseDown={(e) => handleItemSelect(e, 'patient', patient)}
+                        sx={{ px: 2, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
+                      >
                         <ListItemIcon sx={{ minWidth: 40 }}>
                           <Avatar sx={{ width: 32, height: 32, bgcolor: alpha(primaryColor, 0.1), color: primaryColor, fontSize: 12 }}>
                             {(patient.fullName || patient.name || 'P').charAt(0).toUpperCase()}
@@ -741,7 +736,12 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
                   </Typography>
                   <List disablePadding>
                     {searchResults.doctors.map((doctor) => (
-                      <ListItem key={doctor._id} button onClick={() => { handleResultClick({ type: 'doctor', data: doctor }); setMobileSearchOpen(false); }} sx={{ px: 2, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}>
+                      <ListItem
+                        key={doctor._id}
+                        button
+                        onMouseDown={(e) => handleItemSelect(e, 'doctor', doctor)}
+                        sx={{ px: 2, py: 1, '&:hover': { bgcolor: '#f8fafc' } }}
+                      >
                         <ListItemIcon sx={{ minWidth: 40 }}>
                           <Avatar sx={{ width: 32, height: 32, bgcolor: '#dcfce7', color: '#166534', fontSize: 12 }}>
                             {(doctor.fullName || doctor.name || 'D').charAt(0).toUpperCase()}
