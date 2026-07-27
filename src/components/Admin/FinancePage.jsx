@@ -4,7 +4,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, CircularProgress, IconButton, Dialog, DialogTitle,
   DialogContent, DialogActions, ToggleButtonGroup, ToggleButton,
-  TablePagination
+  TablePagination, Grid
 } from '@mui/material';
 import { useColorMode } from '../../context/ThemeContext';
 import { financialService } from '../../api/services/financialService';
@@ -81,22 +81,42 @@ export default function FinancialLedgerPage() {
     <Box sx={{ p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
       {/* HEADER */}
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems="center" mb={2}>
+      <Stack direction="row"
+        justifyContent="space-between" 
+        alignItems="center" 
+        mb={2}
+      >
         <Box sx={{ textAlign: 'start' }}>
           <Typography variant="h5" fontWeight="800" color={primaryColor}>Financial Ledger</Typography>
           <Typography variant="body2" color="#64748b" fontWeight="600">Unified cash flow statement.</Typography>
         </Box>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setExpenseToEdit(null); setModalOpen(true); }} sx={{ bgcolor: primaryColor, borderRadius: 2, px: 3 }}>
+        <Button 
+          variant="contained" 
+          startIcon={<AddIcon />} 
+          onClick={() => { setExpenseToEdit(null); setModalOpen(true); }} 
+          sx={{ bgcolor: primaryColor, borderRadius: 2, px: { xs: 2, sm: 3 } }}
+        >
           Add Expense
         </Button>
       </Stack>
 
       {/* METRIC CARDS */}
-      <Stack direction={{ xs: 'column', lg: 'row' }} spacing={3} mb={1}>
+      <Box 
+        sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: { xs: '1fr 1fr', lg: 'repeat(3, 1fr)' }, 
+          gap: 2, 
+          mb: 1 
+        }}
+      >
         <MetricCard label="TOTAL INCOME" value={data.metrics.totalIncome} icon={<TrendingUpIcon />} color="#10b981" />
+        
         <MetricCard label="TOTAL EXPENSE" value={data.metrics.totalExpense} icon={<TrendingDownIcon />} color="#dc2626" />
-        <MetricCard label="NET PROFIT" value={data.metrics.netProfit} icon={<SavingsIcon />} color={primaryColor} />
-      </Stack>
+        
+        <Box sx={{ gridColumn: { xs: 'span 2', lg: 'span 1' } }}>
+          <MetricCard label="NET PROFIT" value={data.metrics.netProfit} icon={<SavingsIcon />} color={primaryColor} />
+        </Box>
+      </Box>
 
       {/* FILTER BAR */}
       <Paper elevation={0} sx={{ p: 2, borderRadius: 3, border: '1px solid #e2e8f0', display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>

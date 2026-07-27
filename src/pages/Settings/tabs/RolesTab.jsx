@@ -114,7 +114,7 @@ export default function RolesTab() {
             color={saved ? "success" : "primary"}
             sx={{ bgcolor: saved ? 'success.main' : primaryColor, transition: 'all 0.3s' }}
           >
-            {saved ? 'Saved!' : (saving ? 'Saving...' : 'Save Changes')}
+            {saved ? 'Saved!' : (saving ? 'Saving...' : 'Save')}
           </Button>
         }
       />

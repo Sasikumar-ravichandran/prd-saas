@@ -184,7 +184,7 @@ export default function UserProfileTab() {
                 startIcon={savingProfile ? <CircularProgress size={16} color="inherit" /> : <SaveIcon fontSize="small" />}
                 sx={{ bgcolor: primaryColor, fontWeight: '700', textTransform: 'none', borderRadius: 1.5, px: 3 }}
               >
-                {savingProfile ? "Saving..." : "Save Changes"}
+                {savingProfile ? "Saving..." : "Save"}
               </Button>
             </Box>
           </form>

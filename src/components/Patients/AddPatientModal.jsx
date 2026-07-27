@@ -493,7 +493,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
             variant="contained" size="large" disableElevation startIcon={<SaveIcon />}
             sx={{ px: 4, borderRadius: 2, fontWeight: 'bold' }}
           >
-            {initialData ? 'Save Changes' : 'Register Patient'}
+            {initialData ? 'Save' : 'Register Patient'}
           </Button>
         )}
       </DialogActions>

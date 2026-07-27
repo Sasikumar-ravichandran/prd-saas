@@ -218,7 +218,7 @@ export default function ClinicProfileTab() {
               disabled={saving}
               sx={{ bgcolor: primaryColor, fontWeight: 'bold' }}
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Saving..." : "Save"}
             </Button>
           }
         />

@@ -44,12 +44,18 @@ export default function MainLayout() {
             xs: '100%',
             md: `calc(100% - ${isCollapsed ? COLLAPSED_WIDTH : DRAWER_WIDTH}px)`
           },
-          mt: `${HEADER_HEIGHT}px`,
 
-          // ⚡️ FIX 1: Constrain height to exact remaining viewport space
-          height: `calc(100vh - ${HEADER_HEIGHT}px)`,
+          mt: { 
+            xs: `${HEADER_HEIGHT + 24}px`, 
+            md: `${HEADER_HEIGHT}px` 
+          },
 
-          // ⚡️ FIX 2: Tell this specific box to handle vertical scrolling
+          // ⚡️ ONLY AFFECTS MOBILE: Uses dynamic height (100dvh) for real phones, keeps standard 100vh for desktop.
+          height: { 
+            xs: `calc(100dvh - ${HEADER_HEIGHT + 24}px)`, 
+            md: `calc(100vh - ${HEADER_HEIGHT}px)` 
+          },
+          
           overflowY: 'auto',
           overflowX: 'hidden',
 

@@ -248,7 +248,7 @@ export default function AttendancePage() {
                         disabled={saving || roster.length === 0}
                         sx={{ bgcolor: primaryColor, px: 3, borderRadius: 2, fontWeight: 700 }}
                     >
-                        {saving ? 'Saving...' : 'Save Roster'}
+                        {saving ? 'Saving...' : 'Save'}
                     </Button>
                 </Box>
 
