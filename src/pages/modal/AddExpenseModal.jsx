@@ -17,7 +17,7 @@ export default function AddExpenseModal({ open, onClose, onSuccess, expenseToEdi
   const categories = ['Office Supplies', 'Rent', 'Utilities', 'Salaries', 'Marketing', 'Dental Materials', 'Maintenance', 'Other'];
   const methods = ['Cash', 'UPI', 'Bank Transfer', 'Card'];
 
-  // ⚡️ Pre-fill form if editing
+  //  Pre-fill form if editing
   useEffect(() => {
     if (expenseToEdit) {
       setFormData({

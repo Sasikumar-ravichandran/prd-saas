@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-// ⚡️ Categories List (Matches your Backend Enum)
+//  Categories List (Matches your Backend Enum)
 const CATEGORIES = [
   'General', 'Consultation', 'Endodontics', 'Orthodontics', 'Surgery', 'Prosthetics', 'Pediatrics'
 ];
@@ -18,7 +18,7 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
     name: '', 
     category: 'General', // Default
     price: '', 
-    labCost: '', // ⚡️ NEW: Critical for Net Revenue
+    labCost: '', //  NEW: Critical for Net Revenue
     active: true
   });
 
@@ -133,7 +133,7 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
                 />
               </Grid>
               
-              {/* ⚡️ NEW: Lab Cost Field */}
+              {/*  NEW: Lab Cost Field */}
               <Grid item xs={6}>
                 <TextField 
                     fullWidth 

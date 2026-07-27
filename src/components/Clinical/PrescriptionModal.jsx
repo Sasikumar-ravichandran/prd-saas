@@ -19,7 +19,7 @@ export default function PrescriptionModal({ open, onClose, patientId, onSuccess,
    const { showToast } = useToast();
    const { primaryColor } = useColorMode();
 
-   // ⚡️ Load drug catalog AND handle Edit Data Population
+   //  Load drug catalog AND handle Edit Data Population
    useEffect(() => {
       if (open) {
          // Fetch drugs
@@ -98,7 +98,7 @@ export default function PrescriptionModal({ open, onClose, patientId, onSuccess,
             notes: notes.trim(),
          };
 
-         // ⚡️ SWITCH BETWEEN POST AND PUT
+         //  SWITCH BETWEEN POST AND PUT
          if (editData) {
             await api.put(`/prescriptions/${editData._id}`, payload);
             showToast('Prescription updated!', 'success');

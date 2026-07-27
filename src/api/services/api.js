@@ -38,10 +38,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       
-      // ⚡️ FIXED: Check if this error came from the login route
+      //  FIXED: Check if this error came from the login route
       const isLoginRequest = error.config?.url?.includes('/auth/login');
       
-      // ⚡️ Only redirect and wipe data if it is NOT a login attempt
+      //  Only redirect and wipe data if it is NOT a login attempt
       if (!isLoginRequest) {
         // Token expired or invalid during normal app usage
         localStorage.removeItem('user');

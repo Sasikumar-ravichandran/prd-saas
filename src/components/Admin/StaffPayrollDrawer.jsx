@@ -132,7 +132,7 @@ export default function StaffPayrollDrawer({ open, onClose, staffData }) {
           )
         ) : (
           
-          /* ⚡️ THE FIXED COMPREHENSIVE ATTENDANCE DASHBOARD */
+          /*  THE FIXED COMPREHENSIVE ATTENDANCE DASHBOARD */
           <Box sx={{ p: 3, bgcolor: '#f8fafc', borderRadius: 2, border: '1px solid #e2e8f0' }}>
             <Typography variant="subtitle1" fontWeight="800" color="#0f172a" mb={2}>Attendance Breakdown</Typography>
             

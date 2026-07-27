@@ -23,7 +23,7 @@ import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
 
 import moment from 'moment';
 import { useToast } from '../../context/ToastContext';
-import { clinicalNoteService } from '../../api/services/clinicalNoteService'; // ⚡️ Import Service
+import { clinicalNoteService } from '../../api/services/clinicalNoteService'; //  Import Service
 import { useColorMode } from '../../context/ThemeContext';
 
 // --- 1. MEDICAL ALERTS CARD (Connected) ---

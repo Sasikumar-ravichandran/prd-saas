@@ -124,7 +124,7 @@ export default function ClinicProfileTab() {
       // Pull current typed values directly from the form state
       const currentConfig = getValues("whatsappConfig");
 
-      // ⚡️ FIXED: Using the service instead of direct API call
+      //  FIXED: Using the service instead of direct API call
       await whatsappService.testConnection({
         ...currentConfig,
         testPhoneNumber: testPhone
@@ -264,7 +264,7 @@ export default function ClinicProfileTab() {
 
         <Divider sx={{ my: 4 }} />
 
-        {/* ⚡️ WHATSAPP AUTOMATION SECTION */}
+        {/*  WHATSAPP AUTOMATION SECTION */}
         <Box sx={{ mb: 3, }}>
           <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
             <WhatsAppIcon sx={{ color: '#25D366' }} /> WhatsApp Automation

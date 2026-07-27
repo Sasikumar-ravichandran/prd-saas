@@ -383,7 +383,7 @@ export default function ReceptionistDashboard() {
               </Box>
               <Box sx={{ flex: 1, bgcolor: '#f8fafc', p: 1.5, borderRadius: 2, border: '1px solid #f1f5f9' }}>
                 <Typography variant="caption" color="#64748b" fontWeight="600" display="block">UPI/Online</Typography>
-                {/* ⚡️ BUG FIX: Changed 'upi' to 'online' based on your backend response */}
+                {/*  BUG FIX: Changed 'upi' to 'online' based on your backend response */}
                 <Typography variant="body1" fontWeight="700" color="#0f172a">₹ {cashDrawer?.online?.toLocaleString() || 0}</Typography>
               </Box>
             </Stack>

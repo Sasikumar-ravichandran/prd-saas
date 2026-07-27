@@ -19,7 +19,7 @@ const SidebarTab = ({ icon, label, primaryColor, ...props }) => (
       minHeight: { xs: 40, md: 50 }, 
       px: { xs: 2.5, md: 3 }, 
       
-      // ⚡️ FIX 1: Removed `mx` (margins) because it breaks MUI's scroll calculator!
+      //  FIX 1: Removed `mx` (margins) because it breaks MUI's scroll calculator!
       my: { xs: 1, md: 0 }, 
       
       fontWeight: '700', 
@@ -29,7 +29,7 @@ const SidebarTab = ({ icon, label, primaryColor, ...props }) => (
       color: '#64748b',
       transition: 'all 0.2s ease',
       
-      // ⚡️ FIX 2: Strip MUI's default chunky widths
+      //  FIX 2: Strip MUI's default chunky widths
       minWidth: 0, 
 
       borderRadius: { xs: '24px', md: '0px' },
@@ -59,7 +59,7 @@ export default function SettingsSidebar({ tab, setTab }) {
     <Box sx={{ 
       width: { xs: '100%', md: 280 }, 
       
-      // ⚡️ FIX 3: Triple-lock the container to prevent screen blowout
+      //  FIX 3: Triple-lock the container to prevent screen blowout
       maxWidth: '100%', 
       overflow: 'hidden', 
       
@@ -87,12 +87,12 @@ export default function SettingsSidebar({ tab, setTab }) {
         TabIndicatorProps={{ style: { display: 'none' } }} 
         sx={{ 
           flex: 1,
-          maxWidth: '100%', // ⚡️ Lock the Tabs component width
+          maxWidth: '100%', //  Lock the Tabs component width
           minHeight: { xs: 56, md: 'auto' }, 
           '& .MuiTabs-flexContainer': {
             alignItems: { xs: 'center', md: 'stretch' },
             
-            // ⚡️ FIX 4: Use 'gap' instead of margin to space the pills safely!
+            //  FIX 4: Use 'gap' instead of margin to space the pills safely!
             gap: { xs: 1, md: 0 }, 
             px: { xs: 1.5, md: 0 } 
           }

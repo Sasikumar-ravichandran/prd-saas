@@ -53,8 +53,8 @@ const RequireBranch = () => {
 };
 
 function App() {
-  const dispatch = useDispatch(); // ⚡️ 4. Initialize Dispatch
-  const { user } = useSelector((state) => state.auth); // ⚡️ 5. Get current user
+  const dispatch = useDispatch(); //  4. Initialize Dispatch
+  const { user } = useSelector((state) => state.auth); //  5. Get current user
 
   const userId = user?._id;
 

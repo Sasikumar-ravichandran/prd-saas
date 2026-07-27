@@ -28,7 +28,7 @@ export const invoiceService = {
 
   // 5. Void an invoice (if a mistake was made)
   void: async (id) => {
-    // ⚡️ Notice it is a PUT request!
+    //  Notice it is a PUT request!
     const response = await api.put(`/invoices/${id}/void`);
     return response.data;
   }

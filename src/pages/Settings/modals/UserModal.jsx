@@ -4,7 +4,7 @@ import {
   TextField, Grid, MenuItem, Typography, Box, InputAdornment, Divider, IconButton
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
-import CloseIcon from '@mui/icons-material/Close'; // ⚡️ Add this
+import CloseIcon from '@mui/icons-material/Close'; //  Add this
 
 export default function UserModal({ open, onClose, onSave, user, branches, primaryColor }) {
 
@@ -12,7 +12,7 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
   const { register, handleSubmit, reset, watch, setValue } = useForm();
 
   const handleFormSubmit = (data) => {
-    // ⚡️ Create a bulletproof payload that satisfies both 'name' and 'fullName' expectations
+    //  Create a bulletproof payload that satisfies both 'name' and 'fullName' expectations
     const payload = {
       ...data,
       fullName: data.name, // Ensure fullName is sent if backend expects it
@@ -41,7 +41,7 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
           status: user.status || 'Active',
           defaultBranch: branchId,
 
-          // ⚡️ NEW: Universal Payroll Settings
+          //  NEW: Universal Payroll Settings
           baseSalary: user.baseSalary || 0,
           commissionRate: user.commissionRate || 0,
 
@@ -77,7 +77,7 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
         <DialogTitle sx={{
           fontWeight: '800', px: 3, pt: 3,
           borderBottom: '1px solid #e2e8f0', pb: 2,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center' // ⚡️ Added flexbox
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center' //  Added flexbox
         }}>
           {user ? 'Edit Staff Member' : 'Register New Staff'}
           <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
@@ -163,7 +163,7 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
               </Stack>
             </Grid>
 
-            {/* ⚡️⚡️ UNIVERSAL COMPENSATION SETTINGS ⚡️⚡️ */}
+            {/*  UNIVERSAL COMPENSATION SETTINGS  */}
             <Grid item xs={12}>
               <Divider sx={{ my: 1 }}>
                 <Typography variant="caption" color="text.secondary" fontWeight="700">COMPENSATION & PAYROLL</Typography>
@@ -203,7 +203,7 @@ export default function UserModal({ open, onClose, onSave, user, branches, prima
               </Grid>
             </Grid>
 
-            {/* ⚡️⚡️ CONDITIONAL DOCTOR CLINICAL SETTINGS ⚡️⚡️ */}
+            {/*  CONDITIONAL DOCTOR CLINICAL SETTINGS  */}
             {watchRole === 'Doctor' && (
               <Grid item xs={12}>
                 <Divider sx={{ mb: 1 }}>

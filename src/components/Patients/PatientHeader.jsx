@@ -28,7 +28,7 @@ const DataField = ({ label, value, icon, color = 'text.primary' }) => (
   </Box>
 );
 
-// ⚡️ ADDED NEW PROPS: pendingDues, lastVisit, nextAppointment, onBillClick, onHistoryClick
+//  ADDED NEW PROPS: pendingDues, lastVisit, nextAppointment, onBillClick, onHistoryClick
 export default function PatientHeader({ patient, pendingDues, lastVisit, nextAppointment, onEdit, onBillClick, onHistoryClick }) {
   const { primaryColor } = useColorMode();
   const GenderIcon = patient.gender === 'Male' ? MaleIcon : FemaleIcon;
@@ -92,11 +92,11 @@ export default function PatientHeader({ patient, pendingDues, lastVisit, nextApp
                  <DataField label="Blood Group" value={patient.bloodGroup || 'Unknown'} />
               </Grid>
               <Grid item xs={6}>
-                 {/* ⚡️ FIXED: Using dynamic lastVisit prop */}
+                 {/*  FIXED: Using dynamic lastVisit prop */}
                  <DataField label="Last Visit" value={formatDate(lastVisit)} icon={<CalendarTodayIcon sx={{ fontSize: 14 }} />} />
               </Grid>
               <Grid item xs={6}>
-                 {/* ⚡️ FIXED: Using dynamic nextAppointment prop */}
+                 {/*  FIXED: Using dynamic nextAppointment prop */}
                  <DataField label="Next Appointment" value={nextAppointment ? formatDate(nextAppointment) : "Not Scheduled"} color={nextAppointment ? primaryColor : "text.secondary"} />
               </Grid>
            </Grid>
@@ -125,20 +125,20 @@ export default function PatientHeader({ patient, pendingDues, lastVisit, nextApp
         {/* COL 4: ACTIONS & FINANCE (20%) */}
         <Grid item xs={12} md={3} sx={{ p: 2.5, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {/* ⚡️ FIXED: Using calculated pendingDues */}
+              {/*  FIXED: Using calculated pendingDues */}
               <DataField 
                 label="Pending Dues" 
                 value={`₹ ${(pendingDues || 0).toLocaleString()}`} 
                 color={pendingDues > 0 ? '#c2410c' : 'success.main'} 
                 icon={<WalletIcon sx={{ fontSize: 16, color: pendingDues > 0 ? '#ea580c' : 'green' }} />} 
               />
-              {/* ⚡️ WIRED: History button */}
+              {/*  WIRED: History button */}
               <Button size="small" variant="text" onClick={onHistoryClick} sx={{ fontWeight: 'bold' }}>History</Button>
            </Box>
 
            <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
               <Button fullWidth variant="outlined" startIcon={<PrintIcon />} sx={{ borderColor: '#cbd5e1', color: '#475569', fontWeight: 700 }}>Print</Button>
-              {/* ⚡️ WIRED: Bill button */}
+              {/*  WIRED: Bill button */}
               <Button fullWidth variant="contained" onClick={onBillClick} sx={{ bgcolor: primaryColor, fontWeight: 700 }}>Bill</Button>
            </Stack>
         </Grid>

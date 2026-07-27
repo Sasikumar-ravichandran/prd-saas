@@ -18,7 +18,7 @@ export const ThemeWrapper = ({ children }) => {
   const [clinicLogo, setClinicLogo] = useState(DEFAULT_LOGO);
   const [isBrandingLoaded, setIsBrandingLoaded] = useState(false);
 
-  // ⚡️ 1. MOVE THE FUNCTION OUTSIDE useEffect
+  //  1. MOVE THE FUNCTION OUTSIDE useEffect
   const loadBranding = async () => {
     const storedUser = localStorage.getItem('user');
     const user = storedUser ? JSON.parse(storedUser) : null;
@@ -38,7 +38,7 @@ export const ThemeWrapper = ({ children }) => {
     setIsBrandingLoaded(true);
   };
 
-  // ⚡️ 2. CALL IT ON MOUNT
+  //  2. CALL IT ON MOUNT
   useEffect(() => {
     loadBranding();
   }, []);
@@ -49,7 +49,7 @@ export const ThemeWrapper = ({ children }) => {
     setClinicLogo, 
     setClinicName,
     
-    // ⚡️ 3. EXPOSE THE FUNCTION TO THE REST OF THE APP
+    //  3. EXPOSE THE FUNCTION TO THE REST OF THE APP
     loadBranding, 
 
     primaryColor,

@@ -37,7 +37,7 @@ export default function SettingsPage() {
 
   return (
     <Box sx={{ 
-      // ⚡️ FIX 1: The "Edge-to-Edge" Math
+      //  FIX 1: The "Edge-to-Edge" Math
       // Pull the page out of the MainLayout padding on mobile only
       width: 'auto',
       // mx: { xs: -2, md: 0 }, 
@@ -47,7 +47,7 @@ export default function SettingsPage() {
       display: 'flex', 
       flexDirection: 'column',
       
-      // ⚡️ FIX 2: Stop internal tabs from blowing out the width
+      //  FIX 2: Stop internal tabs from blowing out the width
       minWidth: 0,
       overflowX: 'hidden'
     }}>
@@ -70,7 +70,7 @@ export default function SettingsPage() {
         <Box sx={{ 
           flex: 1, 
           overflowY: 'auto', 
-          overflowX: 'hidden', // ⚡️ Protects against wide content inside tabs
+          overflowX: 'hidden', //  Protects against wide content inside tabs
           bgcolor: '#fff', 
           p: { xs: 2, md: 4 },
           minWidth: 0 

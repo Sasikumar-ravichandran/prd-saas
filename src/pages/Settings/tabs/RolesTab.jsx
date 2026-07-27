@@ -82,7 +82,7 @@ export default function RolesTab() {
     try {
       setSaving(true);
       await settingService.updateRole(activeRole, rolePermissions?.[activeRole]);
-      showToast("Permissions saved successfully!", "success"); // ⚡️ ADD TOAST
+      showToast("Permissions saved successfully!", "success"); //  ADD TOAST
     } catch (error) {
       showToast(error || "Failed to save changes", "error");
     } finally {

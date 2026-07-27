@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
 	Box, Button, Typography, Grid, Card, CardMedia, CardContent,
 	IconButton, Dialog, CircularProgress, Chip, Stack, Paper,
-	DialogTitle, DialogContent, DialogContentText, DialogActions // ⚡️ Added imports
+	DialogTitle, DialogContent, DialogContentText, DialogActions //  Added imports
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -19,7 +19,7 @@ export default function PatientFiles({ patient, onRefresh }) {
 	const [uploading, setUploading] = useState(false);
 	const [previewImage, setPreviewImage] = useState(null); // For Lightbox
 
-	// ⚡️ State for Delete Confirmation Modal
+	//  State for Delete Confirmation Modal
 	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 	const [fileToDelete, setFileToDelete] = useState(null);
 
@@ -144,7 +144,7 @@ export default function PatientFiles({ patient, onRefresh }) {
 											<IconButton size="small" onClick={() => setPreviewImage(getFileUrl(filePath))}>
 												<VisibilityIcon fontSize="small" sx={{ color: '#94a3b8' }} />
 											</IconButton>
-											{/* ⚡️ Use requestDelete here */}
+											{/*  Use requestDelete here */}
 											<IconButton size="small" onClick={() => requestDelete(filePath)} sx={{ ml: 1 }}>
 												<DeleteOutlineIcon fontSize="small" color="error" />
 											</IconButton>
@@ -157,7 +157,7 @@ export default function PatientFiles({ patient, onRefresh }) {
 				</Grid>
 			)}
 
-			{/* ⚡️ DELETE CONFIRMATION DIALOG ⚡️ */}
+			{/*  DELETE CONFIRMATION DIALOG  */}
 			<Dialog
 				open={deleteDialogOpen}
 				onClose={() => setDeleteDialogOpen(false)}
@@ -200,7 +200,7 @@ export default function PatientFiles({ patient, onRefresh }) {
 
 					{previewImage && (
 						<Box sx={{
-							bgcolor: '#fff', // ⚡️ White background for transparent PNGs/SVGs
+							bgcolor: '#fff', //  White background for transparent PNGs/SVGs
 							borderRadius: 2,
 							p: 1, // Slight padding
 							boxShadow: '0 20px 50px rgba(0,0,0,0.5)',

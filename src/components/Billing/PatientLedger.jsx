@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
     Paper, Chip, IconButton, Tooltip, Typography, Box, Button,
-    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions // ⚡️ Added Dialog imports
+    Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions //  Added Dialog imports
 } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -14,7 +14,7 @@ export default function PatientLedger({ patient, onCollectPayment, onRefresh }) 
     const { showToast } = useToast();
     const invoices = patient?.invoices || [];
 
-    // ⚡️ State for our custom confirmation modal
+    //  State for our custom confirmation modal
     const [confirmOpen, setConfirmOpen] = useState(false);
     const [invoiceToVoid, setInvoiceToVoid] = useState(null);
     const [isVoiding, setIsVoiding] = useState(false);
@@ -27,13 +27,13 @@ export default function PatientLedger({ patient, onCollectPayment, onRefresh }) 
         return 'error'; // Unpaid
     };
 
-    // ⚡️ 1. Open the modal instead of the browser alert
+    //  1. Open the modal instead of the browser alert
     const handleVoidClick = (invoiceId) => {
         setInvoiceToVoid(invoiceId);
         setConfirmOpen(true);
     };
 
-    // ⚡️ 2. Execute the void action when they click "Confirm" in the modal
+    //  2. Execute the void action when they click "Confirm" in the modal
     const executeVoid = async () => {
         if (!invoiceToVoid) return;
 
@@ -115,7 +115,7 @@ export default function PatientLedger({ patient, onCollectPayment, onRefresh }) 
 
                                     {invoice.status === 'Unpaid' && (
                                         <Tooltip title="Void Invoice">
-                                            {/* ⚡️ Triggers the custom modal */}
+                                            {/*  Triggers the custom modal */}
                                             <IconButton size="small" color="error" onClick={() => handleVoidClick(invoice._id)}>
                                                 <DeleteOutlineIcon fontSize="small" />
                                             </IconButton>
@@ -128,7 +128,7 @@ export default function PatientLedger({ patient, onCollectPayment, onRefresh }) 
                 </Table>
             </TableContainer>
 
-            {/* ⚡️ CUSTOM CONFIRMATION MODAL */}
+            {/*  CUSTOM CONFIRMATION MODAL */}
             <Dialog
                 open={confirmOpen}
                 onClose={() => !isVoiding && setConfirmOpen(false)}

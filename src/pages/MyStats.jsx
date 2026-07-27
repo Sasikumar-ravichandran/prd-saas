@@ -47,7 +47,7 @@ export default function MyStats() {
 
     const isDoctor = stats.role === 'Doctor' || stats.role === 'doctor';
 
-    // ⚡️ Build the KPI array exactly like your Financial Dashboard
+    //  Build the KPI array exactly like your Financial Dashboard
     const kpiData = [
         {
             label: 'TOTAL PAYOUT',
@@ -148,7 +148,7 @@ export default function MyStats() {
             {/* DETAILED SECTIONS */}
             <Grid container spacing={3}>
 
-                {/* ⚡️ FIX: Updated to use 'size' prop. Takes 4 cols for Doctors, 12 cols for Receptionists */}
+                {/*  FIX: Updated to use 'size' prop. Takes 4 cols for Doctors, 12 cols for Receptionists */}
                 <Grid size={{ xs: 12, md: isDoctor ? 4 : 12 }}>
                     <Paper elevation={0} sx={{ p: 3, borderRadius: 2, border: '1px solid #e2e8f0', mb: 3 }}>
                         <Typography variant="subtitle2" fontWeight="800" color="#64748b" sx={{ letterSpacing: '0.05em' }} mb={3}>
@@ -205,7 +205,7 @@ export default function MyStats() {
 
                 {/* RIGHT COLUMN: Doctor Analytics */}
                 {isDoctor && (
-                    // ⚡️ FIX: Updated to use 'size' prop (Takes the remaining 8 cols to equal 12)
+                    //  FIX: Updated to use 'size' prop (Takes the remaining 8 cols to equal 12)
                     <Grid size={{ xs: 12, md: 8 }}>
                         <Paper elevation={0} sx={{ p: 3, borderRadius: 2, border: '1px solid #e2e8f0', mb: 3 }}>
                             <Typography variant="subtitle2" fontWeight="800" color="#64748b" sx={{ letterSpacing: '0.05em' }} mb={3}>

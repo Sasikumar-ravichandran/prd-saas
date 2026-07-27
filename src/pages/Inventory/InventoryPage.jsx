@@ -19,7 +19,7 @@ import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import MoreVertIcon from '@mui/icons-material/MoreVert'; // ⚡️ The "3 Dots" Icon
+import MoreVertIcon from '@mui/icons-material/MoreVert'; //  The "3 Dots" Icon
 
 import { useColorMode } from '../../context/ThemeContext';
 import { inventoryService } from '../../api/services/inventoryService';
@@ -49,7 +49,7 @@ const StatCard = ({ title, value, icon, color }) => (
 	</Paper>
 );
 
-// --- ⚡️ NEW: ACTION MENU COMPONENT ⚡️ ---
+// ---  NEW: ACTION MENU COMPONENT  ---
 const ActionMenu = ({ row, onAction }) => {
 	const [anchorEl, setAnchorEl] = useState(null);
 	const open = Boolean(anchorEl);
@@ -133,7 +133,7 @@ export default function InventoryPage() {
 	const fetchInventory = async () => {
 		setLoading(true);
 		try {
-			// ⚡️ Changed from api.get
+			//  Changed from api.get
 			const data = await inventoryService.getAll();
 			setInventory(data);
 		} catch (error) {
@@ -163,7 +163,7 @@ export default function InventoryPage() {
 	const handleDelete = async () => {
 		if (!selectedItem) return;
 		try {
-			// ⚡️ Changed from api.delete
+			//  Changed from api.delete
 			await inventoryService.delete(selectedItem._id);
 			setInventory(prev => prev.filter(i => i._id !== selectedItem._id));
 			setOpenDeleteModal(false);
@@ -177,12 +177,12 @@ export default function InventoryPage() {
 	const handleSave = async (formData) => {
         try {
             if (formMode === 'edit') {
-                // ⚡️ FIXED: Replaced api.put with inventoryService.update
+                //  FIXED: Replaced api.put with inventoryService.update
                 const updatedItem = await inventoryService.update(selectedItem._id, formData);
                 setInventory(prev => prev.map(i => i._id === selectedItem._id ? updatedItem : i));
                 showToast('Updated successfully', 'success');
             } else {
-                // ⚡️ FIXED: Replaced api.post with inventoryService.add
+                //  FIXED: Replaced api.post with inventoryService.add
                 const newItem = await inventoryService.add(formData);
                 if (formMode === 'create') setInventory(prev => [...prev, newItem]);
                 else fetchInventory();
@@ -197,7 +197,7 @@ export default function InventoryPage() {
     const handleConsume = async (qty, reason) => {
         if (!selectedItem) return;
         try {
-            // ⚡️ FIXED: Replaced api.post with inventoryService.consume
+            //  FIXED: Replaced api.post with inventoryService.consume
             const updatedItem = await inventoryService.consume(selectedItem._id, { quantity: qty, reason });
             setInventory(prev => prev.map(i => i._id === selectedItem._id ? updatedItem : i));
             setOpenConsumeModal(false);
@@ -270,7 +270,7 @@ export default function InventoryPage() {
 			field: 'actions', headerName: 'ACTIONS', width: 80, sortable: false, align: 'center',
 			renderCell: (params) => (
 				<Box display="flex" alignItems="center" justifyContent="center" height="100%">
-					{/* ⚡️ USE THE NEW MENU COMPONENT ⚡️ */}
+					{/*  USE THE NEW MENU COMPONENT  */}
 					<ActionMenu row={params.row} onAction={handleMenuAction} />
 				</Box>
 			)

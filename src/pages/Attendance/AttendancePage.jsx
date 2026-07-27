@@ -83,7 +83,7 @@ export default function AttendancePage() {
         if (selectedMonth) loadRealData();
     }, [selectedMonth]);
 
-    // ⚡️ MENU LOGIC
+    //  MENU LOGIC
     const openMenu = (event, userId, date) => {
         setMenuAnchor(event.currentTarget);
         setActiveCell({ userId, date });
@@ -160,7 +160,7 @@ export default function AttendancePage() {
                 });
             });
 
-            // ⚡️ FIX: Extract the year and month from the state variable
+            //  FIX: Extract the year and month from the state variable
             const [year, month] = selectedMonth.split('-');
 
             const payload = {
@@ -207,7 +207,7 @@ export default function AttendancePage() {
                 </Paper>
             </Stack>
 
-            {/* ⚡️ THE VISUAL LEGEND */}
+            {/*  THE VISUAL LEGEND */}
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ gap: 1 }}>
                 <Chip size="small" label="P = Present" sx={{ bgcolor: '#bbf7d0', color: '#166534', fontWeight: 700, borderRadius: 1 }} />
                 <Chip size="small" label="A = Absent" sx={{ bgcolor: '#fecaca', color: '#991b1b', fontWeight: 700, borderRadius: 1 }} />
@@ -228,7 +228,7 @@ export default function AttendancePage() {
                         Mark Unmarked as Present
                     </Button>
 
-                    {/* ⚡️ THIS BUTTON APPEARS ONLY AFTER AN ACTION */}
+                    {/*  THIS BUTTON APPEARS ONLY AFTER AN ACTION */}
                     {backupRoster && (
                         <Button
                             size="small"
@@ -324,7 +324,7 @@ export default function AttendancePage() {
                 )}
             </Paper>
 
-            {/* ⚡️ THE CONTEXT MENU THAT APPEARS WHEN CLICKING A CELL */}
+            {/*  THE CONTEXT MENU THAT APPEARS WHEN CLICKING A CELL */}
             <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={closeMenu} PaperProps={{ sx: { width: 200, borderRadius: 2, mt: 1 } }}>
                 <MenuItem onClick={() => handleMenuSelect('Present')} sx={{ color: '#166534' }}>
                     <ListItemIcon><CheckCircleIcon sx={{ color: '#166534' }} fontSize="small" /></ListItemIcon>

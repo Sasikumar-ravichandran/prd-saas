@@ -93,7 +93,7 @@ export default function SignupPage() {
     <>
       <CssBaseline />
 
-      {/* ⚡️ Scrollbar Nuke */}
+      {/*  Scrollbar Nuke */}
       <GlobalStyles styles={{
         '*::-webkit-scrollbar': { display: 'none' },
         '*': { msOverflowStyle: 'none', scrollbarWidth: 'none' },

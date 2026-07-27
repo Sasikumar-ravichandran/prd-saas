@@ -44,7 +44,7 @@ export default function Messages() {
 
   const messagesEndRef = useRef(null);
 
-  // ⚡️ HELPER: Smart Sorting Logic
+  //  HELPER: Smart Sorting Logic
   // Prioritizes chats with messages, then sorts by date
   const sortChatsList = (chatList) => {
     return [...chatList].sort((a, b) => {
@@ -140,7 +140,7 @@ export default function Messages() {
     }
   };
 
-  // ⚡️ Create Group Function
+  //  Create Group Function
   const handleCreateGroup = async (type) => {
     setAnchorEl(null); // Close menu
     try {
@@ -211,7 +211,7 @@ export default function Messages() {
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h5" fontWeight="800" color="#0f172a">Chats</Typography>
             
-            {/* ⚡️ Group Creation Menu */}
+            {/*  Group Creation Menu */}
             <Tooltip title="Create Groups">
               <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ bgcolor: alpha(primaryColor, 0.1), color: primaryColor }}>
                 <GroupAddIcon fontSize="small" />

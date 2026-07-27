@@ -4,7 +4,7 @@ import {
   Alert, CircularProgress, Divider, Link, CssBaseline,
   GlobalStyles
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom'; // ⚡️ REQUIRED FOR ROUTING
+import { useNavigate } from 'react-router-dom'; //  REQUIRED FOR ROUTING
 
 // Form Icons
 import EmailIcon from '@mui/icons-material/Email';
@@ -50,7 +50,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const { loadBranding, changePrimaryColor } = useColorMode(); // ⚡️ Extract it here
+  const { loadBranding, changePrimaryColor } = useColorMode(); //  Extract it here
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -268,7 +268,7 @@ export default function LoginPage() {
 
               <Divider sx={{ my: 1, color: 'text.secondary', typography: 'body2' }}>OR</Divider>
 
-              {/* ⚡️ FIXED: Navigates directly to the signup route */}
+              {/*  FIXED: Navigates directly to the signup route */}
               <Button
                 fullWidth
                 onClick={() => navigate('/signup')}

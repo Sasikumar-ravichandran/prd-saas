@@ -275,7 +275,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
             <Typography variant="overline" color="text.secondary" fontWeight="bold">PATIENT IDENTITY</Typography>
             <Stack spacing={2.5} sx={{ mt: 1 }}>
 
-              {/* ⚡️ CUSTOM PATIENT ID FIELD */}
+              {/*  CUSTOM PATIENT ID FIELD */}
               <TextField
                 fullWidth
                 placeholder="Physical File ID (Optional)"

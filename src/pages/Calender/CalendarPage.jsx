@@ -14,7 +14,7 @@ import 'react-big-calendar/lib/addons/dragAndDrop/styles.css';
 import {
   Box, Typography, Button, IconButton, Stack, Tooltip, Zoom,
   GlobalStyles, Card, CardContent, Avatar, Chip, Fade, useMediaQuery, useTheme, Tabs, Tab,
-  CircularProgress // ⚡️ ADDED LOADER IMPORT
+  CircularProgress
 } from '@mui/material';
 
 // Icons
@@ -38,7 +38,7 @@ const EVENT_COLORS = {
   checkup: { bg: '#ecfdf5', border: '#10b981', text: '#064e3b' },
 };
 
-// --- 1. RICH TOOLTIP CARD (⚡️ Memoized & Optimized) ---
+// --- 1. RICH TOOLTIP CARD ( Memoized & Optimized) ---
 const RichTooltip = React.memo(({ event }) => (
   <Card sx={{ minWidth: { xs: 260, sm: 280 }, maxWidth: { xs: 300, sm: 320 }, boxShadow: '0 8px 16px rgba(0,0,0,0.15)', borderRadius: 3 }}>
     <Box sx={{ bgcolor: '#f8fafc', p: { xs: 1.5, sm: 2 }, borderBottom: '1px solid #e2e8f0' }}>
@@ -62,10 +62,10 @@ const RichTooltip = React.memo(({ event }) => (
         <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><AccessTimeIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
         <Box>
           <Typography variant="body2" fontWeight="600" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            {event.formattedTimeRange} {/* ⚡️ Reads pre-calculated string */}
+            {event.formattedTimeRange} {/*  Reads pre-calculated string */}
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            Duration: {event.durationMins} mins {/* ⚡️ Reads pre-calculated number */}
+            Duration: {event.durationMins} mins {/*  Reads pre-calculated number */}
           </Typography>
         </Box>
       </Stack>
@@ -90,13 +90,13 @@ const RichTooltip = React.memo(({ event }) => (
   </Card>
 ));
 
-// --- 2. MODERN EVENT COMPONENT (⚡️ Memoized & Optimized) ---
+// --- 2. MODERN EVENT COMPONENT ( Memoized & Optimized) ---
 const ModernEvent = React.memo(({ event }) => {
   let style = EVENT_COLORS.default;
   if (event.title.toLowerCase().includes('surgery')) style = EVENT_COLORS.surgery;
   if (event.title.toLowerCase().includes('checkup')) style = EVENT_COLORS.checkup;
 
-  const isCompact = event.durationMins <= 30; // ⚡️ Uses pre-calculated data
+  const isCompact = event.durationMins <= 30; // Uses pre-calculated data
 
   return (
     <Tooltip
@@ -120,7 +120,7 @@ const ModernEvent = React.memo(({ event }) => {
         {!isCompact && (
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
             <Typography variant="caption" sx={{ color: style.text, opacity: 0.8, fontWeight: 600, fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
-              {event.formattedTime} {/* ⚡️ Reads pre-calculated string */}
+              {event.formattedTime} {/*  Reads pre-calculated string */}
             </Typography>
           </Stack>
         )}
@@ -134,16 +134,16 @@ export default function CalendarPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  
-  const [isLoading, setIsLoading] = useState(true); // ⚡️ NEW LOADING STATE
+
+  const [isLoading, setIsLoading] = useState(true); // NEW LOADING STATE
   const [view, setView] = useState(Views.DAY);
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [doctors, setDoctors] = useState([]);
   const [patients, setPatients] = useState([]);
-  
+
   // Dynamic Resources
-  const [resources, setResources] = useState([]); 
+  const [resources, setResources] = useState([]);
   const [selectedMobileChair, setSelectedMobileChair] = useState(1);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -153,7 +153,7 @@ export default function CalendarPage() {
   const { primaryColor } = useColorMode();
 
   const fetchAllData = useCallback(async () => {
-    setIsLoading(true); // ⚡️ START LOADING
+    setIsLoading(true); //  START LOADING
     try {
       const [patRes, userRes, apptRes, branchRes] = await Promise.all([
         api.get('/patients'),
@@ -161,17 +161,17 @@ export default function CalendarPage() {
         api.get('/appointments'),
         api.get('/branches')
       ]);
-      
+
       setPatients(patRes.data);
       setDoctors(userRes.data.users.filter(u => u.role === 'Doctor' || u.role === 'doctor'));
 
       const branches = branchRes.data;
       const currentBranch = branches.find(b => b._id === activeBranchId);
-      const chairCount = currentBranch?.chairCount || 1; 
-      
+      const chairCount = currentBranch?.chairCount || 1;
+
       const dynamicChairs = Array.from({ length: chairCount }, (_, i) => ({
-          id: i + 1,
-          title: `Chair ${i + 1}`
+        id: i + 1,
+        title: `Chair ${i + 1}`
       }));
       setResources(dynamicChairs);
 
@@ -179,8 +179,8 @@ export default function CalendarPage() {
       setEvents(branchEvents.map(evt => {
         const start = new Date(evt.start);
         const end = new Date(evt.end);
-        
-        // ⚡️ PRE-CALCULATING EXPENSIVE MATH ONCE DURING FETCH
+
+        // PRE-CALCULATING EXPENSIVE MATH ONCE DURING FETCH
         return {
           ...evt,
           id: evt._id,
@@ -196,11 +196,11 @@ export default function CalendarPage() {
           formattedTimeRange: `${moment(start).format('h:mm A')} - ${moment(end).format('h:mm A')}`
         };
       }));
-    } catch (err) { 
-      console.error(err); 
+    } catch (err) {
+      console.error(err);
       showToast('Failed to load data', 'error');
     } finally {
-      setIsLoading(false); // ⚡️ STOP LOADING
+      setIsLoading(false); //  STOP LOADING
     }
   }, [activeBranchId, showToast]);
 
@@ -213,24 +213,24 @@ export default function CalendarPage() {
   };
 
   const onEventDrop = useCallback(({ event, start, end, resourceId }) => {
-    // ⚡️ UPDATE THE PRE-CALCULATED MATH ON DROP
-    const updatedEvent = { 
-      ...event, 
-      start, 
-      end, 
+    //  UPDATE THE PRE-CALCULATED MATH ON DROP
+    const updatedEvent = {
+      ...event,
+      start,
+      end,
       resourceId,
       durationMins: moment(end).diff(moment(start), 'minutes'),
       formattedTime: moment(start).format('h:mm A'),
       formattedTimeRange: `${moment(start).format('h:mm A')} - ${moment(end).format('h:mm A')}`
     };
-    
-    setEvents(prev => prev.map(ev => ev.id === event.id ? updatedEvent : ev)); 
+
+    setEvents(prev => prev.map(ev => ev.id === event.id ? updatedEvent : ev));
 
     api.put(`/appointments/${event.id}`, { start, end, resourceId })
       .then(() => showToast('Rescheduled', 'success'))
       .catch(() => {
         showToast('Move failed', 'error');
-        setEvents(prev => prev.map(ev => ev.id === event.id ? event : ev)); 
+        setEvents(prev => prev.map(ev => ev.id === event.id ? event : ev));
       });
   }, [showToast]);
 
@@ -245,7 +245,7 @@ export default function CalendarPage() {
         fetchAllData();
       }
       setModalOpen(false); showToast('Saved', 'success');
-    } catch (e) { showToast( e || 'Failed to save', 'error'); }
+    } catch (e) { showToast(e || 'Failed to save', 'error'); }
   };
 
   const handleDelete = async (id) => {
@@ -256,23 +256,13 @@ export default function CalendarPage() {
 
   let displayResources = undefined;
   if (view === Views.DAY) {
-      if (isMobile) displayResources = resources.filter(r => r.id === selectedMobileChair);
-      else displayResources = resources;
+    if (isMobile) displayResources = resources.filter(r => r.id === selectedMobileChair);
+    else displayResources = resources;
   }
 
   return (
-    <Box sx={{
-      mx: { xs: -2, sm: 0 }, 
-      mt: { xs: -2, sm: 0 },
-      height: { xs: 'calc(100vh - 70px)', sm: 'calc(100vh - 100px)' },
-      display: 'flex', flexDirection: 'column',
-      bgcolor: '#fff', 
-      borderRadius: { xs: 0, sm: 3 }, 
-      p: { xs: 0, sm: 2 },
-      overflow: 'hidden',
-      minWidth: 0,
-    }}>
-
+    <Box sx={{ p: { xs: 2, md: 2 }, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}
+    >
       <GlobalStyles styles={{
         '.rbc-time-content': { overflowY: 'auto !important', scrollbarWidth: 'thin' },
         '.rbc-time-view': { border: 'none !important' },
@@ -356,7 +346,7 @@ export default function CalendarPage() {
             variant="contained" startIcon={!isSmallMobile && <AddIcon />}
             onClick={() => { setSelectedSlot(null); setModalOpen(true); }}
             sx={{
-              bgcolor: primaryColor, borderRadius: 2, textTransform: 'none', fontWeight: 'bold', 
+              bgcolor: primaryColor, borderRadius: 2, textTransform: 'none', fontWeight: 'bold',
               px: { xs: 2, sm: 2 }, py: { xs: 0.75, sm: 1 }, boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               fontSize: { xs: '0.8rem', sm: '0.875rem' }, minWidth: { xs: 'auto', sm: 'auto' }
             }}
@@ -369,8 +359,8 @@ export default function CalendarPage() {
       {/* MOBILE CHAIR SWITCHER */}
       {isMobile && view === Views.DAY && resources.length > 0 && (
         <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f8fafc', px: { xs: 2, sm: 0 } }}>
-          <Tabs 
-            value={selectedMobileChair} 
+          <Tabs
+            value={selectedMobileChair}
             onChange={(e, newValue) => setSelectedMobileChair(newValue)}
             variant="scrollable" scrollButtons="auto"
             sx={{ minHeight: 40, '& .MuiTab-root': { minHeight: 40, py: 0, textTransform: 'none', fontWeight: '700', fontSize: '0.85rem' }, '& .Mui-selected': { color: primaryColor } }}
@@ -382,10 +372,8 @@ export default function CalendarPage() {
         </Box>
       )}
 
-      {/* ⚡️ Calendar Container with Loading Overlay */}
       <Box sx={{ flex: 1, overflow: 'hidden', minHeight: { xs: 400, sm: 500, md: 'auto' }, position: 'relative' }}>
-        
-        {/* ⚡️ THE LOADER OVERLAY */}
+
         <Fade in={isLoading} unmountOnExit>
           <Box sx={{
             position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
@@ -406,9 +394,9 @@ export default function CalendarPage() {
           onNavigate={setDate}
           resourceIdAccessor="id"
           resourceTitleAccessor="title"
-          resources={displayResources} 
+          resources={displayResources}
           selectable
-          resizable={!isMobile} 
+          resizable={!isMobile}
           step={15}
           timeslots={4}
           scrollToTime={moment().subtract(1, 'hours').toDate()}
@@ -416,14 +404,14 @@ export default function CalendarPage() {
           onSelectEvent={(e) => { setSelectedSlot(e); setModalOpen(true); }}
           onEventDrop={isMobile ? undefined : onEventDrop}
           components={{ event: ModernEvent, toolbar: () => null }}
-          style={{ height: '100%', width: '100%' }} 
+          style={{ height: '100%', width: '100%' }}
         />
       </Box>
 
       <AppointmentModal
         open={modalOpen} onClose={() => setModalOpen(false)}
         initialData={selectedSlot} onSave={handleSave} onDelete={handleDelete}
-        doctors={doctors} patients={patients} resources={resources} 
+        doctors={doctors} patients={patients} resources={resources}
       />
     </Box>
   );

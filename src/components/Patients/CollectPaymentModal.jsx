@@ -12,7 +12,7 @@ import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import CreditCardIcon from '@mui/icons-material/CreditCard';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
-// ⚡️ IMPORT YOUR SERVICE
+//  IMPORT YOUR SERVICE
 import { invoiceService } from '../../api/services/invoiceService';
 
 const PAYMENT_MODES = [
@@ -27,7 +27,7 @@ export default function CollectPaymentModal({ open, onClose, patient, initialInv
   const [mode, setMode] = useState('UPI'); 
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false); // ⚡️ NEW: Confirmation state
+  const [confirmOpen, setConfirmOpen] = useState(false); //  NEW: Confirmation state
 
   useEffect(() => {
     if (open && initialInvoice) {
@@ -40,13 +40,13 @@ export default function CollectPaymentModal({ open, onClose, patient, initialInv
     }
   }, [open, initialInvoice]);
 
-  // ⚡️ NEW: First step, open confirmation
+  //  NEW: First step, open confirmation
   const handleInitialSubmit = () => {
     if (!amount || Number(amount) <= 0 || !initialInvoice) return;
     setConfirmOpen(true);
   };
 
-  // ⚡️ FIXED: Final submission logic
+  //  FIXED: Final submission logic
   const handleSubmit = async () => {
     setLoading(true);
     try {
@@ -134,7 +134,7 @@ export default function CollectPaymentModal({ open, onClose, patient, initialInv
               Cancel
           </Button>
           <Button 
-              onClick={handleInitialSubmit} // ⚡️ Triggers confirmation
+              onClick={handleInitialSubmit} //  Triggers confirmation
               variant="contained" 
               color="success" 
               size="large"
@@ -147,7 +147,7 @@ export default function CollectPaymentModal({ open, onClose, patient, initialInv
         </DialogActions>
       </Dialog>
 
-      {/* ⚡️ CONFIRMATION DIALOG */}
+      {/*  CONFIRMATION DIALOG */}
       <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>Confirm Payment</DialogTitle>
         <DialogContent>

@@ -112,7 +112,7 @@ export default function AdminPayrollPage() {
 	return (
 		<Box sx={{ p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-			{/* ⚡️ HEADER & FILTERS */}
+			{/*  HEADER & FILTERS */}
 			<Stack
 				direction={{ xs: 'column', md: 'row' }}
 				justifyContent="space-between"
@@ -178,8 +178,8 @@ export default function AdminPayrollPage() {
 				</Paper>
 			</Stack>
 
-			{/* ⚡️ MASTER SAAS METRICS ROW */}
-			{/* ⚡️ MASTER SAAS METRICS ROW (2x2 on Mobile, 4x1 on Desktop) */}
+			{/*  MASTER SAAS METRICS ROW */}
+			{/*  MASTER SAAS METRICS ROW (2x2 on Mobile, 4x1 on Desktop) */}
 			<Grid container spacing={3} mb={4}>
 				{[
 					{ label: 'GROSS REVENUE', value: data?.metrics?.grossRevenue, icon: <AccountBalanceIcon fontSize="small" />, color: '#10b981', bg: '#ecfdf5' },
@@ -187,7 +187,7 @@ export default function AdminPayrollPage() {
 					{ label: 'TOTAL PAYROLL', value: data?.metrics?.totalPayrollDue, icon: <GroupsIcon fontSize="small" />, color: '#8b5cf6', bg: '#f3e8ff' },
 					{ label: 'NET PROFIT', value: data?.metrics?.netProfit, icon: <TrendingUpIcon fontSize="small" />, color: data?.metrics?.netProfit >= 0 ? '#3b82f6' : '#ef4444', bg: data?.metrics?.netProfit >= 0 ? '#eff6ff' : '#fef2f2' }
 				].map((kpi, idx) => (
-					// ⚡️ FIX: Use 'size' prop for Grid v2
+					//  FIX: Use 'size' prop for Grid v2
 					<Grid size={{ xs: 6, md: 3 }} key={idx}>
 						<Paper
 							elevation={0}
@@ -238,7 +238,7 @@ export default function AdminPayrollPage() {
 									</TableCell>
 								</TableRow>
 							) : (
-								// ⚡️ MAP OVER paginatedPayroll INSTEAD OF data.payroll
+								//  MAP OVER paginatedPayroll INSTEAD OF data.payroll
 								paginatedPayroll.map((staff) => (
 									<TableRow key={staff.staffId} hover onClick={() => handleRowClick(staff)} sx={{ cursor: 'pointer' }}>
 										<TableCell sx={{ py: 2 }}><Typography variant="subtitle2" fontWeight="800" color="#0f172a">{staff.name}</Typography></TableCell>
@@ -276,7 +276,7 @@ export default function AdminPayrollPage() {
 					</Table>
 				</TableContainer>
 
-				{/* ⚡️ PAGINATION COMPONENT */}
+				{/*  PAGINATION COMPONENT */}
 				<TablePagination
 					component="div"
 					count={data?.payroll?.length || 0}

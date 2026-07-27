@@ -24,7 +24,7 @@ export default function UserManagementTab() {
   const { primaryColor } = useColorMode();
   const { activeBranchId } = useSelector((state) => state.auth);
 
-  // ⚡️ 1. INITIALIZE SEARCH PARAMS
+  //  1. INITIALIZE SEARCH PARAMS
   const [searchParams] = useSearchParams();
   const initialSearch = searchParams.get('search') || '';
 
@@ -43,14 +43,14 @@ export default function UserManagementTab() {
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
 
-  // ⚡️ 2. USE THE URL TERM AS THE DEFAULT STATE
+  //  2. USE THE URL TERM AS THE DEFAULT STATE
   const [inputValue, setInputValue] = useState(initialSearch);
   const [activeSearch, setActiveSearch] = useState(initialSearch);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
-  // ⚡️ 3. LISTEN FOR URL CHANGES (Cross-page sync)
+  //  3. LISTEN FOR URL CHANGES (Cross-page sync)
   useEffect(() => {
     const queryFromUrl = searchParams.get('search') || '';
 
@@ -159,7 +159,7 @@ export default function UserManagementTab() {
     }
   };
 
-  // ⚡️ REMOVED THE HARD RETURN THAT DESTROYED THE UI
+  //  REMOVED THE HARD RETURN THAT DESTROYED THE UI
   // if (loading) return <Box p={4}><CircularProgress /></Box>;
   if (error) return <Box p={4}><Alert severity="error">{error}</Alert></Box>;
 
@@ -196,7 +196,7 @@ export default function UserManagementTab() {
                 <SearchIcon sx={{ color: '#94a3b8' }} />
               </InputAdornment>
             ),
-            // ⚡️ ADDED INLINE SPINNER: Shows loading indicator directly inside the search bar
+            //  ADDED INLINE SPINNER: Shows loading indicator directly inside the search bar
             endAdornment: loading && (
               <InputAdornment position="end">
                 <CircularProgress size={18} thickness={5} sx={{ color: '#94a3b8' }} />
@@ -224,7 +224,7 @@ export default function UserManagementTab() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* ⚡️ ADDED GRACEFUL EMPTY/LOADING STATES FOR THE TABLE */}
+            {/*  ADDED GRACEFUL EMPTY/LOADING STATES FOR THE TABLE */}
             {loading && users.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center" sx={{ py: 6 }}>

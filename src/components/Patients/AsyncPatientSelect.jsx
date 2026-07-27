@@ -57,7 +57,7 @@ export default function AsyncPatientSelect({ value, onChange }) {
       onClose={() => setOpen(false)}
       isOptionEqualToValue={(option, val) => option._id === val._id}
       
-      // ⚡️ FIX 2: Auto-fills the text box with "Name (ID)" when selected
+      //  FIX 2: Auto-fills the text box with "Name (ID)" when selected
       getOptionLabel={(option) => `${option.fullName} (${option.patientId || 'No ID'})`}
       
       options={options}
@@ -87,7 +87,7 @@ export default function AsyncPatientSelect({ value, onChange }) {
         />
       )}
       
-      // ⚡️ FIX 3: Clean, simplified dropdown UI showing only Name and ID
+      //  FIX 3: Clean, simplified dropdown UI showing only Name and ID
       renderOption={(props, option) => (
         <li {...props} key={option._id}>
           <Typography variant="body2" fontWeight="700" color="#0f172a">

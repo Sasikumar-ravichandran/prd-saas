@@ -163,7 +163,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
     handleResultClick({ type, data });
   };
 
-  // ⚡️ THE NUCLEAR KEYDOWN HANDLER
+  //  THE NUCLEAR KEYDOWN HANDLER
   const handleKeyDown = useCallback((e) => {
     if (e.key === 'Enter') {
       e.preventDefault();    // Stop standard behavior
@@ -268,7 +268,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
         zIndex: 1100,
       }}
     >
-      <Toolbar sx={{ height: HEADER_HEIGHT, display: 'flex', justifyContent: 'space-between', px: { xs: 1, sm: 2 }, gap: 1 }}>
+      <Toolbar sx={{ height: HEADER_HEIGHT, display: 'flex', justifyContent: 'space-between', px: { xs: 2, sm: 2 }, gap: 1 }}>
 
         {/* ── LEFT ── */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 2 }, flex: 1 }}>

@@ -46,13 +46,13 @@ export default function MainLayout() {
           },
 
           mt: { 
-            xs: `${HEADER_HEIGHT + 24}px`, 
+            xs: `${HEADER_HEIGHT + 12}px`, 
             md: `${HEADER_HEIGHT}px` 
           },
 
-          // ⚡️ ONLY AFFECTS MOBILE: Uses dynamic height (100dvh) for real phones, keeps standard 100vh for desktop.
+          //  ONLY AFFECTS MOBILE: Uses dynamic height (100dvh) for real phones, keeps standard 100vh for desktop.
           height: { 
-            xs: `calc(100dvh - ${HEADER_HEIGHT + 24}px)`, 
+            xs: `calc(100dvh - ${HEADER_HEIGHT + 12}px)`, 
             md: `calc(100vh - ${HEADER_HEIGHT}px)` 
           },
           
@@ -62,7 +62,6 @@ export default function MainLayout() {
           transition: 'width 0.3s',
           minWidth: 0,
 
-          // Optional: Add smooth scrolling for the main content area
           WebkitOverflowScrolling: 'touch',
         }}
       >

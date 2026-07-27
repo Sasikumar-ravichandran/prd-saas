@@ -4,7 +4,7 @@ import {
   TableContainer, TableHead, TableRow, Chip, Avatar, Stack,
   CircularProgress, Alert, alpha
 } from '@mui/material';
-import { inventoryService } from '../../api/services/inventoryService'; // ⚡️ ADD THIS
+import { inventoryService } from '../../api/services/inventoryService'; //  ADD THIS
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { dashboardService } from '../../api/services/dashboardService';
 import { useColorMode } from '../../context/ThemeContext';
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [inventoryAlerts, setInventoryAlerts] = useState([]);
-  // ⚡️ 1. ADD THIS: A separate loading state just for the appointments list
+  //  1. ADD THIS: A separate loading state just for the appointments list
   const [apptLoading, setApptLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -90,10 +90,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     const loadInitialData = async () => {
       try {
-        // ⚡️ FETCH BOTH CONCURRENTLY USING YOUR CLEAN SERVICES
+        //  FETCH BOTH CONCURRENTLY USING YOUR CLEAN SERVICES
         const [dashRes, invRes] = await Promise.all([
           dashboardService.getAdminData(selectedDate.toISOString()),
-          inventoryService.getLowStockAlerts() // ⚡️ Calls the new service
+          inventoryService.getLowStockAlerts() //  Calls the new service
         ]);
 
         setData(dashRes);
@@ -109,7 +109,7 @@ export default function AdminDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ⚡️ 3. BACKGROUND LOAD (Runs only when the date is changed)
+  //  3. BACKGROUND LOAD (Runs only when the date is changed)
   useEffect(() => {
     // Skip this if the whole page is still doing its initial load
     if (loading) return;
@@ -271,7 +271,7 @@ export default function AdminDashboard() {
                                 </Typography>
                               </>
                             ) : (
-                              // ⚡️ PAYMENT VIEW: Patient Title on top, 'Patient Bill' below
+                              //  PAYMENT VIEW: Patient Title on top, 'Patient Bill' below
                               <>
                                 <Typography variant="subtitle2" fontWeight="800" color="#0f172a">
                                   {row.title}
@@ -340,7 +340,7 @@ export default function AdminDashboard() {
             {/* UPCOMING APPOINTMENTS (LEFT HALF) */}
             <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)', height: '100%', display: 'flex', flexDirection: 'column' }}>
 
-              {/* ⚡️ HEADER WITH DATE PICKER */}
+              {/*  HEADER WITH DATE PICKER */}
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6" fontWeight="800" color="#0f172a">Appointments</Typography>
 
@@ -388,7 +388,7 @@ export default function AdminDashboard() {
                 </LocalizationProvider>
               </Box>
 
-              {/* ⚡️ 4. ADD LOCAL LOADER TO THE STACK */}
+              {/*  4. ADD LOCAL LOADER TO THE STACK */}
               <Stack spacing={2} sx={{ overflowY: 'auto', flex: 1, pr: 1, maxHeight: '300px' }}>
                 {apptLoading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: 150 }}>
@@ -419,7 +419,7 @@ export default function AdminDashboard() {
                               {appt.patientName || 'Unknown Patient'}
                             </Typography>
 
-                            {/* ⚡️ DISPLAY PATIENT ID CHIP */}
+                            {/*  DISPLAY PATIENT ID CHIP */}
                             {appt.patientDisplayId && (
                               <Typography variant="caption" fontWeight="700" color="text.secondary" sx={{ bgcolor: '#f1f5f9', px: 0.8, py: 0.2, borderRadius: 1 }}>
                                 {appt.patientDisplayId}
@@ -461,7 +461,7 @@ export default function AdminDashboard() {
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Typography variant="h6" fontWeight="800" color="#0f172a">Inventory Alerts</Typography>
 
-                {/* ⚡️ DYNAMIC STATUS CHIP */}
+                {/*  DYNAMIC STATUS CHIP */}
                 <Chip
                   label={inventoryAlerts.length > 0 ? `${inventoryAlerts.length} Critical` : "Optimal"}
                   size="small"
@@ -502,7 +502,7 @@ export default function AdminDashboard() {
                     </Box>
                   ))
                 ) : (
-                  // ⚡️ ZERO ALERTS UI (Everything is fully stocked!)
+                  //  ZERO ALERTS UI (Everything is fully stocked!)
                   <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', minHeight: 150, bgcolor: '#f8fafc', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
                     <Avatar sx={{ bgcolor: '#dcfce7', color: '#16a34a', width: 48, height: 48, mb: 1.5 }}>
                       <CheckCircleIcon />

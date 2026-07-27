@@ -94,7 +94,7 @@ export default function ServiceCatalogTab() {
     }
   };
 
-  // ⚡️ Helper for Category Colors
+  //  Helper for Category Colors
   const getCategoryColor = (cat) => {
      switch(cat) {
         case 'General': return { bg: '#f1f5f9', c: '#475569' };
@@ -120,10 +120,10 @@ export default function ServiceCatalogTab() {
             <TableRow>
               <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>STATUS</TableCell>
               <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>CODE</TableCell>
-              <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>CATEGORY</TableCell> {/* ⚡️ NEW */}
+              <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>CATEGORY</TableCell> {/*  NEW */}
               <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>PROCEDURE</TableCell>
               <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>PATIENT PRICE</TableCell>
-              <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>LAB COST</TableCell> {/* ⚡️ NEW */}
+              <TableCell sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>LAB COST</TableCell> {/*  NEW */}
               <TableCell align="right" sx={{ bgcolor: '#f8fafc', fontWeight: '800' }}>ACTION</TableCell>
             </TableRow>
           </TableHead>
@@ -140,7 +140,7 @@ export default function ServiceCatalogTab() {
                       <Chip label={row.code} size="small" sx={{ borderRadius: 1, fontWeight: 'bold', fontSize: '0.75rem' }} />
                   </TableCell>
                   
-                  {/* ⚡️ NEW: Category Column */}
+                  {/*  NEW: Category Column */}
                   <TableCell>
                       <Chip 
                         label={row.category || 'General'} 
@@ -155,7 +155,7 @@ export default function ServiceCatalogTab() {
                       <Typography variant="body2" fontWeight="bold">₹ {row.price}</Typography>
                   </TableCell>
 
-                  {/* ⚡️ NEW: Lab Cost (Gray color to show it's an expense) */}
+                  {/*  NEW: Lab Cost (Gray color to show it's an expense) */}
                   <TableCell>
                       {row.labCost > 0 ? (
                         <Typography variant="body2" color="text.secondary">₹ {row.labCost}</Typography>

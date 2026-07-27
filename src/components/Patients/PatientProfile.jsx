@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { useColorMode } from '../../context/ThemeContext';
 import { patientService } from '../../api/services/patientService';
-import api from '../../api/services/api'; // ⚡️ Import API for fetching procedures
+import api from '../../api/services/api'; //  Import API for fetching procedures
 
 // Components
 import PatientHeader from '../../components/Patients/PatientHeader';
@@ -50,7 +50,7 @@ export default function PatientProfile() {
     const [patientData, setPatientData] = useState(null);
     const [tab, setTab] = useState(0);
 
-    // ⚡️ NEW: State for dynamic procedures
+    //  NEW: State for dynamic procedures
     const [proceduresList, setProceduresList] = useState([]);
 
     // Modals
@@ -82,7 +82,7 @@ export default function PatientProfile() {
         }
     };
 
-    // ⚡️ Fetch Procedures
+    //  Fetch Procedures
     useEffect(() => {
         const fetchProcedures = async () => {
             try {
@@ -104,7 +104,7 @@ export default function PatientProfile() {
     // --- 2. DERIVED STATE ---
     const treatmentPlan = patientData?.treatmentPlan || [];
 
-    // ⚡️ UPDATED: Now returns both colors (toothStatus) AND text (toothTooltips)
+    //  UPDATED: Now returns both colors (toothStatus) AND text (toothTooltips)
     const { toothStatus, toothTooltips } = useMemo(() => {
         const statusMap = { ...(patientData?.dentalChart || {}) };
         const tooltipMap = {};
@@ -216,8 +216,8 @@ export default function PatientProfile() {
             setNewTreatment({ tooth: toothId, procedure: '', cost: '' });
             setAddTreatmentOpen(true);
         }
-        // ⚡️ HANDLE CONDITIONS (Missing, Decay, Clear)
-        // ⚡️ HANDLE CONDITIONS (Missing, Decay, Clear)
+        //  HANDLE CONDITIONS (Missing, Decay, Clear)
+        //  HANDLE CONDITIONS (Missing, Decay, Clear)
         else if (['mark_decay', 'mark_missing', 'clear'].includes(action)) {
             try {
                 let condition = 'healthy';
@@ -229,14 +229,14 @@ export default function PatientProfile() {
                     condition: condition
                 });
 
-                // ⚡️ THE FIX: Force a fresh database pull to guarantee instant UI sync!
+                //  THE FIX: Force a fresh database pull to guarantee instant UI sync!
                 fetchPatientDetails();
                 showToast(`Tooth #${toothId} updated`, 'success');
             } catch (err) {
                 showToast('Failed to update tooth condition', 'error');
             }
         }
-        // ⚡️ HANDLE "MARK AS COMPLETED"
+        //  HANDLE "MARK AS COMPLETED"
         else if (action === 'mark_completed') {
             // Find any pending/in-progress treatments for this exact tooth
             const pendingTreatments = treatmentPlan.filter(
@@ -536,7 +536,7 @@ export default function PatientProfile() {
                                 value={newTreatment.procedure}
                                 label="Select Procedure"
                                 onChange={(e) => {
-                                    // ⚡️ Find the procedure dynamically from the fetched list
+                                    //  Find the procedure dynamically from the fetched list
                                     const proc = proceduresList.find(p => p.name === e.target.value);
                                     if (proc) {
                                         setNewTreatment({

@@ -213,7 +213,7 @@ export default function PatientList() {
             <Typography variant="body2" color="text.secondary" fontWeight="500">Manage your patient records and clinical files</Typography>
           </Box>
           <Stack direction="row" spacing={1.5}>
-            {/* ⚡️ HIDDEN TEXT ON MOBILE FOR CLEANER LOOK */}
+            {/*  HIDDEN TEXT ON MOBILE FOR CLEANER LOOK */}
             {/* <Button variant="outlined" onClick={fetchPatients} sx={{ bgcolor: 'white', color: '#475569', borderColor: '#cbd5e1', fontWeight: 'bold', minWidth: { xs: 'auto', sm: '100px' }, px: { xs: 1, sm: 2 } }}>
                <RefreshIcon sx={{ mr: { xs: 0, sm: 0.5 } }} />
                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Refresh</Box>
@@ -269,7 +269,7 @@ export default function PatientList() {
             <Tab label="Active Only" value="active" />
           </Tabs>
 
-          {/* ⚡️ RESPONSIVE STACK FOR FILTERS */}
+          {/*  RESPONSIVE STACK FOR FILTERS */}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ width: { xs: '100%', md: 'auto' } }}>
             <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}>
               <InputLabel sx={{ fontWeight: 'bold', fontSize: '0.85rem' }}>Assigned Doctor</InputLabel>
@@ -299,7 +299,7 @@ export default function PatientList() {
         </Box>
 
         {/* ========================================= */}
-        {/* ⚡️ DESKTOP VIEW: STANDARD TABLE ⚡️ */}
+        {/*  DESKTOP VIEW: STANDARD TABLE  */}
         {/* ========================================= */}
         <TableContainer sx={{ flex: 1, maxHeight: '60vh', overflowY: 'auto', display: { xs: 'none', md: 'block' } }}>
           <Table stickyHeader sx={{ minWidth: 800 }}>
@@ -393,7 +393,7 @@ export default function PatientList() {
         </TableContainer>
 
         {/* ========================================= */}
-        {/* ⚡️ MOBILE VIEW: PATIENT CARDS ⚡️ */}
+        {/*  MOBILE VIEW: PATIENT CARDS  */}
         {/* ========================================= */}
         <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2, p: 2, bgcolor: '#f8fafc', flex: 1, overflowY: 'auto' }}>
           {loading ? (

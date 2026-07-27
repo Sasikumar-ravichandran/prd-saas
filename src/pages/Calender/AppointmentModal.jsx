@@ -26,7 +26,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
   const [proceduresList, setProceduresList] = useState([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  // ⚡️ NEW STATE: Holds the full object specifically for the Async dropdown visual
+  //  NEW STATE: Holds the full object specifically for the Async dropdown visual
   const [selectedPatientObj, setSelectedPatientObj] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -92,7 +92,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         resourceId: initialData.resourceId || 1
       });
 
-      // ⚡️ 3. INITIALIZE ASYNC PATIENT DROPDOWN FOR EDIT MODE
+      //  3. INITIALIZE ASYNC PATIENT DROPDOWN FOR EDIT MODE
       if (initialData.patientId) {
         setSelectedPatientObj({
           _id: initialData.patientId,
@@ -109,7 +109,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
     }
   }, [initialData, open, doctors]);
 
-  // ⚡️ UPDATED HANDLER: Keeps both the Dropdown UI and Form Data perfectly synced
+  //  UPDATED HANDLER: Keeps both the Dropdown UI and Form Data perfectly synced
   const handlePatientChange = (newValue) => {
     setSelectedPatientObj(newValue); // Updates the visual box
 
@@ -191,7 +191,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 <Box sx={{ width: 220 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PATIENT</Typography>
                   
-                  {/* ⚡️ THE NEW ASYNC COMPONENT IN ACTION */}
+                  {/*  THE NEW ASYNC COMPONENT IN ACTION */}
                   <AsyncPatientSelect 
                      value={selectedPatientObj}
                      onChange={handlePatientChange}

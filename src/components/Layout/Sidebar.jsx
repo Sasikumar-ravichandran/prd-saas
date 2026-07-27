@@ -144,7 +144,7 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 				overflowY: 'auto',
 				overflowX: 'hidden',
 
-				// ⚡️ FIX 1: SMOOTH SCROLLING ENGINES
+				//  FIX 1: SMOOTH SCROLLING ENGINES
 				overscrollBehavior: 'contain', // Stops the main page from scrolling when you reach the bottom of the sidebar
 				WebkitOverflowScrolling: 'touch', // Enables momentum "flick" scrolling on Apple devices/trackpads
 				willChange: 'transform', // Tells the GPU to handle this container, offloading it from the CPU
@@ -162,7 +162,12 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 						<ListItem key={item.text} disablePadding sx={{ mb: 1, display: 'block' }}>
 							<Tooltip title={isCollapsed ? item.text : ""} placement="right" arrow>
 								<ListItemButton
-									onClick={() => navigate(item.path)}
+									onClick={() => {
+                                        navigate(item.path);
+                                        if (mobileOpen) {
+                                            handleDrawerToggle();
+                                        }
+                                    }}
 									sx={{
 										minHeight: 48,
 										borderRadius: 2,
