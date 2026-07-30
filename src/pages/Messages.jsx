@@ -20,7 +20,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import DomainIcon from '@mui/icons-material/Domain';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
-const ENDPOINT = "http://localhost:5000"; 
+const ENDPOINT = import.meta.env.VITE_API_URL
 var socket, selectedChatCompare;
 
 export default function Messages() {
