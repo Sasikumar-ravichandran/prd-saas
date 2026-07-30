@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Box, Typography, Paper, Grid, Avatar, TextField, IconButton, 
-  List, ListItem, ListItemAvatar, ListItemText, Divider, CircularProgress, Chip, Tooltip, Menu, MenuItem, alpha
+  Box, Typography, Paper, Avatar, TextField, IconButton, 
+  List, ListItem, ListItemAvatar, ListItemText, Divider, CircularProgress, Tooltip, Menu, MenuItem, alpha
 } from '@mui/material';
 import { useColorMode } from '../context/ThemeContext';
 import { format, isToday, isYesterday } from 'date-fns';
@@ -44,11 +44,9 @@ export default function Messages() {
 
   const messagesEndRef = useRef(null);
 
-  //  HELPER: Smart Sorting Logic
-  // Prioritizes chats with messages, then sorts by date
+  // Smart Sorting Logic: Prioritizes chats with messages, then sorts by date
   const sortChatsList = (chatList) => {
     return [...chatList].sort((a, b) => {
-      // If one chat has a message and the other doesn't, put the one with a message first
       if (a.latestMessage && !b.latestMessage) return -1;
       if (!a.latestMessage && b.latestMessage) return 1;
       
@@ -75,7 +73,7 @@ export default function Messages() {
 
     socket.on("messages read", (chatId) => {
       if (selectedChatCompare && selectedChatCompare._id === chatId) {
-        setMessages(prev => prev.map(m => ({ ...m, readBy: [...m.readBy, 'read'] }))); 
+        setMessages(prev => prev.map(m => ({ ...m, readBy: [...(m.readBy || []), 'read'] }))); 
       }
     });
 
@@ -86,7 +84,7 @@ export default function Messages() {
     const fetchInitialData = async () => {
       try {
         const chatRes = await api.get('/chats');
-        setChats(sortChatsList(chatRes.data)); // Use smart sort
+        setChats(sortChatsList(chatRes.data));
 
         const userRes = await userService.getAll({ limit: 50 }); 
         setStaffDirectory(userRes.users || []);
@@ -125,7 +123,7 @@ export default function Messages() {
   const updateSidebarLatestMessage = (newMsg) => {
     setChats(prev => {
       let updated = prev.map(c => c._id === newMsg.chatId._id ? { ...c, latestMessage: newMsg } : c);
-      return sortChatsList(updated); // Use smart sort
+      return sortChatsList(updated);
     });
   };
 
@@ -140,9 +138,8 @@ export default function Messages() {
     }
   };
 
-  //  Create Group Function
   const handleCreateGroup = async (type) => {
-    setAnchorEl(null); // Close menu
+    setAnchorEl(null);
     try {
       const { data } = await api.post('/chats/group', {
         chatName: type === 'clinic' ? 'Clinic Group' : 'Branch Group',
@@ -150,7 +147,6 @@ export default function Messages() {
         branchId: type === 'branch' ? loggedInUser.defaultBranch?._id : null
       });
       
-      // If it's a new group, add it to the list
       if (!chats.find((c) => c._id === data._id)) {
         setChats(prev => sortChatsList([data, ...prev]));
       }
@@ -183,35 +179,67 @@ export default function Messages() {
     return format(date, 'dd/MM/yyyy');                 
   };
 
+  // Safe Chat Details: Prevents "Unknown" and handles single-user fallback properly
   const getChatDetails = (chat) => {
     if (chat.type === 'clinic') return { name: 'Clinic Group', icon: <DomainIcon />, isGroup: true };
     if (chat.type === 'branch') return { name: chat.chatName || 'Branch Group', icon: <GroupsIcon />, isGroup: true };
     
-    const otherUser = chat.participants.find(p => p._id !== loggedInUser._id);
-    return { name: otherUser ? (otherUser.name || otherUser.fullName) : 'Unknown', icon: null, isGroup: false, userId: otherUser?._id };
+    // Find the other participant, or fall back to yourself if it's a self-chat
+    const otherUser = chat.participants.find(p => p._id !== loggedInUser._id) || chat.participants[0];
+    
+    if (!otherUser) return { name: 'Unknown', icon: null, isGroup: false, userId: null };
+
+    const isSelf = otherUser._id === loggedInUser._id;
+    const baseName = otherUser.name || otherUser.fullName || 'Staff Member';
+    const name = isSelf ? `${baseName} (You)` : baseName;
+
+    return { name, icon: null, isGroup: false, userId: otherUser._id };
   };
 
+  // Filter out self and existing private chat participants from the directory
   const privateChatUserIds = chats.filter(c => c.type === 'private').flatMap(c => c.participants.map(p => p._id));
   const unchattedStaff = staffDirectory.filter(user => 
+    user._id !== loggedInUser._id &&
     !privateChatUserIds.includes(user._id) && 
-    (user.name || user.fullName).toLowerCase().includes(search.toLowerCase())
+    (user.name || user.fullName || '').toLowerCase().includes(search.toLowerCase())
   );
 
-  // Check if groups already exist so we can disable the buttons
   const hasClinicGroup = chats.some(c => c.type === 'clinic');
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
   return (
-    <Paper elevation={0} sx={{ height: { xs: 'calc(100vh - 60px)', md: '85vh' }, mx: { xs: 0, md: 3 }, my: { xs: 0, md: 2 }, borderRadius: { xs: 0, md: 3 }, display: 'flex', overflow: 'hidden', border: { xs: 'none', md: '1px solid #e2e8f0' } }}>
-      
+    // STRICT CONTAINER: Locked height and overflow prevents layout shift/header hiding
+    <Paper 
+      elevation={0} 
+      sx={{ 
+        height: { xs: 'calc(100vh - 80px)', md: 'calc(100vh - 110px)' }, 
+        maxHeight: '850px',
+        mx: { xs: 0, md: 3 }, 
+        my: { xs: 0, md: 2 }, 
+        borderRadius: { xs: 0, md: 3 }, 
+        display: 'flex', 
+        overflow: 'hidden', 
+        border: { xs: 'none', md: '1px solid #e2e8f0' },
+        position: 'relative',
+        bgcolor: '#fff'
+      }}
+    >
       {/* ================= LEFT SIDEBAR ================= */}
-      <Box sx={{ width: { xs: '100%', md: '380px' }, borderRight: '1px solid #e2e8f0', display: { xs: selectedChat ? 'none' : 'flex', md: 'flex' }, flexDirection: 'column', bgcolor: '#fff' }}>
-        
-        <Box p={2.5} borderBottom="1px solid #e2e8f0" bgcolor="#f8fafc">
+      <Box 
+        sx={{ 
+          width: { xs: '100%', md: '380px' }, 
+          borderRight: '1px solid #e2e8f0', 
+          display: { xs: selectedChat ? 'none' : 'flex', md: 'flex' }, 
+          flexDirection: 'column', 
+          bgcolor: '#fff',
+          height: '100%',
+          overflow: 'hidden'
+        }}
+      >
+        <Box p={2.5} borderBottom="1px solid #e2e8f0" bgcolor="#f8fafc" flexShrink={0}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h5" fontWeight="800" color="#0f172a">Chats</Typography>
             
-            {/*  Group Creation Menu */}
             <Tooltip title="Create Groups">
               <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ bgcolor: alpha(primaryColor, 0.1), color: primaryColor }}>
                 <GroupAddIcon fontSize="small" />
@@ -281,24 +309,37 @@ export default function Messages() {
                 );
               })}
 
-              <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ px: 3, py: 1.5, display: 'block', bgcolor: '#f8fafc' }}>
-                STAFF DIRECTORY
-              </Typography>
-              {unchattedStaff.map((user) => (
-                <ListItem button key={user._id} onClick={() => startChat(user._id)} sx={{ p: 2, '&:hover': { bgcolor: '#f8fafc' } }}>
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: primaryColor }}>{(user.name || user.fullName || 'U').charAt(0)}</Avatar>
-                  </ListItemAvatar>
-                  <ListItemText primary={<Typography fontWeight="700">{user.name || user.fullName}</Typography>} secondary={<Typography variant="caption" color="text.secondary">{user.role}</Typography>} />
-                </ListItem>
-              ))}
+              {unchattedStaff.length > 0 && (
+                <>
+                  <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ px: 3, py: 1.5, display: 'block', bgcolor: '#f8fafc' }}>
+                    STAFF DIRECTORY
+                  </Typography>
+                  {unchattedStaff.map((user) => (
+                    <ListItem button key={user._id} onClick={() => startChat(user._id)} sx={{ p: 2, '&:hover': { bgcolor: '#f8fafc' } }}>
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: primaryColor }}>{(user.name || user.fullName || 'U').charAt(0)}</Avatar>
+                      </ListItemAvatar>
+                      <ListItemText primary={<Typography fontWeight="700">{user.name || user.fullName}</Typography>} secondary={<Typography variant="caption" color="text.secondary">{user.role}</Typography>} />
+                    </ListItem>
+                  ))}
+                </>
+              )}
             </>
           )}
         </List>
       </Box>
 
       {/* ================= RIGHT SIDE (CHAT WINDOW) ================= */}
-      <Box sx={{ flex: 1, display: { xs: selectedChat ? 'flex' : 'none', md: 'flex' }, flexDirection: 'column', bgcolor: '#f8fafc' }}> 
+      <Box 
+        sx={{ 
+          flex: 1, 
+          display: { xs: selectedChat ? 'flex' : 'none', md: 'flex' }, 
+          flexDirection: 'column', 
+          bgcolor: '#f8fafc',
+          height: '100%',
+          overflow: 'hidden'
+        }}
+      > 
         {!selectedChat ? (
           <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" bgcolor="#f8fafc">
             <Avatar sx={{ width: 80, height: 80, bgcolor: '#e2e8f0', color: '#94a3b8', mb: 3 }}><ChatBubbleOutlineIcon fontSize="large" /></Avatar>
@@ -308,7 +349,7 @@ export default function Messages() {
         ) : (
           <>
             {/* Chat Header */}
-            <Box display="flex" alignItems="center" p={2} borderBottom="1px solid #e2e8f0" bgcolor="#fff" zIndex={10}>
+            <Box display="flex" alignItems="center" p={2} borderBottom="1px solid #e2e8f0" bgcolor="#fff" zIndex={10} flexShrink={0}>
               <IconButton sx={{ display: { md: 'none' }, mr: 1 }} onClick={() => setSelectedChat(null)}>
                 <ArrowBackIcon />
               </IconButton>
@@ -317,7 +358,7 @@ export default function Messages() {
                 {getChatDetails(selectedChat).icon || getChatDetails(selectedChat).name.charAt(0)}
               </Avatar>
               
-              <Box textAlign={'left'}>
+              <Box textAlign="left">
                 <Typography variant="subtitle1" fontWeight="800" color="#0f172a" lineHeight={1.2}>
                   {getChatDetails(selectedChat).name}
                 </Typography>
@@ -335,7 +376,7 @@ export default function Messages() {
               {loadingMessages ? (
                 <CircularProgress sx={{ alignSelf: 'center', mt: 5 }} />
               ) : (
-                messages.map((m, i) => {
+                messages.map((m) => {
                   const isMe = m.sender._id === loggedInUser._id;
                   const isRead = m.readBy && m.readBy.length > 1;
 
@@ -370,13 +411,13 @@ export default function Messages() {
             </Box>
 
             {/* Input Area */}
-            <Box p={2} bgcolor="#f0f2f5" display="flex" alignItems="center" gap={2}>
+            <Box p={2} bgcolor="#f0f2f5" display="flex" alignItems="center" gap={2} flexShrink={0}>
               <TextField 
                 fullWidth variant="outlined" placeholder="Type a message" size="small"
                 value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={sendMessage}
                 sx={{ '& fieldset': { border: 'none' }, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2, px: 1 } }}
               />
-              <IconButton onClick={(e) => sendMessage({ type: 'click' })} sx={{ bgcolor: primaryColor, color: 'white', '&:hover': { bgcolor: '#0f172a' }, width: 44, height: 44 }}>
+              <IconButton onClick={() => sendMessage({ type: 'click' })} sx={{ bgcolor: primaryColor, color: 'white', '&:hover': { bgcolor: '#0f172a' }, width: 44, height: 44 }}>
                 <SendIcon fontSize="small" sx={{ ml: 0.5 }} />
               </IconButton>
             </Box>
