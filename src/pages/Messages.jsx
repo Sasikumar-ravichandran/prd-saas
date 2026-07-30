@@ -44,7 +44,6 @@ export default function Messages() {
 
   const messagesEndRef = useRef(null);
 
-  // Smart Sorting Logic: Prioritizes chats with messages, then sorts by date
   const sortChatsList = (chatList) => {
     return [...chatList].sort((a, b) => {
       if (a.latestMessage && !b.latestMessage) return -1;
@@ -77,7 +76,9 @@ export default function Messages() {
       }
     });
 
-    return () => socket.disconnect();
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -179,12 +180,10 @@ export default function Messages() {
     return format(date, 'dd/MM/yyyy');                 
   };
 
-  // Safe Chat Details: Prevents "Unknown" and handles single-user fallback properly
   const getChatDetails = (chat) => {
     if (chat.type === 'clinic') return { name: 'Clinic Group', icon: <DomainIcon />, isGroup: true };
     if (chat.type === 'branch') return { name: chat.chatName || 'Branch Group', icon: <GroupsIcon />, isGroup: true };
     
-    // Find the other participant, or fall back to yourself if it's a self-chat
     const otherUser = chat.participants.find(p => p._id !== loggedInUser._id) || chat.participants[0];
     
     if (!otherUser) return { name: 'Unknown', icon: null, isGroup: false, userId: null };
@@ -196,7 +195,6 @@ export default function Messages() {
     return { name, icon: null, isGroup: false, userId: otherUser._id };
   };
 
-  // Filter out self and existing private chat participants from the directory
   const privateChatUserIds = chats.filter(c => c.type === 'private').flatMap(c => c.participants.map(p => p._id));
   const unchattedStaff = staffDirectory.filter(user => 
     user._id !== loggedInUser._id &&
@@ -207,223 +205,237 @@ export default function Messages() {
   const hasClinicGroup = chats.some(c => c.type === 'clinic');
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
+  // =========================================================================
+  //HERE IS THE FIX: The updated return block for your layout
+  // =========================================================================
   return (
-    // STRICT CONTAINER: Locked height and overflow prevents layout shift/header hiding
-    <Paper 
-      elevation={0} 
+    <Box 
       sx={{ 
-        height: { xs: 'calc(100vh - 80px)', md: 'calc(100vh - 110px)' }, 
-        maxHeight: '850px',
-        mx: { xs: 0, md: 3 }, 
-        my: { xs: 0, md: 2 }, 
-        borderRadius: { xs: 0, md: 3 }, 
-        display: 'flex', 
+        width: '100%',
+        height: '100%', //Fills MainLayout exactly without scrolling it
         overflow: 'hidden', 
-        border: { xs: 'none', md: '1px solid #e2e8f0' },
-        position: 'relative',
-        bgcolor: '#fff'
+        display: 'flex',
+        flexDirection: 'column',
+        boxSizing: 'border-box',
+        p: { xs: 0, md: 2 }
       }}
     >
-      {/* ================= LEFT SIDEBAR ================= */}
-      <Box 
+      <Paper 
+        elevation={0} 
         sx={{ 
-          width: { xs: '100%', md: '380px' }, 
-          borderRight: '1px solid #e2e8f0', 
-          display: { xs: selectedChat ? 'none' : 'flex', md: 'flex' }, 
-          flexDirection: 'column', 
+          flex: 1,
+          display: 'flex',
+          overflow: 'hidden',
+          borderRadius: { xs: 0, md: 3 },
+          border: { xs: 'none', md: '1px solid #e2e8f0' },
           bgcolor: '#fff',
-          height: '100%',
-          overflow: 'hidden'
+          minHeight: 0, //Critical: prevents message list from expanding beyond screen
+          boxSizing: 'border-box'
         }}
       >
-        <Box p={2.5} borderBottom="1px solid #e2e8f0" bgcolor="#f8fafc" flexShrink={0}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h5" fontWeight="800" color="#0f172a">Chats</Typography>
-            
-            <Tooltip title="Create Groups">
-              <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ bgcolor: alpha(primaryColor, 0.1), color: primaryColor }}>
-                <GroupAddIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)} PaperProps={{ sx: { borderRadius: 2, mt: 1, minWidth: 200 } }}>
-              <MenuItem onClick={() => handleCreateGroup('clinic')} disabled={hasClinicGroup}>
-                <DomainIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
-                {hasClinicGroup ? "Clinic Group (Exists)" : "Create Clinic Group"}
-              </MenuItem>
-              <MenuItem onClick={() => handleCreateGroup('branch')} disabled={hasBranchGroup}>
-                <GroupsIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
-                {hasBranchGroup ? "Branch Group (Exists)" : "Create Branch Group"}
-              </MenuItem>
-            </Menu>
-          </Box>
-          <TextField
-            fullWidth size="small" placeholder="Search staff or groups..."
-            value={search} onChange={(e) => setSearch(e.target.value)}
-            InputProps={{
-              startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} fontSize="small" />,
-              sx: { borderRadius: 4, bgcolor: '#fff', '& fieldset': { borderColor: '#e2e8f0' } }
-            }}
-          />
-        </Box>
-
-        <List sx={{ flexGrow: 1, overflowY: 'auto', p: 0 }}>
-          {loadingChats ? (
-            <Box display="flex" justifyContent="center" p={4}><CircularProgress size={30} /></Box>
-          ) : (
-            <>
-              {chats.filter(c => getChatDetails(c).name.toLowerCase().includes(search.toLowerCase())).map((chat) => {
-                const details = getChatDetails(chat);
-                const latestMsg = chat.latestMessage;
-                const isMe = latestMsg?.sender?._id === loggedInUser._id || latestMsg?.sender === loggedInUser._id;
-                const isRead = latestMsg?.readBy?.length > 1; 
-
-                return (
-                  <React.Fragment key={chat._id}>
-                    <ListItem button onClick={() => setSelectedChat(chat)} sx={{ p: 2, bgcolor: selectedChat?._id === chat._id ? '#f1f5f9' : 'transparent', '&:hover': { bgcolor: '#f8fafc' } }}>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: details.isGroup ? '#0f172a' : primaryColor, width: 48, height: 48 }}>
-                          {details.icon ? details.icon : details.name.charAt(0)}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText 
-                        primary={
-                          <Box display="flex" justifyContent="space-between" mb={0.5}>
-                            <Typography fontWeight="700" color="#0f172a" noWrap>{details.name}</Typography>
-                            <Typography variant="caption" color={selectedChat?._id === chat._id ? primaryColor : 'text.secondary'} fontWeight="600">
-                              {latestMsg ? formatMessageTime(latestMsg.createdAt) : ''} 
-                            </Typography>
-                          </Box>
-                        } 
-                        secondary={
-                          <Box display="flex" alignItems="center" gap={0.5}>
-                            {isMe && latestMsg && <DoneAllIcon sx={{ fontSize: 16, color: isRead ? '#3b82f6' : '#94a3b8' }} />}
-                            <Typography variant="body2" color="text.secondary" noWrap sx={{ fontWeight: 500 }}>
-                              {latestMsg ? (isMe ? `You: ${latestMsg.content}` : latestMsg.content) : 'Tap to start chatting'}
-                            </Typography>
-                          </Box>
-                        } 
-                      />
-                    </ListItem>
-                    <Divider sx={{ ml: 9 }} />
-                  </React.Fragment>
-                );
-              })}
-
-              {unchattedStaff.length > 0 && (
-                <>
-                  <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ px: 3, py: 1.5, display: 'block', bgcolor: '#f8fafc' }}>
-                    STAFF DIRECTORY
-                  </Typography>
-                  {unchattedStaff.map((user) => (
-                    <ListItem button key={user._id} onClick={() => startChat(user._id)} sx={{ p: 2, '&:hover': { bgcolor: '#f8fafc' } }}>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: primaryColor }}>{(user.name || user.fullName || 'U').charAt(0)}</Avatar>
-                      </ListItemAvatar>
-                      <ListItemText primary={<Typography fontWeight="700">{user.name || user.fullName}</Typography>} secondary={<Typography variant="caption" color="text.secondary">{user.role}</Typography>} />
-                    </ListItem>
-                  ))}
-                </>
-              )}
-            </>
-          )}
-        </List>
-      </Box>
-
-      {/* ================= RIGHT SIDE (CHAT WINDOW) ================= */}
-      <Box 
-        sx={{ 
-          flex: 1, 
-          display: { xs: selectedChat ? 'flex' : 'none', md: 'flex' }, 
-          flexDirection: 'column', 
-          bgcolor: '#f8fafc',
-          height: '100%',
-          overflow: 'hidden'
-        }}
-      > 
-        {!selectedChat ? (
-          <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" bgcolor="#f8fafc">
-            <Avatar sx={{ width: 80, height: 80, bgcolor: '#e2e8f0', color: '#94a3b8', mb: 3 }}><ChatBubbleOutlineIcon fontSize="large" /></Avatar>
-            <Typography variant="h5" fontWeight="800" color="#0f172a">Clinic Messenger</Typography>
-            <Typography color="text.secondary" mt={1}>Select a chat or staff member to start.</Typography>
-          </Box>
-        ) : (
-          <>
-            {/* Chat Header */}
-            <Box display="flex" alignItems="center" p={2} borderBottom="1px solid #e2e8f0" bgcolor="#fff" zIndex={10} flexShrink={0}>
-              <IconButton sx={{ display: { md: 'none' }, mr: 1 }} onClick={() => setSelectedChat(null)}>
-                <ArrowBackIcon />
-              </IconButton>
+        {/* ================= LEFT SIDEBAR ================= */}
+        <Box 
+          sx={{ 
+            width: { xs: '100%', md: '380px' }, 
+            borderRight: '1px solid #e2e8f0', 
+            display: { xs: selectedChat ? 'none' : 'flex', md: 'flex' }, 
+            flexDirection: 'column', 
+            bgcolor: '#fff',
+            height: '100%',
+            overflow: 'hidden',
+            flexShrink: 0
+          }}
+        >
+          <Box p={2.5} borderBottom="1px solid #e2e8f0" bgcolor="#f8fafc" flexShrink={0}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h5" fontWeight="800" color="#0f172a">Chats</Typography>
               
-              <Avatar sx={{ bgcolor: getChatDetails(selectedChat).isGroup ? '#0f172a' : primaryColor, mr: 2, width: 40, height: 40 }}>
-                {getChatDetails(selectedChat).icon || getChatDetails(selectedChat).name.charAt(0)}
-              </Avatar>
-              
-              <Box textAlign="left">
-                <Typography variant="subtitle1" fontWeight="800" color="#0f172a" lineHeight={1.2}>
-                  {getChatDetails(selectedChat).name}
-                </Typography>
-                
-                {!getChatDetails(selectedChat).isGroup && (
-                  <Typography variant="caption" color={onlineUsers.includes(getChatDetails(selectedChat).userId) ? "success.main" : "text.secondary"} fontWeight="600">
-                    {onlineUsers.includes(getChatDetails(selectedChat).userId) ? 'Online' : 'Offline'}
-                  </Typography>
-                )}
-              </Box>
+              <Tooltip title="Create Groups">
+                <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ bgcolor: alpha(primaryColor, 0.1), color: primaryColor }}>
+                  <GroupAddIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)} PaperProps={{ sx: { borderRadius: 2, mt: 1, minWidth: 200 } }}>
+                <MenuItem onClick={() => handleCreateGroup('clinic')} disabled={hasClinicGroup}>
+                  <DomainIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  {hasClinicGroup ? "Clinic Group (Exists)" : "Create Clinic Group"}
+                </MenuItem>
+                <MenuItem onClick={() => handleCreateGroup('branch')} disabled={hasBranchGroup}>
+                  <GroupsIcon fontSize="small" sx={{ mr: 1.5, color: 'text.secondary' }} />
+                  {hasBranchGroup ? "Branch Group (Exists)" : "Create Branch Group"}
+                </MenuItem>
+              </Menu>
             </Box>
+            <TextField
+              fullWidth size="small" placeholder="Search staff or groups..."
+              value={search} onChange={(e) => setSearch(e.target.value)}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} fontSize="small" />,
+                sx: { borderRadius: 4, bgcolor: '#fff', '& fieldset': { borderColor: '#e2e8f0' } }
+              }}
+            />
+          </Box>
 
-            {/* Messages Area */}
-            <Box sx={{ flexGrow: 1, overflowY: 'auto', p: { xs: 2, md: 4 }, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {loadingMessages ? (
-                <CircularProgress sx={{ alignSelf: 'center', mt: 5 }} />
-              ) : (
-                messages.map((m) => {
-                  const isMe = m.sender._id === loggedInUser._id;
-                  const isRead = m.readBy && m.readBy.length > 1;
+          <List sx={{ flexGrow: 1, overflowY: 'auto', p: 0 }}>
+            {loadingChats ? (
+              <Box display="flex" justifyContent="center" p={4}><CircularProgress size={30} /></Box>
+            ) : (
+              <>
+                {chats.filter(c => getChatDetails(c).name.toLowerCase().includes(search.toLowerCase())).map((chat) => {
+                  const details = getChatDetails(chat);
+                  const latestMsg = chat.latestMessage;
+                  const isMe = latestMsg?.sender?._id === loggedInUser._id || latestMsg?.sender === loggedInUser._id;
+                  const isRead = latestMsg?.readBy?.length > 1; 
 
                   return (
-                    <Box key={m._id} sx={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                      {getChatDetails(selectedChat).isGroup && !isMe && (
-                        <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ ml: 1, mb: 0.2 }}>
-                          {m.sender.name || m.sender.fullName}
-                        </Typography>
-                      )}
+                    <React.Fragment key={chat._id}>
+                      <ListItem button onClick={() => setSelectedChat(chat)} sx={{ p: 2, bgcolor: selectedChat?._id === chat._id ? '#f1f5f9' : 'transparent', '&:hover': { bgcolor: '#f8fafc' } }}>
+                        <ListItemAvatar>
+                          <Avatar sx={{ bgcolor: details.isGroup ? '#0f172a' : primaryColor, width: 48, height: 48 }}>
+                            {details.icon ? details.icon : details.name.charAt(0)}
+                          </Avatar>
+                        </ListItemAvatar>
+                        <ListItemText 
+                          primary={
+                            <Box display="flex" justifyContent="space-between" mb={0.5}>
+                              <Typography fontWeight="700" color="#0f172a" noWrap>{details.name}</Typography>
+                              <Typography variant="caption" color={selectedChat?._id === chat._id ? primaryColor : 'text.secondary'} fontWeight="600">
+                                {latestMsg ? formatMessageTime(latestMsg.createdAt) : ''} 
+                              </Typography>
+                            </Box>
+                          } 
+                          secondary={
+                            <Box display="flex" alignItems="center" gap={0.5}>
+                              {isMe && latestMsg && <DoneAllIcon sx={{ fontSize: 16, color: isRead ? '#3b82f6' : '#94a3b8' }} />}
+                              <Typography variant="body2" color="text.secondary" noWrap sx={{ fontWeight: 500 }}>
+                                {latestMsg ? (isMe ? `You: ${latestMsg.content}` : latestMsg.content) : 'Tap to start chatting'}
+                              </Typography>
+                            </Box>
+                          } 
+                        />
+                      </ListItem>
+                      <Divider sx={{ ml: 9 }} />
+                    </React.Fragment>
+                  );
+                })}
 
-                      <Box 
-                        sx={{ 
-                          bgcolor: isMe ? '#d9fdd3' : '#fff', color: '#111b21', px: 2, py: 1, 
-                          borderRadius: isMe ? '8px 0px 8px 8px' : '0px 8px 8px 8px', 
-                          boxShadow: '0 1px 1px rgb(0 0 0 / 0.1)', maxWidth: { xs: '85%', md: '65%' } 
-                        }}
-                      >
-                        <Typography variant="body1" sx={{ fontSize: '0.95rem' }}>{m.content}</Typography>
-                        <Box display="flex" justifyContent="flex-end" alignItems="center" gap={0.5} mt={0.5}>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
-                            {formatMessageTime(m.createdAt)}
+                {unchattedStaff.length > 0 && (
+                  <>
+                    <Typography variant="caption" fontWeight="800" color="text.secondary" sx={{ px: 3, py: 1.5, display: 'block', bgcolor: '#f8fafc' }}>
+                      STAFF DIRECTORY
+                    </Typography>
+                    {unchattedStaff.map((user) => (
+                      <ListItem button key={user._id} onClick={() => startChat(user._id)} sx={{ p: 2, '&:hover': { bgcolor: '#f8fafc' } }}>
+                        <ListItemAvatar>
+                          <Avatar sx={{ bgcolor: primaryColor }}>{(user.name || user.fullName || 'U').charAt(0)}</Avatar>
+                        </ListItemAvatar>
+                        <ListItemText primary={<Typography fontWeight="700">{user.name || user.fullName}</Typography>} secondary={<Typography variant="caption" color="text.secondary">{user.role}</Typography>} />
+                      </ListItem>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </List>
+        </Box>
+
+        {/* ================= RIGHT SIDE (CHAT WINDOW) ================= */}
+        <Box 
+          sx={{ 
+            flex: 1, 
+            display: { xs: selectedChat ? 'flex' : 'none', md: 'flex' }, 
+            flexDirection: 'column', 
+            bgcolor: '#f8fafc',
+            height: '100%',
+            minWidth: 0, //Critical: prevents long messages from pushing page horizontally
+            overflow: 'hidden'
+          }}
+        > 
+          {!selectedChat ? (
+            <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" bgcolor="#f8fafc">
+              <Avatar sx={{ width: 80, height: 80, bgcolor: '#e2e8f0', color: '#94a3b8', mb: 3 }}><ChatBubbleOutlineIcon fontSize="large" /></Avatar>
+              <Typography variant="h5" fontWeight="800" color="#0f172a">Clinic Messenger</Typography>
+              <Typography color="text.secondary" mt={1}>Select a chat or staff member to start.</Typography>
+            </Box>
+          ) : (
+            <>
+              {/* Chat Header */}
+              <Box display="flex" alignItems="center" p={2} borderBottom="1px solid #e2e8f0" bgcolor="#fff" zIndex={10} flexShrink={0}>
+                <IconButton sx={{ display: { md: 'none' }, mr: 1 }} onClick={() => setSelectedChat(null)}>
+                  <ArrowBackIcon />
+                </IconButton>
+                
+                <Avatar sx={{ bgcolor: getChatDetails(selectedChat).isGroup ? '#0f172a' : primaryColor, mr: 2, width: 40, height: 40 }}>
+                  {getChatDetails(selectedChat).icon || getChatDetails(selectedChat).name.charAt(0)}
+                </Avatar>
+                
+                <Box textAlign="left">
+                  <Typography variant="subtitle1" fontWeight="800" color="#0f172a" lineHeight={1.2}>
+                    {getChatDetails(selectedChat).name}
+                  </Typography>
+                  
+                  {!getChatDetails(selectedChat).isGroup && (
+                    <Typography variant="caption" color={onlineUsers.includes(getChatDetails(selectedChat).userId) ? "success.main" : "text.secondary"} fontWeight="600">
+                      {onlineUsers.includes(getChatDetails(selectedChat).userId) ? 'Online' : 'Offline'}
+                    </Typography>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Messages Area */}
+              <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, md: 4 }, display: 'flex', flexDirection: 'column', gap: 1.5, minHeight: 0 }}>
+                {loadingMessages ? (
+                  <CircularProgress sx={{ alignSelf: 'center', mt: 5 }} />
+                ) : (
+                  messages.map((m) => {
+                    const isMe = m.sender._id === loggedInUser._id;
+                    const isRead = m.readBy && m.readBy.length > 1;
+
+                    return (
+                      <Box key={m._id} sx={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
+                        {getChatDetails(selectedChat).isGroup && !isMe && (
+                          <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ ml: 1, mb: 0.2 }}>
+                            {m.sender.name || m.sender.fullName}
                           </Typography>
-                          {isMe && <DoneAllIcon sx={{ fontSize: 14, color: isRead ? '#3b82f6' : '#94a3b8' }} />}
+                        )}
+
+                        <Box 
+                          sx={{ 
+                            bgcolor: isMe ? '#d9fdd3' : '#fff', color: '#111b21', px: 2, py: 1, 
+                            borderRadius: isMe ? '8px 0px 8px 8px' : '0px 8px 8px 8px', 
+                            boxShadow: '0 1px 1px rgb(0 0 0 / 0.1)', maxWidth: { xs: '85%', md: '65%' } 
+                          }}
+                        >
+                          <Typography variant="body1" sx={{ fontSize: '0.95rem' }}>{m.content}</Typography>
+                          <Box display="flex" justifyContent="flex-end" alignItems="center" gap={0.5} mt={0.5}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                              {formatMessageTime(m.createdAt)}
+                            </Typography>
+                            {isMe && <DoneAllIcon sx={{ fontSize: 14, color: isRead ? '#3b82f6' : '#94a3b8' }} />}
+                          </Box>
                         </Box>
                       </Box>
-                    </Box>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </Box>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </Box>
 
-            {/* Input Area */}
-            <Box p={2} bgcolor="#f0f2f5" display="flex" alignItems="center" gap={2} flexShrink={0}>
-              <TextField 
-                fullWidth variant="outlined" placeholder="Type a message" size="small"
-                value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={sendMessage}
-                sx={{ '& fieldset': { border: 'none' }, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2, px: 1 } }}
-              />
-              <IconButton onClick={() => sendMessage({ type: 'click' })} sx={{ bgcolor: primaryColor, color: 'white', '&:hover': { bgcolor: '#0f172a' }, width: 44, height: 44 }}>
-                <SendIcon fontSize="small" sx={{ ml: 0.5 }} />
-              </IconButton>
-            </Box>
-          </>
-        )}
-      </Box>
-    </Paper>
+              {/* Input Area */}
+              <Box p={2} bgcolor="#f0f2f5" display="flex" alignItems="center" gap={2} flexShrink={0}>
+                <TextField 
+                  fullWidth variant="outlined" placeholder="Type a message" size="small"
+                  value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={sendMessage}
+                  sx={{ '& fieldset': { border: 'none' }, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2, px: 1 } }}
+                />
+                <IconButton onClick={() => sendMessage({ type: 'click' })} sx={{ bgcolor: primaryColor, color: 'white', '&:hover': { bgcolor: '#0f172a' }, width: 44, height: 44 }}>
+                  <SendIcon fontSize="small" sx={{ ml: 0.5 }} />
+                </IconButton>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Paper>
+    </Box>
   );
 }

@@ -265,7 +265,7 @@ export default function SignupPage() {
                     src="/kliniclogo.png"
                     alt="Logo"
                     onError={(e) => { e.target.style.display = 'none'; }}
-                    sx={{ width: 56, height: 56, objectFit: 'contain' }}
+                    sx={{ width: 126, height: 126, objectFit: 'contain' }}
                   />
                 </Box>
 
