@@ -207,6 +207,14 @@ export default function Messages() {
   const hasClinicGroup = chats.some(c => c.type === 'clinic');
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
+  const messagesContainerRef = useRef(null);
+
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
 
     <Box 
@@ -352,7 +360,8 @@ export default function Messages() {
             height: '100%',
             minWidth: 0,
             minHeight: 0,
-            overflow: 'hidden'
+            overflow: 'hidden',
+            position: 'relative'
           }}
         > 
           {!selectedChat ? (
@@ -387,7 +396,19 @@ export default function Messages() {
               </Box>
 
               {/* Messages Area */}
-              <Box sx={{ flex: 1, overflowY: 'auto', p: { xs: 2, md: 4 }, display: 'flex', flexDirection: 'column', gap: 1.5, minHeight: 0 }}>
+              <Box 
+                ref={messagesContainerRef}
+                sx={{ 
+                  flex: 1, 
+                  overflowY: 'auto', 
+                  p: { xs: 2, md: 4 }, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: 1.5, 
+                  minHeight: 0,
+                  WebkitOverflowScrolling: 'touch'
+                }}
+              >
                 {loadingMessages ? (
                   <CircularProgress sx={{ alignSelf: 'center', mt: 5 }} />
                 ) : (
@@ -422,7 +443,6 @@ export default function Messages() {
                     );
                   })
                 )}
-                <div ref={messagesEndRef} />
               </Box>
 
               {/* Input Area */}
