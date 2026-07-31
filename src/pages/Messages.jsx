@@ -20,7 +20,7 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import DomainIcon from '@mui/icons-material/Domain';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
-//  THE FIX: Safely strips trailing '/api' if present in VITE_API_URL, or defaults to localhost
+// ⚡️ Safely strips trailing '/api' if present in VITE_API_URL, or defaults to localhost
 const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const ENDPOINT = rawApiUrl.replace(/\/api\/?$/, "");
 
@@ -181,12 +181,10 @@ export default function Messages() {
     return format(date, 'dd/MM/yyyy');                 
   };
 
-  //  THE FIX: Deep fallback resolution so "Unknown" never appears
   const getChatDetails = (chat) => {
     if (chat.type === 'clinic') return { name: 'Clinic Group', icon: <DomainIcon />, isGroup: true };
     if (chat.type === 'branch') return { name: chat.chatName || 'Branch Group', icon: <GroupsIcon />, isGroup: true };
     
-    // Safely check participants array
     const participants = chat.participants || [];
     const otherUser = participants.find(p => p && (p._id !== loggedInUser._id && p.id !== loggedInUser._id)) || participants[0];
     
@@ -210,18 +208,17 @@ export default function Messages() {
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
   return (
+
     <Box 
       sx={{ 
-        flex: 1,
-        width: '100%',
-        height: '100%',
-        minHeight: 0,
-        overflow: 'hidden', 
-        display: 'flex',
-        flexDirection: 'column',
+        p: { xs: 1, md: 2 }, 
+        bgcolor: '#f8fafc', 
+        height: '100%', 
+        maxHeight: '100%',
+        display: 'flex', 
+        flexDirection: 'column', 
         boxSizing: 'border-box',
-        p: { xs: 0, md: 2 },
-        bgcolor: '#f8fafc'
+        overflow: 'hidden'
       }}
     >
       <Paper 
@@ -229,11 +226,13 @@ export default function Messages() {
         sx={{ 
           flex: 1,
           display: 'flex',
+          flexDirection: 'row',
           overflow: 'hidden',
-          borderRadius: { xs: 0, md: 3 },
-          border: { xs: 'none', md: '1px solid #e2e8f0' },
+          borderRadius: { xs: 2, md: 3 },
+          border: '1px solid #e2e8f0',
           bgcolor: '#fff',
           minHeight: 0,
+          minWidth: 0,
           boxSizing: 'border-box'
         }}
       >
@@ -311,7 +310,7 @@ export default function Messages() {
                           secondary={
                             <Box display="flex" alignItems="center" gap={0.5}>
                               {isMe && latestMsg && <DoneAllIcon sx={{ fontSize: 16, color: isRead ? '#3b82f6' : '#94a3b8' }} />}
-                              <Typography variant="body2" color="text.secondary" noWrap sx={{ fontWeight: 500 }}>
+                              <Typography component="span" variant="body2" color="text.secondary" noWrap sx={{ fontWeight: 500 }}>
                                 {latestMsg ? (isMe ? `You: ${latestMsg.content}` : latestMsg.content) : 'Tap to start chatting'}
                               </Typography>
                             </Box>
@@ -351,7 +350,8 @@ export default function Messages() {
             flexDirection: 'column', 
             bgcolor: '#f8fafc',
             height: '100%',
-            minWidth: 0, // Critical: stops long messages from expanding page horizontally
+            minWidth: 0,
+            minHeight: 0,
             overflow: 'hidden'
           }}
         > 
