@@ -19,7 +19,7 @@ import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import MoreVertIcon from '@mui/icons-material/MoreVert'; //  The "3 Dots" Icon
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 
 import { useColorMode } from '../../context/ThemeContext';
 import { inventoryService } from '../../api/services/inventoryService';
@@ -137,7 +137,7 @@ export default function InventoryPage() {
 			const data = await inventoryService.getAll();
 			setInventory(data);
 		} catch (error) {
-			showToast('Failed to load inventory', 'error');
+			showToast(error?.message ||'Failed to load inventory', 'error');
 		} finally {
 			setLoading(false);
 		}
@@ -163,13 +163,12 @@ export default function InventoryPage() {
 	const handleDelete = async () => {
 		if (!selectedItem) return;
 		try {
-			//  Changed from api.delete
 			await inventoryService.delete(selectedItem._id);
 			setInventory(prev => prev.filter(i => i._id !== selectedItem._id));
 			setOpenDeleteModal(false);
 			showToast('Deleted successfully', 'success');
 		} catch (error) {
-			showToast('Delete failed', 'error');
+			showToast(error?.message || 'Delete failed', 'error');
 		}
 	};
 
@@ -177,12 +176,10 @@ export default function InventoryPage() {
 	const handleSave = async (formData) => {
         try {
             if (formMode === 'edit') {
-                //  FIXED: Replaced api.put with inventoryService.update
                 const updatedItem = await inventoryService.update(selectedItem._id, formData);
                 setInventory(prev => prev.map(i => i._id === selectedItem._id ? updatedItem : i));
                 showToast('Updated successfully', 'success');
             } else {
-                //  FIXED: Replaced api.post with inventoryService.add
                 const newItem = await inventoryService.add(formData);
                 if (formMode === 'create') setInventory(prev => [...prev, newItem]);
                 else fetchInventory();
@@ -197,7 +194,6 @@ export default function InventoryPage() {
     const handleConsume = async (qty, reason) => {
         if (!selectedItem) return;
         try {
-            //  FIXED: Replaced api.post with inventoryService.consume
             const updatedItem = await inventoryService.consume(selectedItem._id, { quantity: qty, reason });
             setInventory(prev => prev.map(i => i._id === selectedItem._id ? updatedItem : i));
             setOpenConsumeModal(false);
@@ -280,53 +276,56 @@ export default function InventoryPage() {
 	const filteredRows = inventory.filter(row => row.name.toLowerCase().includes(search.toLowerCase()));
 
 	return (
-		<Box sx={{ p: 2, maxWidth: '1600px', mx: 'auto', bgcolor: '#f8fafc', minHeight: '100vh' }}>
+        <Box sx={{ width: '100%', boxSizing: 'border-box', p: { xs: 2, md: 2 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>
 
-			{/* HEADER & STATS */}
-			<Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" mb={3} spacing={2}>
-				<Box sx={{ textAlign: 'left' }}>
-					<Typography variant="h5" fontWeight="900" color={primaryColor} letterSpacing="-0.5px">Inventory</Typography>
-					<Typography variant="body2" color="#64748b" fontWeight="500">Manage your clinic's supplies.</Typography>
-				</Box>
-				<Stack direction="row" spacing={2}>
-					<TextField
-						placeholder="Search..." size="small" value={search} onChange={(e) => setSearch(e.target.value)}
-						InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: '#94a3b8' }} /></InputAdornment> }}
-						sx={{ width: 280, bgcolor: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 3, '& fieldset': { borderColor: '#e2e8f0' } } }}
-					/>
-					<Button variant="contained" startIcon={<AddIcon />} onClick={() => { setSelectedItem(null); setFormMode('create'); }}
-						sx={{ bgcolor: { primaryColor }, borderRadius: 3, px: 3, textTransform: 'none', fontWeight: 'bold' }}>
-						Add Item
-					</Button>
-				</Stack>
-			</Stack>
+            {/* HEADER & STATS */}
+            <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ xs: 'stretch', md: 'center' }} mb={3} spacing={2}>
+                <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="h5" fontWeight="900" color={primaryColor} letterSpacing="-0.5px">Inventory</Typography>
+                    <Typography variant="body2" color="#64748b" fontWeight="500">Manage your clinic's supplies.</Typography>
+                </Box>
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                    <TextField
+                        placeholder="Search..." size="small" value={search} onChange={(e) => setSearch(e.target.value)}
+                        InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: '#94a3b8' }} /></InputAdornment> }}
+                        sx={{ width: { xs: '100%', sm: 280 }, bgcolor: '#fff', '& .MuiOutlinedInput-root': { borderRadius: 3, '& fieldset': { borderColor: '#e2e8f0' } } }}
+                    />
+                    <Button variant="contained" startIcon={<AddIcon />} onClick={() => { setSelectedItem(null); setFormMode('create'); }}
+                        sx={{ bgcolor: primaryColor, borderRadius: 3, px: 3, textTransform: 'none', fontWeight: 'bold' }}>
+                        Add Item
+                    </Button>
+                </Stack>
+            </Stack>
 
-			<Grid container spacing={3} mb={3}>
-				<Grid item xs={12} md={4}><StatCard title="Total Products" value={stats.totalItems} icon={<Inventory2OutlinedIcon fontSize="large" />} color="#3b82f6" /></Grid>
-				<Grid item xs={12} md={4}><StatCard title="Low Stock Alerts" value={stats.lowStock} icon={<WarningAmberRoundedIcon fontSize="large" />} color="#ef4444" /></Grid>
-				<Grid item xs={12} md={4}><StatCard title="Inventory Value" value={`₹${stats.totalValue.toLocaleString('en-IN')}`} icon={<CurrencyRupeeIcon fontSize="large" />} color="#10b981" /></Grid>
-			</Grid>
+            <Grid container spacing={3} mb={3}>
+                <Grid item xs={12} md={4}><StatCard title="Total Products" value={stats.totalItems} icon={<Inventory2OutlinedIcon fontSize="large" />} color="#3b82f6" /></Grid>
+                <Grid item xs={12} md={4}><StatCard title="Low Stock Alerts" value={stats.lowStock} icon={<WarningAmberRoundedIcon fontSize="large" />} color="#ef4444" /></Grid>
+                <Grid item xs={12} md={4}><StatCard title="Inventory Value" value={`₹${stats.totalValue.toLocaleString('en-IN')}`} icon={<CurrencyRupeeIcon fontSize="large" />} color="#10b981" /></Grid>
+            </Grid>
 
-			<Paper sx={{ borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 20px -5px rgba(0, 0, 0, 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
-				<DataGrid
-					rows={filteredRows} columns={columns} getRowId={(row) => row._id} getRowHeight={() => 'auto'} autoHeight
-					initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} pageSizeOptions={[10, 25, 50]} disableRowSelectionOnClick loading={loading}
-					sx={{
-						border: 'none',
-						'& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc', color: '#64748b', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0' },
-						'& .MuiDataGrid-cell': { borderBottom: '1px solid #f1f5f9', color: '#334155', paddingTop: '16px', paddingBottom: '16px' },
-						'& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },
-						'& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': { outline: 'none' }
-					}}
-				/>
-			</Paper>
+            <Paper sx={{ width: '100%', borderRadius: 4, border: '1px solid #e2e8f0', boxShadow: '0 4px 20px -5px rgba(0, 0, 0, 0.05)', overflow: 'hidden', bgcolor: '#fff' }}>
+                <Box sx={{ width: '100%', overflowX: 'auto' }}>
+                    <DataGrid
+                        rows={filteredRows} columns={columns} getRowId={(row) => row._id} getRowHeight={() => 'auto'} autoHeight
+                        initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} pageSizeOptions={[10, 25, 50]} disableRowSelectionOnClick loading={loading}
+                        sx={{
+                            border: 'none',
+                            minWidth: 800, 
+                            '& .MuiDataGrid-columnHeaders': { bgcolor: '#f8fafc', color: '#64748b', fontWeight: 800, fontSize: '0.75rem', textTransform: 'uppercase', borderBottom: '1px solid #e2e8f0' },
+                            '& .MuiDataGrid-cell': { borderBottom: '1px solid #f1f5f9', color: '#334155', paddingTop: '16px', paddingBottom: '16px' },
+                            '& .MuiDataGrid-row:hover': { bgcolor: '#f8fafc' },
+                            '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': { outline: 'none' }
+                        }}
+                    />
+                </Box>
+            </Paper>
 
-			{/* MODALS */}
-			<InventoryFormModal open={!!formMode} onClose={() => setFormMode(null)} onSave={handleSave} initialData={selectedItem} mode={formMode} />
-			<ConsumeStockModal open={openConsumeModal} onClose={() => setOpenConsumeModal(false)} onConfirm={handleConsume} item={selectedItem} />
-			<DeleteConfirmModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)} onConfirm={handleDelete} item={selectedItem} />
-		</Box>
-	);
+            {/* MODALS */}
+            <InventoryFormModal open={!!formMode} onClose={() => setFormMode(null)} onSave={handleSave} initialData={selectedItem} mode={formMode} />
+            <ConsumeStockModal open={openConsumeModal} onClose={() => setOpenConsumeModal(false)} onConfirm={handleConsume} item={selectedItem} />
+            <DeleteConfirmModal open={openDeleteModal} onClose={() => setOpenDeleteModal(false)} onConfirm={handleDelete} item={selectedItem} />
+        </Box>
+    );
 }
 
 // --- MODALS (Same as before) ---

@@ -36,20 +36,18 @@ export default function SettingsPage() {
   };
 
   return (
+    // MainLayout stays untouched, so zero other components are affected!
     <Box sx={{ 
-      //  FIX 1: The "Edge-to-Edge" Math
-      // Pull the page out of the MainLayout padding on mobile only
-      width: 'auto',
-      // mx: { xs: -2, md: 0 }, 
-      // mt: { xs: -2, md: 0 },
-      
-      height: { xs: 'calc(100vh - 74px)', md: 'calc(100vh - 100px)' }, 
+      width: '100%',
+      // Matches the exact height MainLayout gives to <main>
+      height: { xs: `calc(100dvh - 86px)`, md: `calc(100vh - 74px)` },
+      maxHeight: '100%',
+      overflow: 'hidden', // Stops MainLayout from creating an outer scrollbar for this page
       display: 'flex', 
       flexDirection: 'column',
-      
-      //  FIX 2: Stop internal tabs from blowing out the width
-      minWidth: 0,
-      overflowX: 'hidden'
+      boxSizing: 'border-box',
+      p: { xs: 0, md: 2 },
+      bgcolor: '#f8fafc'
     }}>
       
       <Paper elevation={0} sx={{ 
@@ -60,20 +58,23 @@ export default function SettingsPage() {
         borderRadius: { xs: 0, md: 3 }, 
         overflow: 'hidden', 
         bgcolor: 'white',
-        minWidth: 0 // Protects the Paper container
+        minHeight: 0, // ⚡️ CRITICAL: Prevents inner tabs from forcing outer page growth
+        minWidth: 0
       }}>
         
-        {/* Responsive Sidebar (Top menu on mobile, Side menu on desktop) */}
+        {/* Responsive Sidebar (Top horizontal menu on mobile, Side menu on desktop) */}
         <SettingsSidebar tab={tab} setTab={handleTabChange} />
 
-        {/* Right Content */}
+        {/* Right Content - THE ONLY SCROLLABLE AREA */}
         <Box sx={{ 
           flex: 1, 
           overflowY: 'auto', 
-          overflowX: 'hidden', //  Protects against wide content inside tabs
+          overflowX: 'hidden', 
           bgcolor: '#fff', 
           p: { xs: 2, md: 4 },
-          minWidth: 0 
+          minWidth: 0,
+          minHeight: 0,
+          WebkitOverflowScrolling: 'touch'
         }}>
           {tab === 0 && <UserProfileTab />}
           {tab === 1 && <ClinicProfileTab />}

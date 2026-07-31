@@ -20,7 +20,10 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import DomainIcon from '@mui/icons-material/Domain';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
-const ENDPOINT = import.meta.env.VITE_API_URL
+//  THE FIX: Safely strips trailing '/api' if present in VITE_API_URL, or defaults to localhost
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const ENDPOINT = rawApiUrl.replace(/\/api\/?$/, "");
+
 var socket, selectedChatCompare;
 
 export default function Messages() {
@@ -39,9 +42,7 @@ export default function Messages() {
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
 
-  // Group Creation Menu State
   const [anchorEl, setAnchorEl] = useState(null);
-
   const messagesEndRef = useRef(null);
 
   const sortChatsList = (chatList) => {
@@ -180,44 +181,47 @@ export default function Messages() {
     return format(date, 'dd/MM/yyyy');                 
   };
 
+  //  THE FIX: Deep fallback resolution so "Unknown" never appears
   const getChatDetails = (chat) => {
     if (chat.type === 'clinic') return { name: 'Clinic Group', icon: <DomainIcon />, isGroup: true };
     if (chat.type === 'branch') return { name: chat.chatName || 'Branch Group', icon: <GroupsIcon />, isGroup: true };
     
-    const otherUser = chat.participants.find(p => p._id !== loggedInUser._id) || chat.participants[0];
+    // Safely check participants array
+    const participants = chat.participants || [];
+    const otherUser = participants.find(p => p && (p._id !== loggedInUser._id && p.id !== loggedInUser._id)) || participants[0];
     
-    if (!otherUser) return { name: 'Unknown', icon: null, isGroup: false, userId: null };
+    if (!otherUser) return { name: 'Staff Member', icon: null, isGroup: false, userId: null };
 
-    const isSelf = otherUser._id === loggedInUser._id;
-    const baseName = otherUser.name || otherUser.fullName || 'Staff Member';
+    const isSelf = (otherUser._id || otherUser.id) === (loggedInUser._id || loggedInUser.id);
+    const baseName = otherUser.name || otherUser.fullName || otherUser.email || 'Staff Member';
     const name = isSelf ? `${baseName} (You)` : baseName;
 
-    return { name, icon: null, isGroup: false, userId: otherUser._id };
+    return { name, icon: null, isGroup: false, userId: otherUser._id || otherUser.id };
   };
 
-  const privateChatUserIds = chats.filter(c => c.type === 'private').flatMap(c => c.participants.map(p => p._id));
+  const privateChatUserIds = chats.filter(c => c.type === 'private').flatMap(c => (c.participants || []).map(p => p?._id || p?.id));
   const unchattedStaff = staffDirectory.filter(user => 
-    user._id !== loggedInUser._id &&
-    !privateChatUserIds.includes(user._id) && 
+    user && (user._id || user.id) !== (loggedInUser._id || loggedInUser.id) &&
+    !privateChatUserIds.includes(user._id || user.id) && 
     (user.name || user.fullName || '').toLowerCase().includes(search.toLowerCase())
   );
 
   const hasClinicGroup = chats.some(c => c.type === 'clinic');
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
-  // =========================================================================
-  //HERE IS THE FIX: The updated return block for your layout
-  // =========================================================================
   return (
     <Box 
       sx={{ 
+        flex: 1,
         width: '100%',
-        height: '100%', //Fills MainLayout exactly without scrolling it
+        height: '100%',
+        minHeight: 0,
         overflow: 'hidden', 
         display: 'flex',
         flexDirection: 'column',
         boxSizing: 'border-box',
-        p: { xs: 0, md: 2 }
+        p: { xs: 0, md: 2 },
+        bgcolor: '#f8fafc'
       }}
     >
       <Paper 
@@ -229,7 +233,7 @@ export default function Messages() {
           borderRadius: { xs: 0, md: 3 },
           border: { xs: 'none', md: '1px solid #e2e8f0' },
           bgcolor: '#fff',
-          minHeight: 0, //Critical: prevents message list from expanding beyond screen
+          minHeight: 0,
           boxSizing: 'border-box'
         }}
       >
@@ -325,7 +329,7 @@ export default function Messages() {
                       STAFF DIRECTORY
                     </Typography>
                     {unchattedStaff.map((user) => (
-                      <ListItem button key={user._id} onClick={() => startChat(user._id)} sx={{ p: 2, '&:hover': { bgcolor: '#f8fafc' } }}>
+                      <ListItem button key={user._id || user.id} onClick={() => startChat(user._id || user.id)} sx={{ p: 2, '&:hover': { bgcolor: '#f8fafc' } }}>
                         <ListItemAvatar>
                           <Avatar sx={{ bgcolor: primaryColor }}>{(user.name || user.fullName || 'U').charAt(0)}</Avatar>
                         </ListItemAvatar>
@@ -347,7 +351,7 @@ export default function Messages() {
             flexDirection: 'column', 
             bgcolor: '#f8fafc',
             height: '100%',
-            minWidth: 0, //Critical: prevents long messages from pushing page horizontally
+            minWidth: 0, // Critical: stops long messages from expanding page horizontally
             overflow: 'hidden'
           }}
         > 
@@ -388,14 +392,14 @@ export default function Messages() {
                   <CircularProgress sx={{ alignSelf: 'center', mt: 5 }} />
                 ) : (
                   messages.map((m) => {
-                    const isMe = m.sender._id === loggedInUser._id;
+                    const isMe = (m.sender?._id || m.sender?.id) === (loggedInUser._id || loggedInUser.id);
                     const isRead = m.readBy && m.readBy.length > 1;
 
                     return (
                       <Box key={m._id} sx={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                         {getChatDetails(selectedChat).isGroup && !isMe && (
                           <Typography variant="caption" color="text.secondary" fontWeight="700" sx={{ ml: 1, mb: 0.2 }}>
-                            {m.sender.name || m.sender.fullName}
+                            {m.sender?.name || m.sender?.fullName || 'Staff'}
                           </Typography>
                         )}
 
