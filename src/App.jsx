@@ -21,6 +21,11 @@ import AttendancePage from './pages/Attendance/AttendancePage';
 import MyStats from './pages/MyStats';
 import Messages from './pages/Messages';
 
+import RoleGuard from './components/common/RoleGuard';
+import SuperAdminLogin from './pages/SuperAdminLogin';
+import SuperAdminDashboard from './components/SuperAdmin/SuperAdminDashboard';
+import SuperAdminProtectedRoute from './components/SuperAdmin/SuperAdminProtectedRoute';
+
 // --- DASHBOARD PAGES ---
 import DashboardRouter from './pages/Dashboard/DashboardRouter';
 import PatientList from './pages/Dashboard/PatientList';
@@ -84,7 +89,15 @@ function App() {
             {/* --- LEVEL 1: PUBLIC ROUTES --- */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-
+            <Route path="/admin-portal-login" element={<SuperAdminLogin />} />
+            <Route 
+              path="/saas-admin" 
+              element={
+                <SuperAdminProtectedRoute>
+                  <SuperAdminDashboard />
+                </SuperAdminProtectedRoute>
+              } 
+            />
             {/* --- LEVEL 2: AUTHENTICATED ONLY (Onboarding) --- */}
             {/* Use this for pages that happen AFTER login but BEFORE dashboard */}
             <Route element={<RequireAuth />}>
@@ -108,10 +121,27 @@ function App() {
                   <Route path="calendar" element={<CalendarPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="inventory" element={<InventoryPage />} />
-                  <Route path="payroll" element={<AdminPayrollPage />} />
-                  <Route path="financial" element={<FinancePage />} />
+                  <Route 
+                    path="payroll" 
+                    element={
+                      <RoleGuard allowedRoles={['Administrator']}>
+                        <AdminPayrollPage />
+                      </RoleGuard>
+                    } 
+                  />
+                  <Route path="financial" element={
+                      <RoleGuard allowedRoles={['Administrator']}>
+                        <AdminPayrollPage />
+                      </RoleGuard>
+                    } 
+                 />
                   <Route path="attendance" element={<AttendancePage />} />
-                  <Route path="/my-stats" element={<MyStats />} />
+                  <Route path="/my-stats" element={
+                      <RoleGuard allowedRoles={['Doctor']}>
+                        <AdminPayrollPage />
+                      </RoleGuard>
+                    } 
+                 />
                   <Route path="/messages" element={<Messages />} />
                 </Route>
               </Route>

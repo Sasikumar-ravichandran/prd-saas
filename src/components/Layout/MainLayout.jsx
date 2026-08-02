@@ -16,7 +16,7 @@ export default function MainLayout() {
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', overflow: 'hidden', overscrollBehavior: 'none' }}>
 
       {/* 1. TOP BAR */}
       <Header
@@ -46,21 +46,21 @@ export default function MainLayout() {
             md: `${HEADER_HEIGHT}px` 
           },
           height: { 
-            xs: `calc(100dvh - ${HEADER_HEIGHT + 12}px)`, 
+            xs: `calc(100vh - ${HEADER_HEIGHT + 12}px)`, 
             md: `calc(100vh - ${HEADER_HEIGHT}px)` 
           },
           
-          //  CRITICAL FIX 1: Defines the positioning boundary for absolute children
           position: 'relative',
           
-          //  CRITICAL FIX 2: Prevents flexbox children from expanding the page width/height
           display: 'flex',
           flexDirection: 'column',
           minWidth: 0,
           minHeight: 0,
 
+          // ⚡️ CHANGED: Prevents mobile outer-layout trapping when keyboard opens
           overflowY: 'auto',
           overflowX: 'hidden',
+          overscrollBehavior: 'none',
           transition: 'width 0.3s',
           WebkitOverflowScrolling: 'touch',
         }}

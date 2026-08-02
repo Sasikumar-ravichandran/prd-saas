@@ -225,7 +225,6 @@ export default function ClinicProfileTab() {
 
         {/* CLINIC DETAILS */}
         <Box sx={{ mb: 4 }}>
-
           {/* ROW 1: Clinic ID & Legal Name */}
           <Box sx={{ display: 'flex', gap: 3, mb: 3, flexDirection: { xs: 'column', md: 'row' } }}>
             <Box sx={{ flex: 1 }}>
@@ -251,26 +250,24 @@ export default function ClinicProfileTab() {
             </Box>
           </Box>
 
-          {/* ROW 3: Phone (Odd item out) */}
+          {/* ROW 3: Phone */}
           <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
             <Box sx={{ flex: 1 }}>
               <TextField fullWidth label="Phone" placeholder="+91..." InputLabelProps={{ shrink: true }} {...register("phone")} />
             </Box>
-            {/* Empty Box to force the Phone field to stay at 50% width on desktop */}
             <Box sx={{ flex: 1, display: { xs: 'none', md: 'block' } }} />
           </Box>
-
         </Box>
 
         <Divider sx={{ my: 4 }} />
 
-        {/*  WHATSAPP AUTOMATION SECTION */}
-        <Box sx={{ mb: 3, }}>
+        {/* ================= META WHATSAPP AUTOMATION SECTION ================= */}
+        <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <WhatsAppIcon sx={{ color: '#25D366' }} /> WhatsApp Automation
+            <WhatsAppIcon sx={{ color: '#25D366' }} /> WhatsApp Automation (BYON)
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2, display: 'flex' }}>
-            Configure your custom Twilio gateway parameters to send automated notifications to patients.
+            Connect your own Meta WhatsApp Business Cloud API credentials to send automated reminders from your clinic's phone number.
           </Typography>
 
           <FormControlLabel
@@ -281,21 +278,46 @@ export default function ClinicProfileTab() {
                 color="success"
               />
             }
-            label={<Typography fontWeight={600}  >Enable Automated WhatsApp Notifications</Typography>}
+            label={<Typography fontWeight={600}>Enable Meta Cloud API Notifications</Typography>}
             sx={{ mb: 3, display: 'flex' }}
           />
 
           {whatsappEnabled && (
             <Box sx={{ bgcolor: '#f8fafc', p: 3, borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <Grid container spacing={3}>
+                {/* ⚡️ CHANGED: Phone Number ID */}
                 <Grid item xs={12} md={4}>
-                  <TextField fullWidth label="Twilio Account SID" placeholder="ACxxxxxxxxxxxxxx" InputLabelProps={{ shrink: true }} sx={{ bgcolor: 'white' }} {...register("whatsappConfig.twilioAccountSid")} />
+                  <TextField 
+                    fullWidth 
+                    label="Phone Number ID" 
+                    placeholder="109876543210123" 
+                    InputLabelProps={{ shrink: true }} 
+                    sx={{ bgcolor: 'white' }} 
+                    {...register("whatsappConfig.phoneNumberId")} 
+                  />
                 </Grid>
+                {/* ⚡️ CHANGED: WhatsApp Business Account (WABA) ID */}
                 <Grid item xs={12} md={4}>
-                  <TextField fullWidth type="password" label="Twilio Auth Token" placeholder="••••••••••••••••" InputLabelProps={{ shrink: true }} sx={{ bgcolor: 'white' }} {...register("whatsappConfig.twilioAuthToken")} />
+                  <TextField 
+                    fullWidth 
+                    label="WhatsApp Business Account ID" 
+                    placeholder="101234567890123" 
+                    InputLabelProps={{ shrink: true }} 
+                    sx={{ bgcolor: 'white' }} 
+                    {...register("whatsappConfig.wabaId")} 
+                  />
                 </Grid>
+                {/* ⚡️ CHANGED: Permanent System User Access Token */}
                 <Grid item xs={12} md={4}>
-                  <TextField fullWidth label="Twilio Sender Number" placeholder="+14155238886" InputLabelProps={{ shrink: true }} sx={{ bgcolor: 'white' }} {...register("whatsappConfig.twilioSenderNumber")} />
+                  <TextField 
+                    fullWidth 
+                    type="password" 
+                    label="Permanent Access Token" 
+                    placeholder="EAA..." 
+                    InputLabelProps={{ shrink: true }} 
+                    sx={{ bgcolor: 'white' }} 
+                    {...register("whatsappConfig.accessToken")} 
+                  />
                 </Grid>
 
                 {/* Test Sandbox */}
@@ -303,15 +325,15 @@ export default function ClinicProfileTab() {
                   <Box sx={{ mt: 1, p: 2, bgcolor: 'white', borderRadius: 2, border: '1px dashed #cbd5e1' }}>
                     <Typography variant="subtitle2" fontWeight="700" sx={{ mb: 1 }}>Connection Sandbox Verification</Typography>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-                      Input your personal WhatsApp number with country code (e.g., +91xxxxxxxxx) to run a simulated delivery test before saving.
+                      Enter your mobile number with country code (e.g., 919876543210) to dispatch Meta's built-in "hello_world" test template.
                     </Typography>
 
                     {testStatus.msg && <Alert severity={testStatus.type} sx={{ mb: 2, borderRadius: 2 }}>{testStatus.msg}</Alert>}
 
                     <Stack direction="row" spacing={2} alignItems="center">
-                      <TextField size="small" placeholder="+919876543210" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} sx={{ flex: 1, maxWidth: 300 }} />
+                      <TextField size="small" placeholder="919876543210" value={testPhone} onChange={(e) => setTestPhone(e.target.value)} sx={{ flex: 1, maxWidth: 300 }} />
                       <Button variant="outlined" color="inherit" onClick={handleTestConnection} disabled={testLoading} startIcon={<SendIcon />} sx={{ borderRadius: 2, height: 40, textTransform: 'none', fontWeight: 600 }}>
-                        {testLoading ? <CircularProgress size={20} /> : "Test Gateway"}
+                        {testLoading ? <CircularProgress size={20} /> : "Test Meta API"}
                       </Button>
                     </Stack>
                   </Box>
@@ -322,10 +344,10 @@ export default function ClinicProfileTab() {
 
               <Box sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" fontWeight="800" sx={{ mb: 0.5, color: '#0f172a' }}>
-                  Message Templates & Triggers
+                  Meta Approved Template Names & Triggers
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Select which events trigger an automated message. The template text MUST match your pre-approved Twilio templates exactly.
+                  Enter the exact approved template name from your Meta WhatsApp Manager (e.g., 'appointment_reminder_v1').
                 </Typography>
               </Box>
 
@@ -367,13 +389,14 @@ export default function ClinicProfileTab() {
                         />
                       </Box>
 
+                      {/* ⚡️ CHANGED: Label updated to ask for Template Name instead of free text */}
                       <TextField
                         fullWidth
-                        multiline
-                        rows={2}
-                        placeholder="Enter your approved Twilio template here..."
+                        size="small"
+                        placeholder="e.g., appointment_reminder_v1"
+                        label="Meta Approved Template Name"
                         InputLabelProps={{ shrink: true }}
-                        {...register(`whatsappConfig.triggers.${event.id}.template`)}
+                        {...register(`whatsappConfig.triggers.${event.id}.templateName`)}
                         disabled={!isEventEnabled}
                         sx={{
                           mb: 2,
@@ -383,13 +406,13 @@ export default function ClinicProfileTab() {
 
                       <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                         <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mr: 1 }}>
-                          Usable Variables:
+                         {"Template Parameters (In Order {{1}}, {{2}}, etc.):"}
                         </Typography>
-                        {event.variables.map(v => (
+                        {event.variables.map((v, i) => (
                           <Chip
                             key={v}
                             size="small"
-                            label={v}
+                            label={`{{${i+1}}} = ${v}`}
                             sx={{
                               fontSize: '0.65rem',
                               fontWeight: 'bold',
@@ -408,50 +431,6 @@ export default function ClinicProfileTab() {
             </Box>
           )}
         </Box>
-
-        {/* <Divider sx={{ my: 4 }} /> */}
-
-        {/* <Box sx={{ mb: 3 }}> */}
-          {/* <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <DocumentScannerIcon sx={{ color: '#6366f1' }} /> Document AI (OCR)
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enable automated form scanning. You get 1,500 free scans per day by generating your own Google Gemini API key. <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Get your free key here</a>.
-          </Typography> */}
-
-          {/* <FormControlLabel
-            control={
-              <Switch
-                checked={watch("aiConfig.enabled") || false}
-                onChange={(e) => setValue("aiConfig.enabled", e.target.checked, { shouldDirty: true })}
-                color="primary"
-              />
-            }
-            label={<Typography fontWeight={600}>Enable AI Form Scanner</Typography>}
-            sx={{ mb: 3, display: 'flex' }}
-          /> */}
-
-          {/* Only show the key input if they enable it */}
-          {/* {watch("aiConfig.enabled") && (
-            <Box sx={{ bgcolor: '#f8fafc', p: 3, borderRadius: 3, border: '1px solid #e2e8f0' }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <TextField
-                    fullWidth
-                    type="password"
-                    label="Google AI Studio API Key"
-                    placeholder="AIzaSy..."
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ bgcolor: 'white' }}
-                    {...register("aiConfig.geminiApiKey")}
-                  />
-                </Grid>
-              </Grid>
-            </Box>
-          )} */}
-        {/* </Box> */}
-
-
       </form>
       {/* ================= END OF MAIN FORM ================= */}
 

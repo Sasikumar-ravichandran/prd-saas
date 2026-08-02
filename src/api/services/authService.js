@@ -20,6 +20,22 @@ export const authService = {
     return response.data;
   },
 
+  requestOtp: async (email, purpose = 'PASSWORD_RESET') => {
+    const response = await api.post('/auth/send-otp', { email, purpose });
+    return response.data;
+  },
+
+  verifyOtp: async (email, otp, purpose = 'PASSWORD_RESET') => {
+    const response = await api.post('/auth/verify-otp', { email, otp, purpose });
+    return response.data;
+  },
+
+  resetPassword: async (email, otp, newPassword) => {
+    // Your backend requires the OTP again during the final password reset step!
+    const response = await api.post('/auth/reset-password', { email, otp, newPassword });
+    return response.data;
+  },
+
   logout: () => {
     localStorage.removeItem('user');
   }

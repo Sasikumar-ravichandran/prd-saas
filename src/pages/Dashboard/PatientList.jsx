@@ -26,6 +26,9 @@ import { useToast } from '../../context/ToastContext';
 import { patientService } from '../../api/services/patientService';
 import api from '../../api/services/api';
 import { useSearchParams } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectUserRole } from '../../redux/slices/authSlice';
+
 
 import AddPatientModal from '../../components/Patients/AddPatientModal';
 
@@ -60,6 +63,8 @@ export default function PatientList() {
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
 
+  const userRole = useSelector(selectUserRole);
+  
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
@@ -172,7 +177,7 @@ export default function PatientList() {
       showToast('Patient record deleted successfully', 'success');
       fetchPatients();
     } catch (err) {
-      showToast('Failed to delete patient record', 'error');
+      showToast(err?.message || 'Failed to delete patient record', 'error');
     } finally {
       setDeleteDialogOpen(false);
       setPatientToDelete(null);
@@ -230,26 +235,99 @@ export default function PatientList() {
         </Stack>
 
         {/* GLOBAL STATS CARDS */}
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar variant="rounded" sx={{ bgcolor: '#eff6ff', color: primaryColor, width: 48, height: 48 }}><PersonIcon /></Avatar>
-              <Box>
-                <Typography variant="h5" fontWeight="800" color="#1e293b">{globalStats.total}</Typography>
-                <Typography variant="caption" fontWeight="bold" color="text.secondary">TOTAL PATIENTS</Typography>
-              </Box>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar variant="rounded" sx={{ bgcolor: '#fff7ed', color: '#ea580c', width: 48, height: 48 }}><WarningAmberIcon /></Avatar>
-              <Box>
-                <Typography variant="h5" fontWeight="800" color="#1e293b">{globalStats.pending}</Typography>
-                <Typography variant="caption" fontWeight="bold" color="text.secondary">PAYMENTS PENDING</Typography>
-              </Box>
-            </Paper>
-          </Grid>
-        </Grid>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+            gap: 2,
+          }}
+        >
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 1.5, sm: 2.5 },
+              border: '1px solid #e2e8f0',
+              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 1, sm: 2 },
+            }}
+          >
+            <Avatar
+              variant="rounded"
+              sx={{
+                bgcolor: '#eff6ff',
+                color: primaryColor,
+                width: { xs: 40, sm: 48 },
+                height: { xs: 40, sm: 48 },
+                flexShrink: 0,
+              }}
+            >
+              <PersonIcon />
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h5" fontWeight="800" color="#1e293b">
+                {globalStats.total}
+              </Typography>
+              <Typography
+                variant="caption"
+                fontWeight="bold"
+                color="text.secondary"
+                sx={{
+                  display: 'block',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                TOTAL PATIENTS
+              </Typography>
+            </Box>
+          </Paper>
+
+          <Paper
+            elevation={0}
+            sx={{
+              p: { xs: 1.5, sm: 2.5 },
+              border: '1px solid #e2e8f0',
+              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+              gap: { xs: 1, sm: 2 },
+            }}
+          >
+            <Avatar
+              variant="rounded"
+              sx={{
+                bgcolor: '#fff7ed',
+                color: '#ea580c',
+                width: { xs: 40, sm: 48 },
+                height: { xs: 40, sm: 48 },
+                flexShrink: 0,
+              }}
+            >
+              <WarningAmberIcon />
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h5" fontWeight="800" color="#1e293b">
+                {globalStats.pending}
+              </Typography>
+              <Typography
+                variant="caption"
+                fontWeight="bold"
+                color="text.secondary"
+                sx={{
+                  display: 'block',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                PAYMENTS PENDING
+              </Typography>
+            </Box>
+          </Paper>
+        </Box>
       </Box>
 
       {/* 2. TABLE WORKSPACE */}
@@ -266,7 +344,6 @@ export default function PatientList() {
           >
             <Tab label="All Patients" value="all" />
             <Tab label="Pending Dues" value="due" />
-            <Tab label="Active Only" value="active" />
           </Tabs>
 
           {/*  RESPONSIVE STACK FOR FILTERS */}
@@ -379,10 +456,20 @@ export default function PatientList() {
                           <EditIcon sx={{ fontSize: 18, color: '#94a3b8' }} />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Delete Patient">
-                        <IconButton size="small" onClick={(e) => handleDeleteClick(e, row._id)} sx={{ '&:hover': { color: '#ef4444', bgcolor: '#fee2e2' } }}>
-                          <DeleteOutlineIcon fontSize="small" sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' } }} />
-                        </IconButton>
+                      <Tooltip title={userRole === userRole ? "Delete Patient" : "Only Admin can delete patients"}>
+                        <span>
+                          <IconButton
+                            size="small"
+                            disabled={userRole !== userRole}
+                            onClick={(e) => handleDeleteClick(e, row._id)}
+                            sx={{
+                              '&:hover': { color: '#ef4444', bgcolor: '#fee2e2' },
+                              ...(userRole !== userRole && { opacity: 0.5, cursor: 'not-allowed' })
+                            }}
+                          >
+                            <DeleteOutlineIcon fontSize="small" sx={{ color: userRole === userRole ? '#94a3b8' : '#cbd5e1', '&:hover': { color: '#ef4444' } }} />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     </Stack>
                   </TableCell>
