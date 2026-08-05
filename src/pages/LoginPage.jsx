@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, TextField, Button, InputAdornment,
-  Alert, CircularProgress, Divider, Link, CssBaseline,
-  GlobalStyles, Drawer, IconButton
+  Alert, CircularProgress, Divider, CssBaseline,
+  GlobalStyles
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -11,13 +11,7 @@ import { useDispatch } from 'react-redux';
 import EmailIcon from '@mui/icons-material/Email';
 import LockIcon from '@mui/icons-material/Lock';
 import DomainIcon from '@mui/icons-material/Domain';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import ChatIcon from '@mui/icons-material/Chat';
-import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import PieChartIcon from '@mui/icons-material/PieChart';
-import SecurityIcon from '@mui/icons-material/Security';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CloseIcon from '@mui/icons-material/Close';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 
 import { authService } from '../api/services/authService';
@@ -74,15 +68,29 @@ export default function LoginPage() {
         password: formData.password,
         clinicShortId: tab === 1 ? formData.clinicShortId : undefined
       };
+      
       const data = await authService.login(payload);
+      
       if (data.requirePasswordChange) {
         localStorage.setItem("user", JSON.stringify(data));
         navigate("/change-password");
         return;
       }
+      
+      // 1. Save credentials to Redux
       dispatch(setCredentials({ user: data }));
       await loadBranding();
-      navigate("/");
+
+      // 2. THE NEW REDIRECT LOGIC
+      // Check if it's an admin who just got approved but hasn't set up a branch yet.
+      // (Adjust `!data.defaultBranch` based on what your backend returns for a new clinic)
+      if (data.role === 'Clinic Admin' && !data.defaultBranch) {
+        navigate("/setup-branch");
+      } else {
+        // Everyone else goes to the dashboard
+        navigate("/");
+      }
+
     } catch (err) {
       setError(err.response?.data?.message || "Invalid credentials. Please try again.");
       setFormData(prev => ({ ...prev, password: '' }));
@@ -108,14 +116,10 @@ export default function LoginPage() {
         bgcolor: '#ffffff'
       }}>
 
-        {/* =========================================================
-            1. DESKTOP ONLY: Left Side Brand Storytelling
-           ========================================================= */}
+        {/* 1. DESKTOP ONLY: Left Side Brand Storytelling */}
         <BrandSidebar defaultColor={defaultColor} />
 
-        {/* =========================================================
-            2. RIGHT SIDE: Form Container & Mobile Welcome Screen
-           ========================================================= */}
+        {/* 2. RIGHT SIDE: Form Container & Mobile Welcome Screen */}
         <Box sx={{
           flex: 1,
           display: 'flex',
@@ -128,7 +132,7 @@ export default function LoginPage() {
         }}>
           <Box sx={{ width: '100%', maxWidth: 440, p: { xs: 3, sm: 5 }, my: 'auto' }}>
 
-            {/* ⚡️ MOBILE WELCOME SCREEN */}
+            {/* MOBILE WELCOME SCREEN */}
             {mobileView === 'welcome' ? (
               <Box sx={{
                 display: { xs: 'flex', lg: 'none' },
@@ -186,7 +190,6 @@ export default function LoginPage() {
                   </Button>
                 </Box>
 
-                {/* ⚡️ THE FIX: Tapping this opens the native Mobile Bottom Drawer! */}
                 <Box
                   onClick={() => setFeatureDrawerOpen(true)}
                   sx={{
@@ -208,7 +211,7 @@ export default function LoginPage() {
               </Box>
             ) : null}
 
-            {/* ⚡️ LOGIN FORM OR FORGOT PASSWORD FLOW */}
+            {/* LOGIN FORM OR FORGOT PASSWORD FLOW */}
             <Box sx={{
               display: {
                 xs: mobileView === 'form' ? 'block' : 'none',
@@ -221,7 +224,6 @@ export default function LoginPage() {
                 <Button
                   startIcon={<ArrowBackIcon />}
                   onClick={() => {
-                    // If they are in the forgot password flow, go back to login form first
                     if (showForgotPassword) {
                       setShowForgotPassword(false);
                     } else {
@@ -234,7 +236,7 @@ export default function LoginPage() {
                 </Button>
               </Box>
 
-              {/* ⚡️ CONDITIONAL RENDERING: Forgot Password vs Login */}
+              {/* CONDITIONAL RENDERING: Forgot Password vs Login */}
               {showForgotPassword ? (
 
                 <ForgotPasswordFlow
@@ -328,7 +330,6 @@ export default function LoginPage() {
                       />
 
                       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                        {/* ⚡️ CHANGED THIS LINK TO A TYPOGRAPHY CLICK HANDLER */}
                         <Typography
                           variant="body2"
                           onClick={() => setShowForgotPassword(true)}
@@ -374,9 +375,7 @@ export default function LoginPage() {
 
       </Box>
 
-      {/* =========================================================
-          3. ⚡️ MOBILE ONLY: Sleek Native Bottom Drawer for Features
-         ========================================================= */}
+      {/* 3. MOBILE ONLY: Sleek Native Bottom Drawer for Features */}
      <MobileFeatureDrawer 
         open={featureDrawerOpen} 
         onClose={() => setFeatureDrawerOpen(false)} 

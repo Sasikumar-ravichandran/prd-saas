@@ -16,6 +16,9 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import BedtimeIcon from '@mui/icons-material/Bedtime';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import ClearIcon from '@mui/icons-material/Clear';
+import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
+import TableSkeleton from '../../components/Skeletons/TableSkeleton';
+
 
 export default function AttendancePage() {
     const { primaryColor } = useColorMode();
@@ -190,6 +193,23 @@ export default function AttendancePage() {
         }
     };
 
+    if (loading) {
+    return (
+      <Box sx={{ p: 1, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+        <Box sx={{ p: 1, maxWidth: '1600px' }}>
+          <Stack spacing={4}>
+            <StatsCardSkeleton count={4} />
+            
+            <Box sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+              <TableSkeleton rowCount={5} columnCount={4} />
+            </Box>
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
+
     return (
         <Box sx={{ p: { xs: 2, md: 2 }, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
@@ -270,11 +290,11 @@ export default function AttendancePage() {
                             </TableHead>
                             <TableBody>
                                 {roster.map((staff) => {
-                                    let p = 0, a = 0, w = 0;
+                                    let p = 0, a = 0, W = 0;
                                     Object.values(staff.attendance).forEach(val => {
                                         if (val === 'Present' || val === 'Paid Leave') p++;
                                         if (val === 'Absent' || val === 'Unpaid Leave') a++;
-                                        if (val === 'Weekly Off') w++;
+                                        if (val === 'Weekly Off') W++;
                                     });
 
                                     return (

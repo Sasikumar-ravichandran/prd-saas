@@ -16,7 +16,7 @@ import SetupBranch from './pages/Onboarding/SetupBranch';
 import ChangePasswordScreen from './pages/Auth/ChangePasswordScreen';
 import InventoryPage from './pages/Inventory/InventoryPage';
 import AdminPayrollPage from './components/Admin/AdminPayrollPage';
-import FinancePage from './components/Admin/FinancePage';
+import FinancialLedgerPage from './components/Admin/FinancePage';
 import AttendancePage from './pages/Attendance/AttendancePage';
 import MyStats from './pages/MyStats';
 import Messages from './pages/Messages';
@@ -131,7 +131,7 @@ function App() {
                   />
                   <Route path="financial" element={
                       <RoleGuard allowedRoles={['Administrator']}>
-                        <AdminPayrollPage />
+                        <FinancialLedgerPage />
                       </RoleGuard>
                     } 
                  />
