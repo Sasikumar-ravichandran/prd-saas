@@ -155,7 +155,7 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
     const fetchDoctors = async () => {
       try {
         const res = await api.get('/users');
-        const docs = res.data.filter(u => u.role === 'Doctor' || u.role === 'doctor');
+        const docs = res.data?.users.filter(u => u.role === 'Doctor' || u.role === 'doctor');
         setDoctorList(docs);
       } catch (err) {
         console.error("Failed to fetch doctors", err);
@@ -188,7 +188,6 @@ export default function AddPatientModal({ open, onClose, onSubmit, initialData }
 
   const currentGender = watch('gender');
   const currentReferral = watch('referredBy');
-  const currentPain = watch('painLevel');
   const { showToast } = useToast();
 
   const handleFormSubmit = async (data) => {

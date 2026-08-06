@@ -14,6 +14,9 @@ import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
+import StatsCardSkeleton from '../components/Skeletons/StatsCardSkeleton';
+import TableSkeleton from '../components/Skeletons/TableSkeleton';
+
 
 export default function MyStats() {
     const { primaryColor } = useColorMode();
@@ -42,7 +45,24 @@ export default function MyStats() {
         fetchMyStats();
     }, [selectedMonth]);
 
-    if (loading && !stats) return <Box p={10} display="flex" justifyContent="center"><CircularProgress size={40} /></Box>;
+
+    if (loading && !stats) {
+        return (
+            <Box sx={{ p: 1, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+                <Box sx={{ p: 1, maxWidth: '1600px' }}>
+                    <Stack spacing={4}>
+                        <StatsCardSkeleton count={2} />
+
+                        <Box sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+                            <TableSkeleton rowCount={5} columnCount={4} />
+                        </Box>
+                    </Stack>
+                </Box>
+            </Box>
+        );
+    }
+
     if (!stats) return <Typography p={4} variant="body1">Failed to load stats.</Typography>;
 
     const isDoctor = stats.role === 'Doctor' || stats.role === 'doctor';
@@ -83,7 +103,7 @@ export default function MyStats() {
     }
 
     return (
-        <Box sx={{p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
             {/* HEADER SECTION */}
             <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} mb={3} gap={2}>

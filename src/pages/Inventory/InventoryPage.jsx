@@ -20,6 +20,9 @@ import LocalPharmacyOutlinedIcon from '@mui/icons-material/LocalPharmacyOutlined
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
+import TableSkeleton from '../../components/Skeletons/TableSkeleton';
+
 
 import { useColorMode } from '../../context/ThemeContext';
 import { inventoryService } from '../../api/services/inventoryService';
@@ -274,6 +277,23 @@ export default function InventoryPage() {
 	];
 
 	const filteredRows = inventory.filter(row => row.name.toLowerCase().includes(search.toLowerCase()));
+
+	if (loading) {
+    return (
+      <Box sx={{ p: 1, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+        <Box sx={{ p: 1, maxWidth: '1600px' }}>
+          <Stack spacing={4}>
+            <StatsCardSkeleton count={4} />
+            
+            <Box sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+              <TableSkeleton rowCount={5} columnCount={4} />
+            </Box>
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
 
 	return (
         <Box sx={{ width: '100%', boxSizing: 'border-box', p: { xs: 2, md: 2 }, bgcolor: '#f8fafc', minHeight: '100vh' }}>

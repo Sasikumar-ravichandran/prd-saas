@@ -37,3 +37,5 @@ export const AVAILABLE_EVENTS = [
     variables: ['{{patientName}}', '{{amount}}', '{{receiptNumber}}', '{{method}}', '{{clinicName}}']
   }
 ];
+
+export const ADMIN = 'Administrator'

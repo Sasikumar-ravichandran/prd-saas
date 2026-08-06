@@ -17,6 +17,9 @@ import { payrollService } from '../../api/services/payrollService';
 import { useColorMode } from '../../context/ThemeContext';
 import StaffPayrollDrawer from './StaffPayrollDrawer';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
+import TableSkeleton from '../../components/Skeletons/TableSkeleton';
+
 
 export default function AdminPayrollPage() {
 	const [loading, setLoading] = useState(true);
@@ -107,7 +110,23 @@ export default function AdminPayrollPage() {
 		setDrawerOpen(true);
 	};
 
-	if (loading && !data) return <Box sx={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress /></Box>;
+
+	if (loading) {
+		return (
+			<Box sx={{ p: 1, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+				<Box sx={{ p: 1, maxWidth: '1600px' }}>
+					<Stack spacing={4}>
+						<StatsCardSkeleton count={4} />
+
+						<Box sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+							<TableSkeleton rowCount={5} columnCount={4} />
+						</Box>
+					</Stack>
+				</Box>
+			</Box>
+		);
+	}
 
 	return (
 		<Box sx={{ p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>

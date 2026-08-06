@@ -22,6 +22,8 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import DownloadIcon from '@mui/icons-material/Download';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
+import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
+import TableSkeleton from '../../components/Skeletons/TableSkeleton';
 
 // --- REFINED FINCARD COMPONENT ---
 const FinCard = ({ label, value, sub, color, icon, trend }) => (
@@ -153,7 +155,22 @@ export default function AdminDashboard() {
     link.click();
   };
 
-  if (loading) return <Box sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress sx={{ color: primaryColor }} /></Box>;
+  if (loading) {
+    return (
+      <Box sx={{ p: 1, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Box sx={{ p: 1, maxWidth: '1600px' }}>
+          <Stack spacing={4}>
+            <StatsCardSkeleton count={4} />
+            
+            <Box sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+              <TableSkeleton rowCount={5} columnCount={4} />
+            </Box>
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
+  
   if (!data) return <Box sx={{ p: 5 }}><Alert severity="error" sx={{ borderRadius: 2 }}>Failed to load admin dashboard.</Alert></Box>;
 
   return (

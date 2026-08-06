@@ -44,6 +44,7 @@ export default function Messages() {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const sortChatsList = (chatList) => {
     return [...chatList].sort((a, b) => {
@@ -55,6 +56,33 @@ export default function Messages() {
       return dateB - dateA;
     });
   };
+
+  // ⚡️ FIX 1: Listen to Mobile Keyboard / Visual Viewport Resize
+  // Prevents layout getting stuck at top when keyboard opens/closes
+  useEffect(() => {
+    const handleViewportResize = () => {
+      if (window.visualViewport) {
+        // Force window scroll back to 0 so the browser header doesn't get pushed off screen
+        window.scrollTo(0, 0);
+        // Ensure chat container scrolls to bottom when keyboard opens
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      }
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportResize);
+      window.visualViewport.addEventListener('scroll', handleViewportResize);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportResize);
+        window.visualViewport.removeEventListener('scroll', handleViewportResize);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -176,9 +204,9 @@ export default function Messages() {
   const formatMessageTime = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    if (isToday(date)) return format(date, 'p');       
-    if (isYesterday(date)) return 'Yesterday';         
-    return format(date, 'dd/MM/yyyy');                 
+    if (isToday(date)) return format(date, 'p');      
+    if (isYesterday(date)) return 'Yesterday';        
+    return format(date, 'dd/MM/yyyy');                
   };
 
   const getChatDetails = (chat) => {
@@ -207,26 +235,41 @@ export default function Messages() {
   const hasClinicGroup = chats.some(c => c.type === 'clinic');
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
-  const messagesContainerRef = useRef(null);
-
   useEffect(() => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
-  return (
+  // ⚡️ FIX 2: Mobile Keyboard Focus Handlers
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    }, 150);
+  };
 
+  const handleInputBlur = () => {
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+  };
+
+  return (
+    // ⚡️ FIX 3: Dynamic Viewport Height (100dvh fallback to 100%)
     <Box 
       sx={{ 
-        p: { xs: 1, md: 2 }, 
+        p: { xs: 0, md: 2 }, 
         bgcolor: '#f8fafc', 
-        height: '100%', 
-        maxHeight: '100%',
+        height: { xs: '100dvh', md: '100%' }, 
+        maxHeight: { xs: '100dvh', md: '100%' },
         display: 'flex', 
         flexDirection: 'column', 
         boxSizing: 'border-box',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        position: 'relative'
       }}
     >
       <Paper 
@@ -236,8 +279,8 @@ export default function Messages() {
           display: 'flex',
           flexDirection: 'row',
           overflow: 'hidden',
-          borderRadius: { xs: 2, md: 3 },
-          border: '1px solid #e2e8f0',
+          borderRadius: { xs: 0, md: 3 },
+          border: { xs: 'none', md: '1px solid #e2e8f0' },
           bgcolor: '#fff',
           minHeight: 0,
           minWidth: 0,
@@ -443,13 +486,18 @@ export default function Messages() {
                     );
                   })
                 )}
+                <div ref={messagesEndRef} />
               </Box>
 
               {/* Input Area */}
               <Box p={2} bgcolor="#f0f2f5" display="flex" alignItems="center" gap={2} flexShrink={0}>
                 <TextField 
                   fullWidth variant="outlined" placeholder="Type a message" size="small"
-                  value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={sendMessage}
+                  value={newMessage} 
+                  onChange={(e) => setNewMessage(e.target.value)} 
+                  onKeyDown={sendMessage}
+                  onFocus={handleInputFocus}
+                  onBlur={handleInputBlur}
                   sx={{ '& fieldset': { border: 'none' }, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2, px: 1 } }}
                 />
                 <IconButton onClick={() => sendMessage({ type: 'click' })} sx={{ bgcolor: primaryColor, color: 'white', '&:hover': { bgcolor: '#0f172a' }, width: 44, height: 44 }}>

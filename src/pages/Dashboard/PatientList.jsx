@@ -26,7 +26,11 @@ import { useToast } from '../../context/ToastContext';
 import { patientService } from '../../api/services/patientService';
 import api from '../../api/services/api';
 import { useSearchParams } from 'react-router-dom';
-
+import { useSelector } from 'react-redux';
+import { selectUserRole } from '../../redux/slices/authSlice';
+import CardListSkeleton from '../../components/Skeletons/CardSkeleton';
+import TableSkeleton from '../../components/Skeletons/TableSkeleton';
+import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
 import AddPatientModal from '../../components/Patients/AddPatientModal';
 
 export default function PatientList() {
@@ -59,6 +63,8 @@ export default function PatientList() {
 
   const [searchInput, setSearchInput] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+
+  const userRole = useSelector(selectUserRole);
 
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -172,7 +178,7 @@ export default function PatientList() {
       showToast('Patient record deleted successfully', 'success');
       fetchPatients();
     } catch (err) {
-      showToast('Failed to delete patient record', 'error');
+      showToast(err?.message || 'Failed to delete patient record', 'error');
     } finally {
       setDeleteDialogOpen(false);
       setPatientToDelete(null);
@@ -230,26 +236,103 @@ export default function PatientList() {
         </Stack>
 
         {/* GLOBAL STATS CARDS */}
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar variant="rounded" sx={{ bgcolor: '#eff6ff', color: primaryColor, width: 48, height: 48 }}><PersonIcon /></Avatar>
-              <Box>
-                <Typography variant="h5" fontWeight="800" color="#1e293b">{globalStats.total}</Typography>
-                <Typography variant="caption" fontWeight="bold" color="text.secondary">TOTAL PATIENTS</Typography>
+        {loading ? (
+          <StatsCardSkeleton count={2} />
+        ) : (
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+              gap: 2,
+            }}
+          >
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 1.5, sm: 2.5 },
+                border: '1px solid #e2e8f0',
+                borderRadius: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 1, sm: 2 },
+              }}
+            >
+              <Avatar
+                variant="rounded"
+                sx={{
+                  bgcolor: '#eff6ff',
+                  color: primaryColor,
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
+                  flexShrink: 0,
+                }}
+              >
+                <PersonIcon />
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="h5" fontWeight="800" color="#1e293b">
+                  {globalStats.total}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  fontWeight="bold"
+                  color="text.secondary"
+                  sx={{
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  TOTAL PATIENTS
+                </Typography>
               </Box>
             </Paper>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <Paper elevation={0} sx={{ p: 2.5, border: '1px solid #e2e8f0', borderRadius: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Avatar variant="rounded" sx={{ bgcolor: '#fff7ed', color: '#ea580c', width: 48, height: 48 }}><WarningAmberIcon /></Avatar>
-              <Box>
-                <Typography variant="h5" fontWeight="800" color="#1e293b">{globalStats.pending}</Typography>
-                <Typography variant="caption" fontWeight="bold" color="text.secondary">PAYMENTS PENDING</Typography>
+
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 1.5, sm: 2.5 },
+                border: '1px solid #e2e8f0',
+                borderRadius: 3,
+                display: 'flex',
+                alignItems: 'center',
+                gap: { xs: 1, sm: 2 },
+              }}
+            >
+              <Avatar
+                variant="rounded"
+                sx={{
+                  bgcolor: '#fff7ed',
+                  color: '#ea580c',
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
+                  flexShrink: 0,
+                }}
+              >
+                <WarningAmberIcon />
+              </Avatar>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="h5" fontWeight="800" color="#1e293b">
+                  {globalStats.pending}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  fontWeight="bold"
+                  color="text.secondary"
+                  sx={{
+                    display: 'block',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  PAYMENTS PENDING
+                </Typography>
               </Box>
             </Paper>
-          </Grid>
-        </Grid>
+          </Box>
+        )}
       </Box>
 
       {/* 2. TABLE WORKSPACE */}
@@ -266,7 +349,6 @@ export default function PatientList() {
           >
             <Tab label="All Patients" value="all" />
             <Tab label="Pending Dues" value="due" />
-            <Tab label="Active Only" value="active" />
           </Tabs>
 
           {/*  RESPONSIVE STACK FOR FILTERS */}
@@ -301,103 +383,119 @@ export default function PatientList() {
         {/* ========================================= */}
         {/*  DESKTOP VIEW: STANDARD TABLE  */}
         {/* ========================================= */}
-        <TableContainer sx={{ flex: 1, maxHeight: '60vh', overflowY: 'auto', display: { xs: 'none', md: 'block' } }}>
-          <Table stickyHeader sx={{ minWidth: 800 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2, pl: 3 }}>PATIENT NAME</TableCell>
-                <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>CONTACT</TableCell>
-                <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>LAST VISIT</TableCell>
-                <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>ASSIGNED TO</TableCell>
-                <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>PAYMENT STATUS</TableCell>
-                <TableCell align="right" sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2, pr: 3 }}>ACTIONS</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
+        {loading ? (
+          <Box sx={{ display: { xs: 'none', md: 'block' }, p: 2 }}>
+            <TableSkeleton rowCount={rowsPerPage} columnCount={6} />
+          </Box>
+        ) : (
+          <TableContainer sx={{ flex: 1, maxHeight: '60vh', overflowY: 'auto', display: { xs: 'none', md: 'block' } }}>
+            <Table stickyHeader sx={{ minWidth: 800 }}>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                    <CircularProgress sx={{ color: primaryColor }} />
-                  </TableCell>
+                  <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2, pl: 3 }}>PATIENT NAME</TableCell>
+                  <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>CONTACT</TableCell>
+                  <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>LAST VISIT</TableCell>
+                  <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>ASSIGNED TO</TableCell>
+                  <TableCell sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2 }}>PAYMENT STATUS</TableCell>
+                  <TableCell align="right" sx={{ bgcolor: '#f8fafc', color: '#64748b', fontWeight: '800', fontSize: '0.75rem', py: 2, pr: 3 }}>ACTIONS</TableCell>
                 </TableRow>
-              ) : patients.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                    <FilterListIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
-                    <Typography variant="h6" color="#64748b" fontWeight="700">No Patients Found</Typography>
-                    <Typography variant="body2" color="text.secondary">Try adjusting your search or filters.</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : patients.map((row) => (
-                <TableRow
-                  key={row._id}
-                  hover
-                  onClick={() => navigate(`/patients/${row.patientId || row._id}`)}
-                  sx={{ cursor: 'pointer', '& td': { borderBottom: '1px solid #f1f5f9' }, '&:hover': { bgcolor: (primaryColor, 0.03) } }}
-                >
-                  <TableCell sx={{ pl: 3 }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Avatar sx={{ bgcolor: row.gender === 'Female' ? '#fce7f3' : '#e0f2fe', color: row.gender === 'Female' ? '#db2777' : '#0284c7', width: 40, height: 40, fontWeight: 'bold' }}>
-                        {row.fullName.charAt(0)}
-                      </Avatar>
-                      <Box>
-                        <Typography variant="subtitle2" fontWeight="800" color="#0f172a">{row.fullName}</Typography>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                          {row.gender === 'Female' ? <FemaleIcon sx={{ fontSize: 14, color: '#ec4899' }} /> : <MaleIcon sx={{ fontSize: 14, color: primaryColor }} />}
-                          <Typography variant="caption" color="text.secondary" fontWeight="600">{row.age} yrs</Typography>
-                        </Stack>
-                      </Box>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" fontWeight="700" color="#334155">{row.mobile}</Typography>
-                    <Typography variant="caption" color="text.secondary" fontWeight="600">{row.patientId}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <CalendarTodayIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
-                      <Typography variant="body2" fontWeight="600" color="#475569">
-                        {new Date(row.updatedAt).toLocaleDateString()}
-                      </Typography>
-                    </Stack>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={row.assignedDoctor || 'Unassigned'} size="small" sx={{ bgcolor: '#f1f5f9', color: '#475569', fontWeight: '700', borderRadius: 1.5 }} />
-                  </TableCell>
-                  <TableCell>
-                    {getPaymentChip(row.totalCost || 0, row.totalPaid || 0)}
-                  </TableCell>
-                  <TableCell align="right" sx={{ pr: 3 }}>
-                    <Stack direction="row" justifyContent="flex-end" spacing={0.5}>
-                      <Tooltip title="View Profile">
-                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/patients/${row.patientId || row._id}`) }}>
-                          <VisibilityIcon fontSize="small" sx={{ color: '#94a3b8' }} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit Patient">
-                        <IconButton size="small" onClick={(e) => handleEdit(e, row)}>
-                          <EditIcon sx={{ fontSize: 18, color: '#94a3b8' }} />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Patient">
-                        <IconButton size="small" onClick={(e) => handleDeleteClick(e, row._id)} sx={{ '&:hover': { color: '#ef4444', bgcolor: '#fee2e2' } }}>
-                          <DeleteOutlineIcon fontSize="small" sx={{ color: '#94a3b8', '&:hover': { color: '#ef4444' } }} />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                      <CircularProgress sx={{ color: primaryColor }} />
+                    </TableCell>
+                  </TableRow>
+                ) : patients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                      <FilterListIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
+                      <Typography variant="h6" color="#64748b" fontWeight="700">No Patients Found</Typography>
+                      <Typography variant="body2" color="text.secondary">Try adjusting your search or filters.</Typography>
+                    </TableCell>
+                  </TableRow>
+                ) : patients.map((row) => (
+                  <TableRow
+                    key={row._id}
+                    hover
+                    onClick={() => navigate(`/patients/${row.patientId || row._id}`)}
+                    sx={{ cursor: 'pointer', '& td': { borderBottom: '1px solid #f1f5f9' }, '&:hover': { bgcolor: (primaryColor, 0.03) } }}
+                  >
+                    <TableCell sx={{ pl: 3 }}>
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <Avatar sx={{ bgcolor: row.gender === 'Female' ? '#fce7f3' : '#e0f2fe', color: row.gender === 'Female' ? '#db2777' : '#0284c7', width: 40, height: 40, fontWeight: 'bold' }}>
+                          {row.fullName.charAt(0)}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="subtitle2" fontWeight="800" color="#0f172a">{row.fullName}</Typography>
+                          <Stack direction="row" alignItems="center" spacing={0.5}>
+                            {row.gender === 'Female' ? <FemaleIcon sx={{ fontSize: 14, color: '#ec4899' }} /> : <MaleIcon sx={{ fontSize: 14, color: primaryColor }} />}
+                            <Typography variant="caption" color="text.secondary" fontWeight="600">{row.age} yrs</Typography>
+                          </Stack>
+                        </Box>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="700" color="#334155">{row.mobile}</Typography>
+                      <Typography variant="caption" color="text.secondary" fontWeight="600">{row.patientId}</Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <CalendarTodayIcon sx={{ fontSize: 16, color: '#94a3b8' }} />
+                        <Typography variant="body2" fontWeight="600" color="#475569">
+                          {new Date(row.updatedAt).toLocaleDateString()}
+                        </Typography>
+                      </Stack>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={row.assignedDoctor || 'Unassigned'} size="small" sx={{ bgcolor: '#f1f5f9', color: '#475569', fontWeight: '700', borderRadius: 1.5 }} />
+                    </TableCell>
+                    <TableCell>
+                      {getPaymentChip(row.totalCost || 0, row.totalPaid || 0)}
+                    </TableCell>
+                    <TableCell align="right" sx={{ pr: 3 }}>
+                      <Stack direction="row" justifyContent="flex-end" spacing={0.5}>
+                        <Tooltip title="View Profile">
+                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); navigate(`/patients/${row.patientId || row._id}`) }}>
+                            <VisibilityIcon fontSize="small" sx={{ color: '#94a3b8' }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Edit Patient">
+                          <IconButton size="small" onClick={(e) => handleEdit(e, row)}>
+                            <EditIcon sx={{ fontSize: 18, color: '#94a3b8' }} />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={userRole === userRole ? "Delete Patient" : "Only Admin can delete patients"}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={userRole !== userRole}
+                              onClick={(e) => handleDeleteClick(e, row._id)}
+                              sx={{
+                                '&:hover': { color: '#ef4444', bgcolor: '#fee2e2' },
+                                ...(userRole !== userRole && { opacity: 0.5, cursor: 'not-allowed' })
+                              }}
+                            >
+                              <DeleteOutlineIcon fontSize="small" sx={{ color: userRole === userRole ? '#94a3b8' : '#cbd5e1', '&:hover': { color: '#ef4444' } }} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         {/* ========================================= */}
         {/*  MOBILE VIEW: PATIENT CARDS  */}
         {/* ========================================= */}
         <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 2, p: 2, bgcolor: '#f8fafc', flex: 1, overflowY: 'auto' }}>
           {loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}><CircularProgress sx={{ color: primaryColor }} /></Box>
+            <CardListSkeleton count={4} />
           ) : patients.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 5 }}>
               <FilterListIcon sx={{ fontSize: 40, color: '#cbd5e1', mb: 1 }} />
