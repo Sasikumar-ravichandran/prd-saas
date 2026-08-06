@@ -586,13 +586,13 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
             )}
           </Menu>
 
-          <Tooltip title="Notifications">
+          {/* <Tooltip title="Notifications">
             <IconButton sx={{ color: '#64748b', width: 38, height: 38 }}>
               <Badge badgeContent={3} color="error" variant="dot">
                 <NotificationsNoneIcon fontSize="small" />
               </Badge>
             </IconButton>
-          </Tooltip>
+          </Tooltip> */}
 
           <Divider orientation="vertical" flexItem sx={{ height: 24, alignSelf: 'center', mx: { xs: 0, sm: 0.5 } }} />
 
