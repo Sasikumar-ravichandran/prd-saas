@@ -5,6 +5,7 @@ import {
 	IconButton, Typography, Divider, Tooltip, alpha, Avatar
 } from '@mui/material';
 import { useColorMode } from '../../context/ThemeContext';
+import { useDispatch, useSelector } from 'react-redux';
 
 // Icons
 import PaidIcon from '@mui/icons-material/Paid';
@@ -22,8 +23,7 @@ import CoPresentIcon from '@mui/icons-material/CoPresent';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import ChatIcon from '@mui/icons-material/Chat';
 
-import { logout } from '../../redux/slices/authSlice';
-import { useDispatch } from 'react-redux';
+import { logout, selectUserRole } from '../../redux/slices/authSlice';
 
 
 const DRAWER_WIDTH = 260;
@@ -33,12 +33,12 @@ const HEADER_HEIGHT = 74;
 const MENU_ITEMS = [
 	{ text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
 	{ text: 'Calendar', icon: <CalendarMonthIcon />, path: '/calendar' },
-	{ text: 'My Stats', icon: <QueryStatsIcon />, path: '/my-stats' },
+	{ text: 'My Stats', icon: <QueryStatsIcon />, path: '/my-stats', roles: ['Doctor'] },
 	{ text: 'Messages',icon: <ChatIcon />, path: '/messages' },
 	{ text: 'Patient List', icon: <PeopleIcon />, path: '/patients' },
-	{ text: 'Attendance', icon: <CoPresentIcon />, path: '/attendance' },
-	{ text: 'Payroll & P&L', icon: <PaidIcon />, path: '/payroll', },
-	{ text: 'Financial Ledger', icon: <AccountBalanceWalletIcon />, path: '/financial' },
+	{ text: 'Attendance', icon: <CoPresentIcon />, path: '/attendance', roles: ['Administrator'] },
+	{ text: 'Payroll & P&L', icon: <PaidIcon />, path: '/payroll', roles: ['Administrator']},
+	{ text: 'Financial Ledger', icon: <AccountBalanceWalletIcon />, path: '/financial', roles: ['Administrator'] },
 	{ text: 'Inventory', icon: <Inventory2Icon />, path: '/inventory' },
 	{ text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 	
@@ -49,6 +49,7 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 	const location = useLocation();
 	const dispatch = useDispatch();
 	const { primaryColor, clinicName, clinicLogo } = useColorMode();
+	const userRole = useSelector(selectUserRole);
 
 	const handleCollapseToggle = () => setIsCollapsed(!isCollapsed);
 
@@ -56,6 +57,13 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 		dispatch(logout());
 		navigate('/login');
 	};
+
+	const visibleMenuItems = MENU_ITEMS.filter((item) => {
+        // If no roles are specified, everyone can see it
+        if (!item.roles || item.roles.length === 0) return true;
+        // Otherwise, check if the user's role is in the allowed list
+        return item.roles.includes(userRole);
+    });
 
 	// The internal content of the drawer
 	const DrawerContent = (
@@ -154,7 +162,7 @@ export default function Sidebar({ mobileOpen, handleDrawerToggle, isCollapsed, s
 				'&::-webkit-scrollbar-thumb': { bgcolor: '#cbd5e1', borderRadius: '4px' },
 				'&::-webkit-scrollbar-track': { bgcolor: 'transparent' }
 			}}>
-				{MENU_ITEMS.map((item) => {
+				{visibleMenuItems.map((item) => {
 					const isActive = item.path === '/'
 						? location.pathname === '/'
 						: location.pathname.startsWith(item.path);

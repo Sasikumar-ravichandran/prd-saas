@@ -69,5 +69,17 @@ const authSlice = createSlice({
   },
 });
 
+export const selectHasRole = (allowedRoles) => (state) => {
+  const user = state.auth.user;
+  if (!user || !user.role) return false;
+
+  if (Array.isArray(allowedRoles)) {
+    return allowedRoles.includes(user.role);
+  }
+  return user.role === allowedRoles;
+};
+
+export const selectUserRole = (state) => state.auth.user?.role || null;
+
 export const { setCredentials, logout, setBranches, switchBranch } = authSlice.actions;
 export default authSlice.reducer;

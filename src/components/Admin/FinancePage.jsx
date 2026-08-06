@@ -19,6 +19,9 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import SavingsIcon from '@mui/icons-material/Savings';
+import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
+import TableSkeleton from '../../components/Skeletons/TableSkeleton';
+
 
 export default function FinancialLedgerPage() {
   const { primaryColor } = useColorMode();
@@ -52,7 +55,7 @@ export default function FinancialLedgerPage() {
       setData(res);
       setPage(0); // Reset to first page on filter change
     } catch (error) {
-      showToast("Failed to load financials", "error");
+      showToast(error?.message || "Failed to load financials", "error");
     } finally {
       setLoading(false);
     }
@@ -68,7 +71,7 @@ export default function FinancialLedgerPage() {
       showToast("Expense deleted", "success");
       loadFinancials();
     } catch (error) {
-      showToast("Failed to delete", "error");
+      showToast(error?.message || "Failed to delete", "error");
     } finally {
       setDeleteConfirm({ open: false, id: null });
     }
@@ -76,6 +79,23 @@ export default function FinancialLedgerPage() {
 
   // Pagination Logic
   const paginatedData = data.transactions.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 1, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+        <Box sx={{ p: 1, maxWidth: '1600px' }}>
+          <Stack spacing={4}>
+            <StatsCardSkeleton count={4} />
+            
+            <Box sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+              <TableSkeleton rowCount={5} columnCount={4} />
+            </Box>
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>

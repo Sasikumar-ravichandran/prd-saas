@@ -16,7 +16,7 @@ export default function MainLayout() {
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh', overflow: 'hidden' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', overflow: 'hidden', overscrollBehavior: 'none' }}>
 
       {/* 1. TOP BAR */}
       <Header

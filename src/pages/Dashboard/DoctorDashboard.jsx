@@ -24,7 +24,9 @@ import EventSeatIcon from '@mui/icons-material/EventSeat';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 
-// --- ANIMATIONS ---
+import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
+import TableSkeleton from '../../components/Skeletons/TableSkeleton';
+
 const pulseAnimation = keyframes`
   0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
   70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(22, 163, 74, 0); }
@@ -162,7 +164,7 @@ export default function DoctorDashboard() {
         setSelectedApptId(inProgress?.id || nextUp?.id || res.schedule[0].id);
       }
     } catch (err) {
-      console.error("Failed to load doctor dashboard");
+      console.error(err?.message||"Failed to load doctor dashboard");
     } finally {
       setLoading(false);
     }
@@ -176,7 +178,7 @@ export default function DoctorDashboard() {
       showToast('Treatment started. Patient is in the chair.', 'success');
       loadData();
     } catch (error) {
-      showToast('Failed to start session', 'error');
+      showToast(error?.message || 'Failed to start session', 'error');
     }
   };
 
@@ -191,7 +193,23 @@ export default function DoctorDashboard() {
     setPage(0);
   };
 
-  if (loading) return <Box sx={{ height: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress size={40} sx={{ color: primaryColor }} /></Box>;
+  if (loading) {
+    return (
+      <Box sx={{ p: 1, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+        <Box sx={{ p: 1, maxWidth: '1600px' }}>
+          <Stack spacing={4}>
+            <StatsCardSkeleton count={4} />
+            
+            <Box sx={{ borderRadius: 4, overflow: 'hidden', bgcolor: 'white', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
+              <TableSkeleton rowCount={5} columnCount={4} />
+            </Box>
+          </Stack>
+        </Box>
+      </Box>
+    );
+  }
+
   if (!data) return <Box sx={{ p: 3 }}><Alert severity="error" sx={{ borderRadius: 2 }}>Failed to load dashboard data. Please try again.</Alert></Box>;
 
   const { schedule, doctorName } = data;
@@ -227,6 +245,8 @@ export default function DoctorDashboard() {
       />
     );
   };
+
+
 
   return (
     <Box sx={{p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>

@@ -56,7 +56,6 @@ export default function Messages() {
     });
   };
 
-  // ⚡️ REMOVED visualViewport logic. It fights the browser's native keyboard handling.
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -212,21 +211,13 @@ export default function Messages() {
   const hasClinicGroup = chats.some(c => c.type === 'clinic');
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
-  // ⚡️ FIX: Only scroll the chat container to bottom when focused, DO NOT touch window scroll
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-      }
-    }, 300); // 300ms gives the mobile keyboard time to animate up before scrolling
-  };
-
   return (
     <Box 
       sx={{ 
         p: { xs: 0, md: 2 }, 
         bgcolor: '#f8fafc', 
         height: '100%', 
+        maxHeight: { xs: '100dvh', md: '100%' },
         display: 'flex', 
         flexDirection: 'column', 
         boxSizing: 'border-box',
@@ -443,18 +434,13 @@ export default function Messages() {
                     );
                   })
                 )}
-                {/* Invisible element to auto-scroll to */}
-                <div ref={messagesEndRef} />
               </Box>
 
               {/* Input Area */}
               <Box p={2} bgcolor="#f0f2f5" display="flex" alignItems="center" gap={2} flexShrink={0}>
                 <TextField 
                   fullWidth variant="outlined" placeholder="Type a message" size="small"
-                  value={newMessage} 
-                  onChange={(e) => setNewMessage(e.target.value)} 
-                  onKeyDown={sendMessage}
-                  onFocus={handleInputFocus}
+                  value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={sendMessage}
                   sx={{ '& fieldset': { border: 'none' }, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2, px: 1 } }}
                 />
                 <IconButton onClick={() => sendMessage({ type: 'click' })} sx={{ bgcolor: primaryColor, color: 'white', '&:hover': { bgcolor: '#0f172a' }, width: 44, height: 44 }}>
