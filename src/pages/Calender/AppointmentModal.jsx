@@ -26,7 +26,6 @@ export default function AppointmentModal({ open, onClose, initialData, resources
   const [proceduresList, setProceduresList] = useState([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
-  //  NEW STATE: Holds the full object specifically for the Async dropdown visual
   const [selectedPatientObj, setSelectedPatientObj] = useState(null);
 
   const [formData, setFormData] = useState({
@@ -92,7 +91,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
         resourceId: initialData.resourceId || 1
       });
 
-      //  3. INITIALIZE ASYNC PATIENT DROPDOWN FOR EDIT MODE
+      // 3. INITIALIZE ASYNC PATIENT DROPDOWN FOR EDIT MODE
       if (initialData.patientId) {
         setSelectedPatientObj({
           _id: initialData.patientId,
@@ -104,14 +103,12 @@ export default function AppointmentModal({ open, onClose, initialData, resources
       }
 
     } else {
-       // Reset if it's a completely new blank appointment
        setSelectedPatientObj(null);
     }
   }, [initialData, open, doctors]);
 
-  //  UPDATED HANDLER: Keeps both the Dropdown UI and Form Data perfectly synced
   const handlePatientChange = (newValue) => {
-    setSelectedPatientObj(newValue); // Updates the visual box
+    setSelectedPatientObj(newValue); 
 
     if (newValue) {
       setFormData(prev => ({
@@ -182,21 +179,18 @@ export default function AppointmentModal({ open, onClose, initialData, resources
           <IconButton onClick={onClose} size="small" sx={{ color: '#94a3b8' }}><CloseIcon /></IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent sx={{ p: { xs: 2, sm: 3 } }}>
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Stack spacing={2.5} sx={{ mt: 1 }}>
 
-              {/* ROW 1: PATIENT */}
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ width: 220 }}>
+              {/* ⚡️ ROW 1: PATIENT (Made responsive) */}
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+                <Box sx={{ width: { xs: '100%', sm: 280 } }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PATIENT</Typography>
-                  
-                  {/*  THE NEW ASYNC COMPONENT IN ACTION */}
                   <AsyncPatientSelect 
                      value={selectedPatientObj}
                      onChange={handlePatientChange}
                   />
-
                 </Box>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PATIENT CONTACT</Typography>
@@ -208,9 +202,9 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 </Box>
               </Box>
 
-              {/* ROW 2: DOCTOR */}
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Box sx={{ width: 180 }}>
+              {/* ⚡️ ROW 2: DOCTOR (Made responsive) */}
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+                <Box sx={{ width: { xs: '100%', sm: 280 } }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>ASSIGN DOCTOR</Typography>
                   <TextField select value={formData.docId} onChange={handleDoctorChange} fullWidth size="small">
                     {doctors && doctors.length > 0 ? (
@@ -231,8 +225,8 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 </Box>
               </Box>
 
-              {/* ROW 3: CHAIR & PROCEDURE */}
-              <Box sx={{ display: 'flex', gap: 2 }}>
+              {/* ⚡️ ROW 3: CHAIR & PROCEDURE (Made responsive) */}
+              <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>DENTAL CHAIR</Typography>
                   <TextField select value={formData.resourceId} onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><EventSeatIcon fontSize="small" /></InputAdornment> }}>
