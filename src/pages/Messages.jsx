@@ -20,7 +20,6 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import DomainIcon from '@mui/icons-material/Domain';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
-// ⚡️ Safely strips trailing '/api' if present in VITE_API_URL, or defaults to localhost
 const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const ENDPOINT = rawApiUrl.replace(/\/api\/?$/, "");
 
@@ -44,6 +43,7 @@ export default function Messages() {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   const sortChatsList = (chatList) => {
     return [...chatList].sort((a, b) => {
@@ -55,6 +55,8 @@ export default function Messages() {
       return dateB - dateA;
     });
   };
+
+  // ⚡️ REMOVED visualViewport logic. It fights the browser's native keyboard handling.
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -118,8 +120,11 @@ export default function Messages() {
     fetchMessages();
   }, [selectedChat]);
 
+  // Scroll to bottom whenever messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   }, [messages]);
 
   const updateSidebarLatestMessage = (newMsg) => {
@@ -176,9 +181,9 @@ export default function Messages() {
   const formatMessageTime = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
-    if (isToday(date)) return format(date, 'p');       
-    if (isYesterday(date)) return 'Yesterday';         
-    return format(date, 'dd/MM/yyyy');                 
+    if (isToday(date)) return format(date, 'p');      
+    if (isYesterday(date)) return 'Yesterday';        
+    return format(date, 'dd/MM/yyyy');                
   };
 
   const getChatDetails = (chat) => {
@@ -207,26 +212,26 @@ export default function Messages() {
   const hasClinicGroup = chats.some(c => c.type === 'clinic');
   const hasBranchGroup = chats.some(c => c.type === 'branch');
 
-  const messagesContainerRef = useRef(null);
-
-  useEffect(() => {
-    if (messagesContainerRef.current) {
-      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
-    }
-  }, [messages]);
+  // ⚡️ FIX: Only scroll the chat container to bottom when focused, DO NOT touch window scroll
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    }, 300); // 300ms gives the mobile keyboard time to animate up before scrolling
+  };
 
   return (
-
     <Box 
       sx={{ 
-        p: { xs: 1, md: 2 }, 
+        p: { xs: 0, md: 2 }, 
         bgcolor: '#f8fafc', 
         height: '100%', 
-        maxHeight: '100%',
         display: 'flex', 
         flexDirection: 'column', 
         boxSizing: 'border-box',
-        overflow: 'hidden'
+        overflow: 'hidden',
+        position: 'relative'
       }}
     >
       <Paper 
@@ -236,11 +241,9 @@ export default function Messages() {
           display: 'flex',
           flexDirection: 'row',
           overflow: 'hidden',
-          borderRadius: { xs: 2, md: 3 },
-          border: '1px solid #e2e8f0',
+          borderRadius: { xs: 0, md: 3 },
+          border: { xs: 'none', md: '1px solid #e2e8f0' },
           bgcolor: '#fff',
-          minHeight: 0,
-          minWidth: 0,
           boxSizing: 'border-box'
         }}
       >
@@ -358,10 +361,7 @@ export default function Messages() {
             flexDirection: 'column', 
             bgcolor: '#f8fafc',
             height: '100%',
-            minWidth: 0,
-            minHeight: 0,
-            overflow: 'hidden',
-            position: 'relative'
+            overflow: 'hidden'
           }}
         > 
           {!selectedChat ? (
@@ -373,7 +373,7 @@ export default function Messages() {
           ) : (
             <>
               {/* Chat Header */}
-              <Box display="flex" alignItems="center" p={2} borderBottom="1px solid #e2e8f0" bgcolor="#fff" zIndex={10} flexShrink={0}>
+              <Box display="flex" alignItems="center" p={2} borderBottom="1px solid #e2e8f0" bgcolor="#fff" flexShrink={0}>
                 <IconButton sx={{ display: { md: 'none' }, mr: 1 }} onClick={() => setSelectedChat(null)}>
                   <ArrowBackIcon />
                 </IconButton>
@@ -404,8 +404,8 @@ export default function Messages() {
                   p: { xs: 2, md: 4 }, 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  gap: 1.5, 
-                  minHeight: 0,
+                  gap: 1.5,
+                  // Smooth scrolling for iOS
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
@@ -443,13 +443,18 @@ export default function Messages() {
                     );
                   })
                 )}
+                {/* Invisible element to auto-scroll to */}
+                <div ref={messagesEndRef} />
               </Box>
 
               {/* Input Area */}
               <Box p={2} bgcolor="#f0f2f5" display="flex" alignItems="center" gap={2} flexShrink={0}>
                 <TextField 
                   fullWidth variant="outlined" placeholder="Type a message" size="small"
-                  value={newMessage} onChange={(e) => setNewMessage(e.target.value)} onKeyDown={sendMessage}
+                  value={newMessage} 
+                  onChange={(e) => setNewMessage(e.target.value)} 
+                  onKeyDown={sendMessage}
+                  onFocus={handleInputFocus}
                   sx={{ '& fieldset': { border: 'none' }, '& .MuiOutlinedInput-root': { bgcolor: '#fff', borderRadius: 2, px: 1 } }}
                 />
                 <IconButton onClick={() => sendMessage({ type: 'click' })} sx={{ bgcolor: primaryColor, color: 'white', '&:hover': { bgcolor: '#0f172a' }, width: 44, height: 44 }}>
