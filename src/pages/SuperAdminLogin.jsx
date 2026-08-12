@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, Typography, Paper, TextField, Button, CircularProgress, Alert } from '@mui/material';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import { useNavigate } from 'react-router-dom';
-// 1. ⚡️ IMPORT RAW AXIOS INSTEAD OF YOUR CUSTOM API
+// 1. IMPORT RAW AXIOS INSTEAD OF YOUR CUSTOM API
 import axios from 'axios';
 
 export default function SuperAdminLogin() {
@@ -20,7 +20,7 @@ export default function SuperAdminLogin() {
 		try {
 			const cleanEmail = email.trim().toLowerCase();
 
-			// ⚡️ Fix: Ensure we build the correct URL
+			// Fix: Ensure we build the correct URL
 			let baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 			// If the baseURL doesn't end with /api, add it.

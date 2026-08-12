@@ -1,23 +1,32 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux'; // ADDED: To get clinicType
 import {
     Box, Paper, Typography, Tabs, Tab, Stack, Chip, Button, IconButton, Divider,
     Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, FormControl, InputLabel, Select, Tooltip, InputAdornment, CircularProgress, Alert, Container
 } from '@mui/material';
+
 import { useColorMode } from '../../context/ThemeContext';
 import { patientService } from '../../api/services/patientService';
-import api from '../../api/services/api'; //  Import API for fetching procedures
+import api from '../../api/services/api';
+import { useToast } from '../../context/ToastContext';
 
 // Components
 import PatientHeader from '../../components/Patients/PatientHeader';
 import AddPatientModal from '../../components/Patients/AddPatientModal';
-import Odontogram from '../../components/Clinical/Odontogram';
 import PatientLedger from '../../components/Billing/PatientLedger';
 import CollectPaymentModal from '../../components/Patients/CollectPaymentModal';
 import PrescriptionList from '../../components/Clinical/PrescriptionList';
 import PatientHistory from '../../components/Clinical/PatientHistory';
 import PatientFiles from '../../components/Clinical/PatientFiles';
 import CreateInvoiceModal from '../../components/Billing/CreateInvoiceModal';
+
+// PHASE 5: DYNAMIC CLINICAL MODULES
+import Odontogram from '../../components/Clinical/Odontogram';
+// If you don't have these components yet, they can just be empty placeholder files for now.
+import DermaBodyMap from '../../components/Clinical/DermaBodyMap';
+import GeneralVitals from '../../components/Clinical/GeneralVitals';
+import PhysioSkeletalMap from '../../components/Clinical/PhysioSkeletalMap';
 
 // Icons
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
@@ -32,16 +41,19 @@ import CenterFocusStrongIcon from '@mui/icons-material/CenterFocusStrong';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import UndoIcon from '@mui/icons-material/Undo';
 import CloseIcon from '@mui/icons-material/Close';
-import { useToast } from '../../context/ToastContext';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import MedicationIcon from '@mui/icons-material/Medication';
 import FolderIcon from '@mui/icons-material/Folder';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera'; // For CDN/Gallery Tab
 
 export default function PatientProfile() {
     const { id } = useParams();
     const { primaryColor } = useColorMode();
     const { showToast } = useToast();
     const navigate = useNavigate();
+
+    // 1. GET CLINIC TYPE FROM REDUX
+    const clinicType = useSelector((state) => state.auth?.user?.clinicType) || 'General_Practice';
 
     // --- STATE ---
     const [loading, setLoading] = useState(true);
@@ -50,7 +62,6 @@ export default function PatientProfile() {
     const [patientData, setPatientData] = useState(null);
     const [tab, setTab] = useState(0);
 
-    //  NEW: State for dynamic procedures
     const [proceduresList, setProceduresList] = useState([]);
 
     // Modals
@@ -59,15 +70,16 @@ export default function PatientProfile() {
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [createInvoiceModalOpen, setCreateInvoiceModalOpen] = useState(false);
     const [activeInvoice, setActiveInvoice] = useState(null);
-    // Form Input
-    const [newTreatment, setNewTreatment] = useState({ tooth: '', procedure: '', cost: '' });
+    
+    // CHANGED 'tooth' to 'region'
+    const [newTreatment, setNewTreatment] = useState({ region: '', procedure: '', cost: '' });
 
     // Canvas State
     const [transform, setTransform] = useState({ x: 0, y: 0, scale: 1 });
     const [isDragging, setIsDragging] = useState(false);
     const dragStart = useRef({ x: 0, y: 0 });
 
-    // --- 1. FETCH DATA ---
+    // --- 2. FETCH DATA ---
     const fetchPatientDetails = async () => {
         try {
             if (!patientData) setLoading(true);
@@ -82,12 +94,10 @@ export default function PatientProfile() {
         }
     };
 
-    //  Fetch Procedures
     useEffect(() => {
         const fetchProcedures = async () => {
             try {
                 const res = await api.get('/procedures');
-                // Filter out inactive procedures
                 const activeProcedures = (res.data || []).filter(p => p.isActive !== false);
                 setProceduresList(activeProcedures);
             } catch (err) {
@@ -101,60 +111,50 @@ export default function PatientProfile() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
-    // --- 2. DERIVED STATE ---
+    // --- 3. DERIVED STATE ---
     const treatmentPlan = patientData?.treatmentPlan || [];
 
-    //  UPDATED: Now returns both colors (toothStatus) AND text (toothTooltips)
-    const { toothStatus, toothTooltips } = useMemo(() => {
-        const statusMap = { ...(patientData?.dentalChart || {}) };
+    // UPDATED: Uses `specialtyData` instead of `dentalChart`
+    // And maps `region` instead of `tooth`
+    const { regionStatus, regionTooltips } = useMemo(() => {
+        const statusMap = { ...(patientData?.specialtyData || {}) };
         const tooltipMap = {};
 
-        // 1. Basic conditions tooltips
-        Object.keys(statusMap).forEach(tooth => {
-            // Capitalize the word (e.g., "missing" -> "Missing")
-            tooltipMap[tooth] = statusMap[tooth].charAt(0).toUpperCase() + statusMap[tooth].slice(1);
+        Object.keys(statusMap).forEach(region => {
+            tooltipMap[region] = String(statusMap[region]).charAt(0).toUpperCase() + String(statusMap[region]).slice(1);
         });
 
-        // 2. Treatment plan tooltips (these overwrite basic conditions)
         treatmentPlan.forEach(item => {
+            const key = item.region || item.tooth; // Fallback for legacy DB data
             if (item.status === 'Proposed') {
-                statusMap[item.tooth] = 'planned';
-                tooltipMap[item.tooth] = `Planned: ${item.procedure}`;
+                statusMap[key] = 'planned';
+                tooltipMap[key] = `Planned: ${item.procedure}`;
             }
             else if (item.status === 'In Progress') {
-                statusMap[item.tooth] = 'active';
-                tooltipMap[item.tooth] = `Active: ${item.procedure}`;
+                statusMap[key] = 'active';
+                tooltipMap[key] = `Active: ${item.procedure}`;
             }
             else if (item.status === 'Completed') {
-                statusMap[item.tooth] = 'completed';
-                tooltipMap[item.tooth] = `Completed: ${item.procedure}`;
+                statusMap[key] = 'completed';
+                tooltipMap[key] = `Completed: ${item.procedure}`;
             }
         });
 
-        return { toothStatus: statusMap, toothTooltips: tooltipMap };
+        return { regionStatus: statusMap, regionTooltips: tooltipMap };
     }, [treatmentPlan, patientData]);
 
+    const estimatedCost = treatmentPlan.filter(item => item.status === 'Proposed').reduce((sum, item) => sum + Number(item.cost), 0);
+    const incurredCost = treatmentPlan.filter(item => ['In Progress', 'Completed'].includes(item.status)).reduce((sum, item) => sum + Number(item.cost), 0);
+    const proposedItemsCount = treatmentPlan.filter(i => i.status === 'Proposed').length;
 
-    // BUCKET 1: Estimated Cost (Only 'Proposed' items)
-    const estimatedCost = treatmentPlan
-        .filter(item => item.status === 'Proposed')
-        .reduce((sum, item) => sum + Number(item.cost), 0);
-
-    // BUCKET 2: Incurred Cost (Work actually started or finished)
-    const incurredCost = treatmentPlan
-        .filter(item => ['In Progress', 'Completed'].includes(item.status))
-        .reduce((sum, item) => sum + Number(item.cost), 0);
-
-    const proposedItemsCount = treatmentPlan.filter(i => i.status === 'Proposed').length
-
-    // --- 3. API HANDLERS ---
+    // --- 4. API HANDLERS ---
     const handleAddTreatment = async () => {
-        if (!newTreatment.tooth || !newTreatment.procedure) return;
+        if (!newTreatment.region || !newTreatment.procedure) return;
 
         try {
             setSubmitting(true);
             const payload = {
-                tooth: newTreatment.tooth,
+                region: newTreatment.region, // Uses region
                 procedure: newTreatment.procedure,
                 cost: Number(newTreatment.cost),
                 status: 'Proposed'
@@ -164,7 +164,7 @@ export default function PatientProfile() {
             setPatientData(updatedPatient);
             showToast('Treatment added to plan', 'success');
             setAddTreatmentOpen(false);
-            setNewTreatment({ tooth: '', procedure: '', cost: '' });
+            setNewTreatment({ region: '', procedure: '', cost: '' });
         } catch (err) {
             showToast('Failed to add treatment', 'error');
         } finally {
@@ -205,100 +205,65 @@ export default function PatientProfile() {
         }
     };
 
-    const handlePaymentSuccess = () => {
-        fetchPatientDetails();
-        setPaymentModalOpen(false);
-        showToast('Payment recorded successfully!', 'success');
-    };
-
-    const handleChartAction = async (action, toothId) => {
+    // UPDATED: Generic Handler for ANY clinical module
+    const handleChartAction = async (action, regionId, customValue = null) => {
         if (action === 'plan_treatment') {
-            setNewTreatment({ tooth: toothId, procedure: '', cost: '' });
+            setNewTreatment({ region: regionId, procedure: '', cost: '' });
             setAddTreatmentOpen(true);
         }
-        //  HANDLE CONDITIONS (Missing, Decay, Clear)
-        //  HANDLE CONDITIONS (Missing, Decay, Clear)
-        else if (['mark_decay', 'mark_missing', 'clear'].includes(action)) {
-            try {
-                let condition = 'healthy';
-                if (action === 'mark_decay') condition = 'decayed';
-                if (action === 'mark_missing') condition = 'missing';
-
-                await patientService.updateToothCondition(id, {
-                    tooth: toothId,
-                    condition: condition
-                });
-
-                //  THE FIX: Force a fresh database pull to guarantee instant UI sync!
-                fetchPatientDetails();
-                showToast(`Tooth #${toothId} updated`, 'success');
-            } catch (err) {
-                showToast('Failed to update tooth condition', 'error');
-            }
-        }
-        //  HANDLE "MARK AS COMPLETED"
         else if (action === 'mark_completed') {
-            // Find any pending/in-progress treatments for this exact tooth
             const pendingTreatments = treatmentPlan.filter(
-                t => t.tooth.toString() === toothId.toString() && t.status !== 'Completed'
+                t => (t.region === regionId || t.tooth === regionId) && t.status !== 'Completed'
             );
 
             if (pendingTreatments.length === 0) {
-                showToast(`No pending treatments found for Tooth #${toothId}.`, 'info');
+                showToast(`No pending treatments found for region ${regionId}.`, 'info');
                 return;
             }
 
             try {
                 setSubmitting(true);
-                // Loop through and complete the treatments on this tooth using your existing API
                 for (const treatment of pendingTreatments) {
                     await patientService.updateTreatmentStatus(id, treatment._id, 'Completed');
                 }
-                // Refresh the whole patient to update the ledger/billing
                 fetchPatientDetails();
-                showToast(`Treatments on Tooth #${toothId} marked completed!`, 'success');
+                showToast(`Treatments marked completed!`, 'success');
             } catch (error) {
                 showToast(`Failed to complete treatment.`, 'error');
             } finally {
                 setSubmitting(false);
             }
         }
+        else {
+            // Calls the new Phase 3 API endpoint (updateSpecialtyDataKey)
+            // Example: action="update_condition", regionId="leftCheek", customValue="Acne"
+            // Example (Legacy Dental): action="mark_decay", regionId="14"
+            let condition = customValue || action.replace('mark_', ''); 
+            if (['clear', 'healthy', 'remove'].includes(action)) condition = 'clear';
+
+            try {
+                // Adjust this call to point to your new API route from Phase 3
+                await api.put(`/patients/${id}/specialty`, {
+                    key: regionId,
+                    value: condition
+                });
+                fetchPatientDetails();
+                showToast(`Region ${regionId} updated`, 'success');
+            } catch (err) {
+                showToast('Failed to update clinical condition', 'error');
+            }
+        }
     };
 
     const { lastVisit, nextAppointment, pendingDues } = useMemo(() => {
         if (!patientData) return { lastVisit: null, nextAppointment: null, pendingDues: 0 };
-
         const appointments = patientData.appointments || [];
-
-        // 1. Last Visit
         const pastAppointments = appointments.filter(a => a.status === 'Completed');
-        const calculatedLastVisit = pastAppointments.length > 0
-            ? new Date(Math.max(...pastAppointments.map(a => new Date(a.start))))
-            : null;
-
-        // 2. Next Appointment
+        const calculatedLastVisit = pastAppointments.length > 0 ? new Date(Math.max(...pastAppointments.map(a => new Date(a.start)))) : null;
         const pendingAppointments = appointments.filter(a => ['Scheduled', 'In Progress'].includes(a.status));
-        const calculatedNextAppointment = pendingAppointments.length > 0
-            ? new Date(Math.min(...pendingAppointments.map(a => new Date(a.start))))
-            : null;
-
-        // 3. Financials
-        const invoices = patientData.invoices || [];
-
-        const calculatedDues = invoices.reduce((sum, inv) => {
-            if (inv.status !== 'Void') {
-                return sum + (inv.balance || 0);
-            }
-            return sum;
-        }, 0);
-
-        // Return the calculated values as an object
-        return {
-            lastVisit: calculatedLastVisit,
-            nextAppointment: calculatedNextAppointment,
-            pendingDues: calculatedDues
-        };
-
+        const calculatedNextAppointment = pendingAppointments.length > 0 ? new Date(Math.min(...pendingAppointments.map(a => new Date(a.start)))) : null;
+        const calculatedDues = (patientData.invoices || []).reduce((sum, inv) => inv.status !== 'Void' ? sum + (inv.balance || 0) : sum, 0);
+        return { lastVisit: calculatedLastVisit, nextAppointment: calculatedNextAppointment, pendingDues: calculatedDues };
     }, [patientData]);
 
     // Zoom Handlers
@@ -309,55 +274,44 @@ export default function PatientProfile() {
     const handleMouseUp = () => setIsDragging(false);
 
     // --- RENDER ---
-    if (loading) {
-        return (
-            <Box sx={{ height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CircularProgress size={40} sx={{ color: primaryColor }} />
-            </Box>
-        );
-    }
+    if (loading) return <Box sx={{ height: '90vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><CircularProgress size={40} sx={{ color: primaryColor }} /></Box>;
+    if (error || !patientData) return <Container maxWidth="sm" sx={{ mt: 10 }}><Alert severity="error" action={<Button color="inherit" size="small" onClick={() => window.history.back()}>Go Back</Button>}>{error || "Patient not found."}</Alert></Container>;
 
-    if (error || !patientData) {
-        return (
-            <Container maxWidth="sm" sx={{ mt: 10 }}>
-                <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => window.history.back()}>Go Back</Button>}>
-                    {error || "Patient not found."}
-                </Alert>
-            </Container>
-        );
-    }
-
-
+    // 5. COMPONENT FACTORY
+    const renderClinicalModule = () => {
+        // Here we dynamically render the correct visual module.
+        switch(clinicType) {
+            case 'Dermatology':
+                return <DermaBodyMap initialStates={regionStatus} tooltips={regionTooltips} onAction={handleChartAction} />;
+                // return <Box p={4} textAlign="center"><Typography variant="h6" color="text.secondary">Body Mapping Tool (Dermatology) will render here.</Typography></Box>;
+            case 'General_Practice':
+                return <GeneralVitals initialStates={regionStatus} onAction={handleChartAction} />;
+            case 'Physiotherapy':
+                return <PhysioSkeletalMap initialStates={regionStatus} onAction={handleChartAction} />;
+                // return <Box p={4} textAlign="center"><Typography variant="h6" color="text.secondary">Musculoskeletal Map will render here.</Typography></Box>;
+            case 'Dental':
+            default:
+                // Existing Odontogram Fallback
+                return (
+                    <Box sx={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`, transition: isDragging ? 'none' : 'transform 0.1s ease-out', transformOrigin: 'center center', pointerEvents: 'none' }}>
+                        <Box sx={{ pointerEvents: 'auto' }}>
+                            <Odontogram initialStates={regionStatus} tooltips={regionTooltips} onAction={handleChartAction} />
+                        </Box>
+                    </Box>
+                );
+        }
+    };
 
     return (
         <Box sx={{ height: tab === 0 ? 'calc(100vh - 64px)' : 'auto', minHeight: 'calc(100vh - 64px)', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc' }}>
 
             <Box sx={{ flexShrink: 0, bgcolor: 'white', pt: 2 }}>
                 <Box sx={{ px: 3, mb: 0 }}>
-                    <Button
-                        startIcon={<ArrowBackIcon />}
-                        onClick={() => navigate('/patients')}
-                        size="small"
-                        sx={{
-                            color: '#64748b',
-                            fontWeight: '700',
-                            textTransform: 'none',
-                            fontSize: '0.85rem',
-                            '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' }
-                        }}
-                    >
+                    <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/patients')} size="small" sx={{ color: '#64748b', fontWeight: '700', textTransform: 'none', fontSize: '0.85rem', '&:hover': { bgcolor: '#f1f5f9', color: '#0f172a' } }}>
                         Back to Patients
                     </Button>
                 </Box>
-                <PatientHeader
-                    patient={patientData}
-                    pendingDues={pendingDues}
-                    lastVisit={lastVisit}
-                    nextAppointment={nextAppointment}
-                    onEdit={() => setEditModalOpen(true)}
-                    onBillClick={() => setCreateInvoiceModalOpen(true)} // Opens the Invoice Modal!
-                    onHistoryClick={() => setTab(1)} // Switches to the History Tab!
-                />
+                <PatientHeader patient={patientData} pendingDues={pendingDues} lastVisit={lastVisit} nextAppointment={nextAppointment} onEdit={() => setEditModalOpen(true)} onBillClick={() => setCreateInvoiceModalOpen(true)} onHistoryClick={() => setTab(1)} />
             </Box>
 
             {/* TABS */}
@@ -366,7 +320,13 @@ export default function PatientProfile() {
                     <Tab icon={<MedicalServicesIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Clinical Charting" sx={{ fontWeight: 700 }} />
                     <Tab icon={<HistoryIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="History" sx={{ fontWeight: 700 }} />
                     <Tab icon={<MedicationIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Prescription" sx={{ fontWeight: 700 }} />
-                    <Tab icon={<FolderIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Files" sx={{ fontWeight: 700 }} />
+                    <Tab icon={<FolderIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Docs & Scans" sx={{ fontWeight: 700 }} />
+                    
+                    {/* Added Gallery Tab for Before/After CDN Images */}
+                    {['Dermatology', 'Dental', 'Physiotherapy'].includes(clinicType) && (
+                        <Tab icon={<PhotoCameraIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Media Gallery" sx={{ fontWeight: 700 }} />
+                    )}
+                    
                     <Tab icon={<ReceiptLongIcon sx={{ fontSize: 18, mr: 1 }} />} iconPosition="start" label="Billing" sx={{ fontWeight: 700 }} />
                 </Tabs>
             </Box>
@@ -379,26 +339,21 @@ export default function PatientProfile() {
                     <>
                         {/* LEFT: CANVAS */}
                         <Box sx={{ flex: 1, position: 'relative', display: 'flex', flexDirection: 'column', bgcolor: '#f1f5f9', overflow: 'hidden' }}>
-                            <Paper elevation={3} sx={{ position: 'absolute', top: 20, left: 20, zIndex: 20, p: 0.5, borderRadius: 2, display: 'flex', gap: 0.5, alignItems: 'center' }}>
-                                <IconButton size="small" onClick={() => handleZoom(0.2)}><ZoomInIcon /></IconButton>
-                                <IconButton size="small" onClick={() => handleZoom(-0.2)}><ZoomOutIcon /></IconButton>
-                                <Divider orientation="vertical" flexItem variant="middle" />
-                                <IconButton size="small" onClick={handleResetView}><CenterFocusStrongIcon /></IconButton>
-                            </Paper>
+                            {clinicType === 'Dental' && (
+                                <Paper elevation={3} sx={{ position: 'absolute', top: 20, left: 20, zIndex: 20, p: 0.5, borderRadius: 2, display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                                    <IconButton size="small" onClick={() => handleZoom(0.2)}><ZoomInIcon /></IconButton>
+                                    <IconButton size="small" onClick={() => handleZoom(-0.2)}><ZoomOutIcon /></IconButton>
+                                    <Divider orientation="vertical" flexItem variant="middle" />
+                                    <IconButton size="small" onClick={handleResetView}><CenterFocusStrongIcon /></IconButton>
+                                </Paper>
+                            )}
 
                             <Box
                                 sx={{ flex: 1, width: '100%', height: '25%', cursor: isDragging ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
                                 onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}
                             >
-                                <Box sx={{ transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.scale})`, transition: isDragging ? 'none' : 'transform 0.1s ease-out', transformOrigin: 'center center', pointerEvents: 'none' }}>
-                                    <Box sx={{ pointerEvents: 'auto' }}>
-                                        <Odontogram
-                                            initialStates={toothStatus}
-                                            tooltips={toothTooltips}
-                                            onAction={handleChartAction}
-                                        />
-                                    </Box>
-                                </Box>
+                                {/* Render Dynamic Clinical Module */}
+                                {renderClinicalModule()}
                             </Box>
 
                             <Paper square sx={{ p: 1.5, borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', gap: 4, zIndex: 10 }}>
@@ -419,14 +374,13 @@ export default function PatientProfile() {
                             </Box>
 
                             <Box sx={{ flex: 1, overflowY: 'auto' }}>
-                                {treatmentPlan.length === 0 && (
-                                    <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>No treatments added yet.</Typography>
-                                )}
+                                {treatmentPlan.length === 0 && <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>No treatments added yet.</Typography>}
                                 {treatmentPlan.map((item) => (
                                     <Box key={item._id} sx={{ p: 2, borderBottom: '1px solid #f1f5f9', position: 'relative', '&:hover': { bgcolor: '#f8fafc' }, transition: '0.1s' }}>
                                         <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: item.status === 'In Progress' ? '#f59e0b' : (item.status === 'Completed' ? '#22c55e' : '#3b82f6') }} />
                                         <Stack direction="row" justifyContent="space-between" mb={1} alignItems="center">
-                                            <Chip label={`Tooth #${item.tooth}`} size="small" sx={{ borderRadius: 1, height: 20, fontSize: '0.7rem', fontWeight: 'bold', bgcolor: '#f1f5f9', color: '#64748b' }} />
+                                            {/* Updated Label to support Region instead of just Tooth */}
+                                            <Chip label={clinicType === 'Dental' ? `Tooth #${item.region || item.tooth}` : `Area: ${item.region || 'General'}`} size="small" sx={{ borderRadius: 1, height: 20, fontSize: '0.7rem', fontWeight: 'bold', bgcolor: '#f1f5f9', color: '#64748b' }} />
                                             <Typography variant="caption" fontWeight="bold" color={item.status === 'In Progress' ? 'warning.main' : 'primary.main'}>{item.status}</Typography>
                                         </Stack>
                                         <Typography variant="body2" fontWeight="700" color="#1e293b" sx={{ mb: 1 }}>{item.procedure}</Typography>
@@ -435,16 +389,12 @@ export default function PatientProfile() {
                                             <Stack direction="row">
                                                 {item.status === 'Proposed' && (
                                                     <Tooltip title="Delete Item">
-                                                        <IconButton size="small" color="error" onClick={() => handleDeleteItem(item._id)}>
-                                                            <DeleteOutlineIcon fontSize="small" />
-                                                        </IconButton>
+                                                        <IconButton size="small" color="error" onClick={() => handleDeleteItem(item._id)}><DeleteOutlineIcon fontSize="small" /></IconButton>
                                                     </Tooltip>
                                                 )}
                                                 {item.status === 'In Progress' && (
                                                     <Tooltip title="Mistake? Undo to Plan.">
-                                                        <IconButton size="small" color="warning" onClick={() => handleRevertItem(item._id)}>
-                                                            <UndoIcon fontSize="small" />
-                                                        </IconButton>
+                                                        <IconButton size="small" color="warning" onClick={() => handleRevertItem(item._id)}><UndoIcon fontSize="small" /></IconButton>
                                                     </Tooltip>
                                                 )}
                                             </Stack>
@@ -459,11 +409,9 @@ export default function PatientProfile() {
                                     <Typography variant="h6" fontWeight="900" color={primaryColor}>₹ {estimatedCost.toLocaleString()}</Typography>
                                 </Stack>
                                 <Button
-                                    fullWidth
-                                    variant="contained"
+                                    fullWidth variant="contained"
                                     startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : (proposedItemsCount > 0 ? <CheckCircleIcon /> : <PlayArrowIcon />)}
-                                    onClick={handleApproveAndStart}
-                                    disabled={proposedItemsCount === 0 || submitting}
+                                    onClick={handleApproveAndStart} disabled={proposedItemsCount === 0 || submitting}
                                     sx={{ bgcolor: primaryColor, py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
                                 >
                                     {submitting ? "Processing..." : (proposedItemsCount > 0 ? `Approve & Start` : 'All Active')}
@@ -472,41 +420,30 @@ export default function PatientProfile() {
                         </Box>
                     </>
                 )}
-                {tab === 1 && (
-                    <Box sx={{ width: '100%', minHeight: '80vh', p: 0, bgcolor: '#fff' }}>
-                        <PatientHistory patient={patientData} onRefresh={fetchPatientDetails} />
+                
+                {/* OTHER TABS */}
+                {tab === 1 && <Box sx={{ width: '100%', minHeight: '80vh', p: 0, bgcolor: '#fff' }}><PatientHistory patient={patientData} onRefresh={fetchPatientDetails} /></Box>}
+                {tab === 2 && <Box sx={{ width: '100%', minHeight: '80vh', p: 0 }}><PrescriptionList patientId={patientData._id} /></Box>}
+                {tab === 3 && <Box sx={{ width: '100%', minHeight: '80vh', bgcolor: '#fff' }}><PatientFiles patient={patientData} onRefresh={fetchPatientDetails} /></Box>}
+                
+                {/* NEW: Gallery Tab Placeholder for CDNs */}
+                {tab === 4 && ['Dermatology', 'Dental', 'Physiotherapy'].includes(clinicType) && (
+                    <Box sx={{ width: '100%', minHeight: '80vh', p: 4, bgcolor: '#fff' }}>
+                        <Typography variant="h6" fontWeight="800" mb={1}>Before & After Media Gallery</Typography>
+                        <Typography variant="body2" color="text.secondary" mb={3}>Upload and compare high-resolution clinical photos securely stored via our CDN architecture.</Typography>
+                        {/* Build a nice image grid component here later! */}
+                        <Alert severity="info">Image Gallery Component goes here. Photos uploaded will be streamed via AWS S3 / Cloudflare CDN.</Alert>
                     </Box>
                 )}
-                {tab === 2 && (
-                    <Box sx={{ width: '100%', minHeight: '80vh', p: 0 }}>
-                        <PrescriptionList patientId={patientData._id} />
-                    </Box>
-                )}
-                {tab === 3 && (
-                    <Box sx={{ width: '100%', minHeight: '80vh', bgcolor: '#fff' }}>
-                        <PatientFiles patient={patientData} onRefresh={fetchPatientDetails} />
-                    </Box>
-                )}
-                {/* --- TAB 4: BILLING --- */}
-                {tab === 4 && (
+
+                {tab === (['Dermatology', 'Dental', 'Physiotherapy'].includes(clinicType) ? 5 : 4) && (
                     <Box sx={{ width: '100%', minHeight: '80vh', p: 3, bgcolor: '#f8fafc' }}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center" mb={3}>
                             <Typography variant="h6" fontWeight="800">Financial Summary</Typography>
-                            <Button
-                                variant="contained"
-                                startIcon={<ReceiptLongIcon />}
-                                onClick={() => setCreateInvoiceModalOpen(true)}
-                                sx={{ bgcolor: primaryColor, borderRadius: 2 }}
-                            >
-                                Generate Invoice
-                            </Button>
+                            <Button variant="contained" startIcon={<ReceiptLongIcon />} onClick={() => setCreateInvoiceModalOpen(true)} sx={{ bgcolor: primaryColor, borderRadius: 2 }}>Generate Invoice</Button>
                         </Stack>
-
                         <Paper sx={{ p: 0, borderRadius: 3, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                            <PatientLedger onCollectPayment={(invoice) => {
-                                setActiveInvoice(invoice);
-                                setPaymentModalOpen(true);
-                            }} patient={patientData} onRefresh={fetchPatientDetails} />
+                            <PatientLedger onCollectPayment={(invoice) => { setActiveInvoice(invoice); setPaymentModalOpen(true); }} patient={patientData} onRefresh={fetchPatientDetails} />
                         </Paper>
                     </Box>
                 )}
@@ -521,30 +458,21 @@ export default function PatientProfile() {
                 <DialogContent sx={{ pt: 3, pb: 1, overflow: 'visible' }}>
                     <Stack spacing={3} sx={{ mt: 1 }}>
                         <TextField
-                            label="Tooth Number"
-                            value={newTreatment.tooth}
-                            onChange={(e) => setNewTreatment({ ...newTreatment, tooth: e.target.value })}
+                            label={clinicType === 'Dental' ? "Tooth Number" : "Treatment Region/Area"} // Dynamic Label
+                            value={newTreatment.region}
+                            onChange={(e) => setNewTreatment({ ...newTreatment, region: e.target.value })}
                             fullWidth
-                            placeholder="e.g. 46"
+                            placeholder={clinicType === 'Dental' ? "e.g. 46" : "e.g. Left Cheek, Lower Back"}
                             autoFocus
                             InputProps={{ sx: { fontWeight: 'bold' } }}
                         />
                         <FormControl fullWidth>
                             <InputLabel id="procedure-label">Select Procedure</InputLabel>
                             <Select
-                                labelId="procedure-label"
-                                value={newTreatment.procedure}
-                                label="Select Procedure"
+                                labelId="procedure-label" value={newTreatment.procedure} label="Select Procedure"
                                 onChange={(e) => {
-                                    //  Find the procedure dynamically from the fetched list
                                     const proc = proceduresList.find(p => p.name === e.target.value);
-                                    if (proc) {
-                                        setNewTreatment({
-                                            ...newTreatment,
-                                            procedure: proc.name,
-                                            cost: proc.price // Map DB 'price' to UI 'cost'
-                                        });
-                                    }
+                                    if (proc) setNewTreatment({ ...newTreatment, procedure: proc.name, cost: proc.price });
                                 }}
                                 MenuProps={{ disablePortal: false, PaperProps: { sx: { maxHeight: 300, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', borderRadius: 2, mt: 1, zIndex: 9999 } }, style: { zIndex: 1400 } }}
                             >
@@ -561,17 +489,14 @@ export default function PatientProfile() {
                             </Select>
                         </FormControl>
                         <TextField
-                            label="Estimated Cost"
-                            value={newTreatment.cost}
-                            type="number"
-                            fullWidth
+                            label="Estimated Cost" value={newTreatment.cost} type="number" fullWidth
                             InputProps={{ startAdornment: <InputAdornment position="start">₹</InputAdornment>, readOnly: true, sx: { bgcolor: '#f8fafc', fontWeight: 'bold' } }}
                         />
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ p: 2, borderTop: '1px solid #f1f5f9', bgcolor: '#fafafa', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
                     <Button onClick={() => setAddTreatmentOpen(false)} sx={{ fontWeight: 'bold', color: '#64748b' }}>Cancel</Button>
-                    <Button onClick={handleAddTreatment} variant="contained" disabled={!newTreatment.tooth || !newTreatment.procedure || submitting} sx={{ borderRadius: 2, px: 3, fontWeight: 'bold', bgcolor: '#0f172a' }}>
+                    <Button onClick={handleAddTreatment} variant="contained" disabled={!newTreatment.region || !newTreatment.procedure || submitting} sx={{ borderRadius: 2, px: 3, fontWeight: 'bold', bgcolor: '#0f172a' }}>
                         {submitting ? "Adding..." : "Add to Plan"}
                     </Button>
                 </DialogActions>
@@ -579,21 +504,8 @@ export default function PatientProfile() {
 
             {/* OTHER MODALS */}
             <AddPatientModal open={editModalOpen} onClose={() => setEditModalOpen(false)} initialData={patientData} onSubmit={fetchPatientDetails} />
-            <CollectPaymentModal
-                open={paymentModalOpen}
-                onClose={() => setPaymentModalOpen(false)}
-                patient={patientData}
-                initialInvoice={activeInvoice}
-                onPaymentSuccess={fetchPatientDetails} />
-            <CreateInvoiceModal
-                open={createInvoiceModalOpen}
-                onClose={() => setCreateInvoiceModalOpen(false)}
-                patientId={patientData._id}
-                doctorId={patientData?.appointments?.[0]?.doctorId || null}
-                onSuccess={() => {
-                    fetchPatientDetails();
-                }}
-            />
+            <CollectPaymentModal open={paymentModalOpen} onClose={() => setPaymentModalOpen(false)} patient={patientData} initialInvoice={activeInvoice} onPaymentSuccess={fetchPatientDetails} />
+            <CreateInvoiceModal open={createInvoiceModalOpen} onClose={() => setCreateInvoiceModalOpen(false)} patientId={patientData._id} doctorId={patientData?.appointments?.[0]?.doctorId || null} onSuccess={fetchPatientDetails} />
         </Box>
     );
 }

@@ -285,7 +285,7 @@ export default function ClinicProfileTab() {
           {whatsappEnabled && (
             <Box sx={{ bgcolor: '#f8fafc', p: 3, borderRadius: 3, border: '1px solid #e2e8f0' }}>
               <Grid container spacing={3}>
-                {/* ⚡️ CHANGED: Phone Number ID */}
+                {/* CHANGED: Phone Number ID */}
                 <Grid item xs={12} md={4}>
                   <TextField 
                     fullWidth 
@@ -296,7 +296,7 @@ export default function ClinicProfileTab() {
                     {...register("whatsappConfig.phoneNumberId")} 
                   />
                 </Grid>
-                {/* ⚡️ CHANGED: WhatsApp Business Account (WABA) ID */}
+                {/* CHANGED: WhatsApp Business Account (WABA) ID */}
                 <Grid item xs={12} md={4}>
                   <TextField 
                     fullWidth 
@@ -307,7 +307,7 @@ export default function ClinicProfileTab() {
                     {...register("whatsappConfig.wabaId")} 
                   />
                 </Grid>
-                {/* ⚡️ CHANGED: Permanent System User Access Token */}
+                {/* CHANGED: Permanent System User Access Token */}
                 <Grid item xs={12} md={4}>
                   <TextField 
                     fullWidth 
@@ -389,7 +389,7 @@ export default function ClinicProfileTab() {
                         />
                       </Box>
 
-                      {/* ⚡️ CHANGED: Label updated to ask for Template Name instead of free text */}
+                      {/* CHANGED: Label updated to ask for Template Name instead of free text */}
                       <TextField
                         fullWidth
                         size="small"

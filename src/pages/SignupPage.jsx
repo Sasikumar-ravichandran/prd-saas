@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Box, Typography, TextField, Button, InputAdornment,
   Alert, CircularProgress, Divider, CssBaseline,
-  GlobalStyles
+  GlobalStyles, Grid, Paper, alpha, Stack
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,6 +20,15 @@ import { BrandSidebar, MobileFeatureDrawer } from '../pages/Auth/BrandVisuals';
 import { authService } from '../api/services/authService';
 
 const defaultColor = '#1976d2';
+
+//  NEW: The Clinic Types Configuration
+const CLINIC_TYPES = [
+  { id: 'Dental', label: 'Dental Care', icon: '🦷', desc: 'Odontograms & Perio' },
+  { id: 'Dermatology', label: 'Dermatology', icon: '✨', desc: 'Body Mapping & Botox' },
+  { id: 'General_Practice', label: 'General Practice', icon: '🩺', desc: 'Vitals & Prescriptions' },
+  { id: 'Ophthalmology', label: 'Eye Care', icon: '👁️', desc: 'Vision Rx & Retinal' },
+  { id: 'Physiotherapy', label: 'Physiotherapy', icon: '🏃', desc: 'Skeletal Maps & Rehab' },
+];
 
 // Custom style for premium SaaS inputs
 const premiumInputSx = {
@@ -41,6 +50,7 @@ export default function SignupPage() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
+    clinicType: '', //  NEW: Capture the type
     clinicName: '',
     fullName: '',
     email: '',
@@ -51,7 +61,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [step, setStep] = useState('FORM');
+  //  CHANGED: Flow now starts at 'TYPE' -> 'FORM' -> 'OTP' -> 'SUCCESS'
+  const [step, setStep] = useState('TYPE');
   const [otp, setOtp] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -97,12 +108,13 @@ export default function SignupPage() {
 
       await authService.verifyOtp(formData.email, otp, 'SIGNUP_VERIFY');
 
+      // formData already includes clinicType, so it gets sent automatically!
       await authService.register({
         ...formData,
         otp: otp
       });
 
-      // Move them to the success/pending screen instead.
+      // Move them to the success/pending screen
       setStep('SUCCESS');
 
     } catch (err) {
@@ -132,7 +144,7 @@ export default function SignupPage() {
           backgroundImage: 'linear-gradient(145deg, #b8c8e6 0%, #a4c0eb 100%)',
           height: '100%', overflowY: 'auto', overflowX: 'hidden'
         }}>
-          <Box sx={{ width: '100%', maxWidth: 440, p: { xs: 3, sm: 5 }, my: 'auto' }}>
+          <Box sx={{ width: '100%', maxWidth: 500, p: { xs: 3, sm: 5 }, my: 'auto' }}>
 
             {/* MOBILE WELCOME SCREEN */}
             {mobileView === 'welcome' ? (
@@ -182,7 +194,7 @@ export default function SignupPage() {
               
               {/* Back Button (Only show if not on SUCCESS screen) */}
               {step !== 'SUCCESS' && (
-                <Box sx={{ display: { xs: 'flex', lg: 'none' }, mb: 2 }}>
+                <Box sx={{ display: { xs: 'flex', lg: step === 'TYPE' ? 'none' : 'flex' }, mb: 2 }}>
                   <Button
                     startIcon={<ArrowBackIcon />}
                     onClick={() => {
@@ -190,8 +202,10 @@ export default function SignupPage() {
                         setStep('FORM');
                         setSuccessMsg('');
                         setOtp('');
-                      } else {
-                        setMobileView('welcome');
+                      } else if (step === 'FORM') {
+                        setStep('TYPE'); //  Go back to type selector
+                      } else if (step === 'TYPE') {
+                        setMobileView('welcome'); //  Go back to mobile welcome
                       }
                     }}
                     sx={{ textTransform: 'none', fontWeight: 700, color: '#0f172a', pl: 0 }}
@@ -204,8 +218,108 @@ export default function SignupPage() {
               {error && <Alert severity="error" sx={{ borderRadius: 2, mb: 3 }}>{error}</Alert>}
               {successMsg && step !== 'SUCCESS' && <Alert severity="success" sx={{ borderRadius: 2, mb: 3 }}>{successMsg}</Alert>}
 
+              {/*  =========================================================
+                  STEP 1: CLINIC TYPE SELECTION
+              ========================================================= */}
+              {step === 'TYPE' && (
+                <>
+                  <Box sx={{ mb: 4 }}>
+                    <Typography variant="h4" fontWeight="800" sx={{ mb: 1, color: defaultColor, letterSpacing: '-0.5px' }}>
+                      Choose your specialty
+                    </Typography>
+                    <Typography color="text.secondary" fontWeight={500}>
+                      We'll tailor your workspace, clinical charts, and tools to fit your practice perfectly.
+                    </Typography>
+                  </Box>
+
+                  <Stack spacing={1.5} sx={{ mt: 1 }}>
+                    {CLINIC_TYPES.map((type) => {
+                      const isSelected = formData.clinicType === type.id;
+                      return (
+                        <Paper
+                          key={type.id}
+                          elevation={0}
+                          onClick={() => setFormData({ ...formData, clinicType: type.id })}
+                          sx={{
+                            p: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            borderRadius: 3,
+                            cursor: 'pointer',
+                            border: '2px solid',
+                            borderColor: isSelected ? defaultColor : 'rgba(226, 232, 240, 0.8)', // soft gray
+                            bgcolor: isSelected ? alpha(defaultColor, 0.04) : '#ffffff',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                              borderColor: isSelected ? defaultColor : '#cbd5e1',
+                              transform: 'translateY(-2px)',
+                              boxShadow: '0 8px 16px -6px rgba(0,0,0,0.1)'
+                            }
+                          }}
+                        >
+                          {/* LEFT: Premium Icon Box */}
+                          <Box sx={{
+                            width: 48, height: 48, borderRadius: 2.5,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '1.5rem',
+                            bgcolor: isSelected ? alpha(defaultColor, 0.15) : '#f1f5f9',
+                            mr: 2, transition: 'all 0.2s ease'
+                          }}>
+                            {type.icon}
+                          </Box>
+
+                          {/* MIDDLE: Text */}
+                          <Box sx={{ flex: 1 }}>
+                            <Typography variant="subtitle1" fontWeight="800" color="#0f172a" sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                              {type.label}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" fontWeight="600">
+                              {type.desc}
+                            </Typography>
+                          </Box>
+
+                          {/* RIGHT: Modern Selection Indicator */}
+                          <Box sx={{
+                            width: 24, height: 24, borderRadius: '50%',
+                            border: '2px solid',
+                            borderColor: isSelected ? defaultColor : '#cbd5e1',
+                            bgcolor: isSelected ? defaultColor : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.2s ease'
+                          }}>
+                            {/* Inner white dot when selected */}
+                            {isSelected && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ffffff' }} />}
+                          </Box>
+                        </Paper>
+                      );
+                    })}
+                  </Stack>
+
+                  <Button 
+                    fullWidth size="large" variant="contained" 
+                    disabled={!formData.clinicType}
+                    onClick={() => setStep('FORM')}
+                    sx={{
+                      borderRadius: '12px', py: 1.8, mt: 4, fontSize: '1rem', fontWeight: 700,
+                      bgcolor: defaultColor, textTransform: 'none', boxShadow: `0 8px 24px -6px ${defaultColor}`,
+                    }}
+                  >
+                    Continue
+                  </Button>
+                  
+                  <Divider sx={{ my: 3, color: 'text.secondary', typography: 'body2' }}>OR</Divider>
+                  
+                  <Button
+                    fullWidth onClick={() => navigate('/login')} variant="outlined"
+                    sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontSize: '1rem', fontWeight: 600, borderColor: '#e2e8f0', color: '#475569', '&:hover': { borderColor: '#cbd5e1', bgcolor: '#f8fafc' } }}
+                  >
+                    Already have an account? Sign In
+                  </Button>
+                </>
+              )}
+
               {/* =========================================================
-                  STEP 1: REGISTRATION DETAILS
+                  STEP 2: REGISTRATION DETAILS
               ========================================================= */}
               {step === 'FORM' && (
                 <>
@@ -214,12 +328,16 @@ export default function SignupPage() {
                       Create Your Workspace
                     </Typography>
                     <Typography color="text.secondary" fontWeight={500}>
-                      Set up your secure, all-in-one digital clinic in seconds.
+                      Set up your secure digital clinic in seconds.
                     </Typography>
                   </Box>
 
                   <Box component="form" onSubmit={handleInitialSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                    <TextField fullWidth placeholder="e.g. Apollo Dental" label="Clinic Name" name="clinicName" sx={premiumInputSx} InputLabelProps={{ shrink: true }} required value={formData.clinicName} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start"><BusinessIcon color="action" /></InputAdornment> }} />
+                    <TextField 
+                      fullWidth 
+                      placeholder={formData.clinicType ? `e.g. Apollo ${formData.clinicType.replace('_', ' ')}` : "e.g. Apollo Health"} 
+                      label="Clinic Name" name="clinicName" sx={premiumInputSx} InputLabelProps={{ shrink: true }} required value={formData.clinicName} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start"><BusinessIcon color="action" /></InputAdornment> }} 
+                    />
                     <TextField fullWidth placeholder="e.g. Dr. Jane Doe" label="Your Full Name" name="fullName" sx={premiumInputSx} InputLabelProps={{ shrink: true }} required value={formData.fullName} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start"><PersonAddIcon color="action" /></InputAdornment> }} />
                     <TextField fullWidth placeholder="name@clinic.com" label="Email Address" name="email" type="email" sx={premiumInputSx} InputLabelProps={{ shrink: true }} required value={formData.email} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start"><EmailIcon color="action" /></InputAdornment> }} />
                     <TextField fullWidth placeholder="••••••••" label="Password" name="password" type="password" sx={premiumInputSx} InputLabelProps={{ shrink: true }} required value={formData.password} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon color="action" /></InputAdornment> }} />
@@ -232,21 +350,12 @@ export default function SignupPage() {
                     }}>
                       {loading ? <CircularProgress size={24} color="inherit" /> : "Verify Email & Create Account"}
                     </Button>
-
-                    <Divider sx={{ my: 1, color: 'text.secondary', typography: 'body2' }}>OR</Divider>
-
-                    <Button
-                      fullWidth onClick={() => navigate('/login')} variant="outlined"
-                      sx={{ borderRadius: '12px', py: 1.5, textTransform: 'none', fontSize: '1rem', fontWeight: 600, borderColor: '#e2e8f0', color: '#475569', '&:hover': { borderColor: '#cbd5e1', bgcolor: '#f8fafc' } }}
-                    >
-                      Already have an account? Sign In
-                    </Button>
                   </Box>
                 </>
               )}
 
               {/* =========================================================
-                  STEP 2: OTP VERIFICATION
+                  STEP 3: OTP VERIFICATION
               ========================================================= */}
               {step === 'OTP' && (
                 <>
@@ -287,7 +396,7 @@ export default function SignupPage() {
               )}
 
               {/* =========================================================
-                  STEP 3: SUCCESS / PENDING ADMIN APPROVAL
+                  STEP 4: SUCCESS / PENDING ADMIN APPROVAL
               ========================================================= */}
               {step === 'SUCCESS' && (
                 <Box sx={{ textAlign: 'center', py: 4, px: 2 }}>

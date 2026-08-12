@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux'; // ADDED: To fetch clinicType dynamically
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button,
   TextField, MenuItem, Stack, Typography, IconButton, Box, InputAdornment,
@@ -10,18 +11,45 @@ import { LocalizationProvider, TimePicker, DatePicker } from '@mui/x-date-picker
 // Icons
 import CloseIcon from '@mui/icons-material/Close';
 import PhoneIcon from '@mui/icons-material/Phone';
-import EventSeatIcon from '@mui/icons-material/EventSeat';
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+
+// PHASE 7: Dynamic Icons based on Clinic Type
+import EventSeatIcon from '@mui/icons-material/EventSeat'; // Dental
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom'; // General / Derma
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter'; // Physio
+import VisibilityIcon from '@mui/icons-material/Visibility'; // Ophthalmology
+
 import { useColorMode } from '../../context/ThemeContext';
 import api from '../../api/services/api'; 
 import AsyncPatientSelect from '../../components/Patients/AsyncPatientSelect';
 
+// PHASE 7: Mapper function to get dynamic label & icon
+const getResourceConfig = (type) => {
+  switch(type) {
+    case 'Dental': 
+      return { label: 'DENTAL CHAIR', icon: <EventSeatIcon fontSize="small" sx={{ color: 'text.secondary' }} /> };
+    case 'Physiotherapy': 
+      return { label: 'REHAB BAY / BED', icon: <FitnessCenterIcon fontSize="small" sx={{ color: 'text.secondary' }} /> };
+    case 'Ophthalmology': 
+      return { label: 'EXAMINATION ROOM', icon: <VisibilityIcon fontSize="small" sx={{ color: 'text.secondary' }} /> };
+    case 'Dermatology': 
+      return { label: 'PROCEDURE ROOM', icon: <MeetingRoomIcon fontSize="small" sx={{ color: 'text.secondary' }} /> };
+    case 'General_Practice':
+    default: 
+      return { label: 'CONSULTATION ROOM', icon: <MeetingRoomIcon fontSize="small" sx={{ color: 'text.secondary' }} /> };
+  }
+};
+
 export default function AppointmentModal({ open, onClose, initialData, resources, doctors, patients, onSave, onDelete }) {
 
   const { primaryColor } = useColorMode();
+  
+  // GET CLINIC TYPE FROM REDUX (Defaults to General_Practice)
+  const clinicType = useSelector((state) => state.auth?.user?.clinicType) || 'General_Practice';
+  const resourceConfig = getResourceConfig(clinicType);
 
   const [proceduresList, setProceduresList] = useState([]);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -183,7 +211,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <Stack spacing={2.5} sx={{ mt: 1 }}>
 
-              {/* ⚡️ ROW 1: PATIENT (Made responsive) */}
+              {/* ROW 1: PATIENT */}
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 <Box sx={{ width: { xs: '100%', sm: 280 } }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>PATIENT</Typography>
@@ -202,7 +230,7 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 </Box>
               </Box>
 
-              {/* ⚡️ ROW 2: DOCTOR (Made responsive) */}
+              {/* ROW 2: DOCTOR */}
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 <Box sx={{ width: { xs: '100%', sm: 280 } }}>
                   <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>ASSIGN DOCTOR</Typography>
@@ -225,11 +253,22 @@ export default function AppointmentModal({ open, onClose, initialData, resources
                 </Box>
               </Box>
 
-              {/* ⚡️ ROW 3: CHAIR & PROCEDURE (Made responsive) */}
+              {/* ROW 3: CHAIR & PROCEDURE */}
               <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
                 <Box sx={{ flex: 1 }}>
-                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>DENTAL CHAIR</Typography>
-                  <TextField select value={formData.resourceId} onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })} fullWidth size="small" InputProps={{ startAdornment: <InputAdornment position="start"><EventSeatIcon fontSize="small" /></InputAdornment> }}>
+                  {/* DYNAMIC LABEL APPLIED HERE */}
+                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
+                    {resourceConfig.label}
+                  </Typography>
+                  <TextField 
+                    select 
+                    value={formData.resourceId} 
+                    onChange={(e) => setFormData({ ...formData, resourceId: e.target.value })} 
+                    fullWidth 
+                    size="small" 
+                    // DYNAMIC ICON APPLIED HERE
+                    InputProps={{ startAdornment: <InputAdornment position="start">{resourceConfig.icon}</InputAdornment> }}
+                  >
                     {resources.map(r => <MenuItem key={r.id} value={r.id}>{r.title}</MenuItem>)}
                   </TextField>
                 </Box>

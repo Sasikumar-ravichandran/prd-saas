@@ -117,8 +117,10 @@ export default function SettingsSidebar({ tab, setTab }) {
         {userRole === ADMIN && (
           <SidebarTab icon={<SupervisorAccountIcon />} label="User Management" primaryColor={primaryColor} />
         )}
-        {/* <SidebarTab icon={<SecurityIcon />} label="Roles & Permissions" primaryColor={primaryColor} />
-        <SidebarTab icon={<HistoryIcon />} label="Audit Logs" primaryColor={primaryColor} /> */}
+        {/* <SidebarTab icon={<SecurityIcon />} label="Roles & Permissions" primaryColor={primaryColor} /> */}
+        {userRole === ADMIN && (
+          <SidebarTab icon={<HistoryIcon />} label="Audit Logs" primaryColor={primaryColor} />
+        )}
       </Tabs>
     </Box>
   );

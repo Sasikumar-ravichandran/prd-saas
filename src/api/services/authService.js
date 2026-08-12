@@ -36,7 +36,17 @@ export const authService = {
     return response.data;
   },
 
-  logout: () => {
-    localStorage.removeItem('user');
+  // UPDATED: Async logout to destroy the backend cookie
+  logout: async () => {
+    try {
+      // 1. Tell the server to instantly expire the HttpOnly cookie
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.error("Logout API failed, proceeding with local cleanup", error);
+    } finally {
+      // 2. Clear local storage so the UI updates
+      localStorage.removeItem('user');
+      localStorage.removeItem('activeBranchId');
+    }
   }
 };

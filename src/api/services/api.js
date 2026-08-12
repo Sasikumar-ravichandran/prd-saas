@@ -4,6 +4,7 @@ export const API_URL = `${SERVER_URL}/api`;
 
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true, 
   headers: {
     'Content-Type': 'application/json',
   },
@@ -11,7 +12,7 @@ const api = axios.create({
 
 // 1. REQUEST INTERCEPTOR (Attaches Token & Branch ID)
 api.interceptors.request.use((config) => {
-  // A. Handle User Token (Existing)
+  // A. Handle User Token (Fallback for older sessions/mobile)
   const userStr = localStorage.getItem('user');
   if (userStr) {
     const user = JSON.parse(userStr);
@@ -20,7 +21,7 @@ api.interceptors.request.use((config) => {
     }
   }
 
-  // B. Handle Active Branch (NEW)
+  // B. Handle Active Branch
   // We check if the user has selected a specific branch to work in
   const activeBranchId = localStorage.getItem('activeBranchId');
 
@@ -38,10 +39,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       
-      //  FIXED: Check if this error came from the login route
+      // FIXED: Check if this error came from the login route
       const isLoginRequest = error.config?.url?.includes('/auth/login');
       
-      //  Only redirect and wipe data if it is NOT a login attempt
+      // Only redirect and wipe data if it is NOT a login attempt
       if (!isLoginRequest) {
         // Token expired or invalid during normal app usage
         localStorage.removeItem('user');

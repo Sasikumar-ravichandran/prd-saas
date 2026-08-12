@@ -170,10 +170,8 @@ export default function SuperAdminDashboard() {
   }
 
   return (
-    // ⚡️ FIX 1: Flex layout setup to contain the height perfectly
     <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: '#f8fafc', height: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* ⚡️ FIX 2: Header wrapped so it doesn't shrink */}
       <Box sx={{ flexShrink: 0 }}>
         {/* SaaS Admin Header */}
         <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
@@ -260,15 +258,16 @@ export default function SuperAdminDashboard() {
         </Paper>
       </Box>
 
-      {/* ⚡️ FIX 3: Flex 1 wrapper allowing table to grow and scroll internally */}
+      {/* ================= CLINICS TABLE ================= */}
       <Paper sx={{ borderRadius: 2, border: '1px solid #e2e8f0', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
         
-        {/* The scrolling container */}
         <TableContainer sx={{ flex: 1, overflowY: 'auto' }}>
-          <Table stickyHeader> {/* ⚡️ FIX 4: Sticky Header applied */}
+          <Table stickyHeader> 
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>CLINIC ID & NAME</TableCell>
+                {/* ADDED: Clinic Type Column */}
+                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>TYPE</TableCell>
                 <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>ADMINISTRATOR</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>STAFF</TableCell>
                 <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>BRANCHES</TableCell>
@@ -280,24 +279,44 @@ export default function SuperAdminDashboard() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                  {/* Updated colSpan to 8 */}
+                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={30} />
                   </TableCell>
                 </TableRow>
               ) : data.clinics.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                  {/* Updated colSpan to 8 */}
+                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                     <Typography variant="body1" color="text.secondary">No clinics found matching your criteria.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 data.clinics.map((clinic) => {
                   const isBusy = actionLoading === clinic._id;
+                  
+                  // Format the type (e.g. "General_Practice" -> "General Practice")
+                  const displayType = (clinic.clinicType || 'General_Practice').replace('_', ' ');
+
                   return (
                     <TableRow key={clinic._id} hover>
                       <TableCell>
                         <Typography variant="subtitle2" fontWeight="700" color="#0f172a">{clinic.name}</Typography>
                         <Chip label={clinic.clinicId} size="small" sx={{ mt: 0.5, fontWeight: 700, bgcolor: '#f1f5f9', fontSize: '0.75rem' }} />
+                      </TableCell>
+
+                      {/* ADDED: Clinic Type Badge */}
+                      <TableCell>
+                        <Chip 
+                          label={displayType} 
+                          size="small" 
+                          sx={{ 
+                            fontWeight: 700, 
+                            bgcolor: '#e0e7ff', // Soft indigo background
+                            color: '#4338ca',   // Deep indigo text
+                            textTransform: 'capitalize' 
+                          }} 
+                        />
                       </TableCell>
 
                       <TableCell>

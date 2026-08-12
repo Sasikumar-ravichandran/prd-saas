@@ -25,8 +25,9 @@ export default function SettingsPage() {
     else if (tabQuery === 'branding') setTab(2);
     else if (tabQuery === 'services') setTab(3);
     else if (tabQuery === 'users') setTab(4);
+    else if (tabQuery === 'audit') setTab(5);
     // else if (tabQuery === 'roles') setTab(5);
-    // else if (tabQuery === 'audit') setTab(6);
+
   }, [searchParams]);
 
   const handleTabChange = (newValue) => {
@@ -58,7 +59,7 @@ export default function SettingsPage() {
         borderRadius: { xs: 0, md: 3 }, 
         overflow: 'hidden', 
         bgcolor: 'white',
-        minHeight: 0, // ⚡️ CRITICAL: Prevents inner tabs from forcing outer page growth
+        minHeight: 0, // CRITICAL: Prevents inner tabs from forcing outer page growth
         minWidth: 0
       }}>
         
@@ -81,8 +82,8 @@ export default function SettingsPage() {
           {tab === 2 && <BrandingTab />}
           {tab === 3 && <ServiceCatalogTab />}
           {tab === 4 && <UserManagementTab />}
-          {/* {tab === 5 && <RolesTab />}
-          {tab === 6 && <AuditLogsTab />} */}
+          {tab === 5 && <AuditLogsTab />}
+          {tab === 6 && <RolesTab />}
         </Box>
 
       </Paper>

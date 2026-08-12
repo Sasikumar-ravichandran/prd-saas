@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux'; //  ADDED: To get clinicType
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -7,9 +8,9 @@ import {
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import CloseIcon from '@mui/icons-material/Close';
 
-//  IMPORT SERVICES INSTEAD OF API
+// IMPORT SERVICES INSTEAD OF API
 import { patientService } from '../../api/services/patientService';
-import { invoiceService } from '../../api/services/invoiceService'; // Create this service if you haven't!
+import { invoiceService } from '../../api/services/invoiceService'; 
 
 import { useToast } from '../../context/ToastContext';
 import { useColorMode } from '../../context/ThemeContext';
@@ -24,10 +25,12 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
   const { showToast } = useToast();
   const { primaryColor } = useColorMode();
 
+  //  GET CLINIC TYPE FROM REDUX
+  const clinicType = useSelector((state) => state.auth?.user?.clinicType) || 'General_Practice';
+
   // 1. Fetch Unbilled Treatments for this Patient
   useEffect(() => {
     if (open && patientId) {
-      //  REPLACED api.get WITH patientService
       patientService.getById(patientId)
         .then(data => {
           // Filter only treatments that are completed but NOT billed yet
@@ -36,7 +39,7 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
           );
           setTreatments(unbilled);
 
-          //  UX FIX: Automatically check all boxes so the total isn't 0!
+          // UX FIX: Automatically check all boxes so the total isn't 0!
           setSelectedItems(unbilled.map(t => t._id));
         })
         .catch(err => console.error("Error fetching treatments", err));
@@ -96,7 +99,6 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
         dueDate: new Date()
       };
 
-      //  REPLACED api.post WITH invoiceService
       await invoiceService.create(payload);
 
       showToast('Invoice generated successfully!', 'success');
@@ -151,6 +153,10 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
                   <TableBody>
                     {treatments.map((row) => {
                       const isSelected = selectedItems.indexOf(row._id) !== -1;
+                      //  DYNAMIC LABEL: Handle both old 'tooth' data and new 'region' data
+                      const regionLabel = row.region || row.tooth || 'General';
+                      const displayLabel = clinicType === 'Dental' ? `Tooth: ${regionLabel}` : `Area: ${regionLabel}`;
+
                       return (
                         <TableRow
                           hover
@@ -165,7 +171,8 @@ export default function CreateInvoiceModal({ open, onClose, patientId, doctorId,
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2" fontWeight="500">{row.procedure}</Typography>
-                            <Typography variant="caption" color="text.secondary">Tooth: {row.tooth || 'General'}</Typography>
+                            {/*  Render dynamic label */}
+                            <Typography variant="caption" color="text.secondary">{displayLabel}</Typography>
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="body2" fontWeight="600">₹{row.cost}</Typography>
