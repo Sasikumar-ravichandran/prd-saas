@@ -3,7 +3,7 @@ import {
     Box, Typography, Grid, Paper, CircularProgress, Divider,
     Select, MenuItem, FormControl, LinearProgress, Chip,
     Table, TableBody, TableCell, TableHead, TableRow, TableContainer,
-    Stack, Avatar, alpha
+    Stack, Avatar, alpha, TablePagination
 } from '@mui/material';
 import { format, subMonths } from 'date-fns';
 import api from '../api/services/api';
@@ -22,7 +22,8 @@ export default function MyStats() {
     const { primaryColor } = useColorMode();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
-
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
     const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
 
     const monthOptions = Array.from({ length: 6 }).map((_, i) => {
@@ -66,7 +67,8 @@ export default function MyStats() {
     if (!stats) return <Typography p={4} variant="body1">Failed to load stats.</Typography>;
 
     const isDoctor = stats.role === 'Doctor' || stats.role === 'doctor';
-
+    const recentActivity = stats?.doctorStats?.recentActivity || [];
+    const paginatedActivity = recentActivity.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
     //  Build the KPI array exactly like your Financial Dashboard
     const kpiData = [
         {
@@ -279,14 +281,15 @@ export default function MyStats() {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {stats?.doctorStats?.recentActivity.length === 0 ? (
+                                        {recentActivity.length === 0 ? (
                                             <TableRow>
                                                 <TableCell colSpan={4} align="center" sx={{ py: 4, color: '#94a3b8' }}>
                                                     <Typography variant="body2">No treatments recorded this month.</Typography>
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
-                                            stats?.doctorStats?.recentActivity.map((activity, idx) => (
+                                            // ⚡️ CHANGED: Now mapping over paginatedActivity
+                                            paginatedActivity.map((activity, idx) => (
                                                 <TableRow key={idx} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                                                     <TableCell sx={{ whiteSpace: 'nowrap', py: 2, color: '#475569', fontSize: '0.85rem' }}>
                                                         {format(new Date(activity.date), 'MMM dd, yyyy')}
@@ -314,6 +317,27 @@ export default function MyStats() {
                                     </TableBody>
                                 </Table>
                             </TableContainer>
+
+                            {/* ⚡️ ADDED: Pagination Bar */}
+                            {recentActivity.length > 0 && (
+                                <TablePagination
+                                    rowsPerPageOptions={[5, 10, 25]}
+                                    component="div"
+                                    count={recentActivity.length}
+                                    rowsPerPage={rowsPerPage}
+                                    page={page}
+                                    onPageChange={(event, newPage) => setPage(newPage)}
+                                    onRowsPerPageChange={(event) => {
+                                        setRowsPerPage(parseInt(event.target.value, 10));
+                                        setPage(0); // Reset to page 1 when changing rows per page
+                                    }}
+                                    sx={{
+                                        borderTop: '1px solid #e2e8f0',
+                                        bgcolor: '#f8fafc',
+                                        '& .MuiTablePagination-toolbar': { minHeight: 48 }
+                                    }}
+                                />
+                            )}
                         </Paper>
                     </Grid>
                 )}

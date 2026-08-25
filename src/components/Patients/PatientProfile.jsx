@@ -27,6 +27,7 @@ import Odontogram from '../../components/Clinical/Odontogram';
 import DermaBodyMap from '../../components/Clinical/DermaBodyMap';
 import GeneralVitals from '../../components/Clinical/GeneralVitals';
 import PhysioSkeletalMap from '../../components/Clinical/PhysioSkeletalMap';
+import BeforeAfterGallery from '../../components/Clinical/BeforeAfterGallery'; //  ADD THIS LINE
 
 // Icons
 import MedicalServicesIcon from '@mui/icons-material/MedicalServices';
@@ -114,6 +115,9 @@ export default function PatientProfile() {
     // --- 3. DERIVED STATE ---
     const treatmentPlan = patientData?.treatmentPlan || [];
 
+    const galleryPhotos = patientData?.attachments?.photo 
+        ? [patientData.attachments.photo] // If it's a single string, make it an array
+        : patientData?.attachments?.photos || [];
     // UPDATED: Uses `specialtyData` instead of `dentalChart`
     // And maps `region` instead of `tooth`
     const { regionStatus, regionTooltips } = useMemo(() => {
@@ -429,10 +433,12 @@ export default function PatientProfile() {
                 {/* NEW: Gallery Tab Placeholder for CDNs */}
                 {tab === 4 && ['Dermatology', 'Dental', 'Physiotherapy'].includes(clinicType) && (
                     <Box sx={{ width: '100%', minHeight: '80vh', p: 4, bgcolor: '#fff' }}>
-                        <Typography variant="h6" fontWeight="800" mb={1}>Before & After Media Gallery</Typography>
-                        <Typography variant="body2" color="text.secondary" mb={3}>Upload and compare high-resolution clinical photos securely stored via our CDN architecture.</Typography>
-                        {/* Build a nice image grid component here later! */}
-                        <Alert severity="info">Image Gallery Component goes here. Photos uploaded will be streamed via AWS S3 / Cloudflare CDN.</Alert>
+                        {/*RENDER THE ACTUAL COMPONENT HERE */}
+                        <BeforeAfterGallery 
+                            patientId={patientData._id} 
+                            existingPhotos={galleryPhotos} 
+                            onRefresh={fetchPatientDetails} 
+                        />
                     </Box>
                 )}
 

@@ -45,6 +45,31 @@ const RequireAuth = () => {
   return <Outlet />;
 };
 
+// --- 3. APPROVAL GUARD (Must be approved by Super Admin) ---
+const RequireApproval = () => {
+  const user = JSON.parse(localStorage.getItem('user'));
+  
+  // Replace 'status' and 'Pending' with your actual schema properties
+  if (user && user.status === 'Pending') { 
+    return <Navigate to="/pending-approval" replace />;
+  }
+
+  return <Outlet />;
+};
+
+// --- PENDING APPROVAL PLACEHOLDER PAGE ---
+// You can move this to its own file in /pages later
+const PendingApprovalPage = () => (
+  <div style={{ textAlign: 'center', marginTop: '100px', padding: '20px' }}>
+    <h2>Account Pending Approval</h2>
+    <p>Your account has been created and is waiting for Admin approval.</p>
+    <p>We will notify you once your clinic is verified.</p>
+    <button onClick={() => { localStorage.removeItem('user'); window.location.href = '/login'; }}>
+      Log Out
+    </button>
+  </div>
+);
+
 // --- 2. BRANCH GUARD (Must have a branch selected) ---
 const RequireBranch = () => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -101,13 +126,21 @@ function App() {
             {/* --- LEVEL 2: AUTHENTICATED ONLY (Onboarding) --- */}
             {/* Use this for pages that happen AFTER login but BEFORE dashboard */}
             <Route element={<RequireAuth />}>
-              <Route path="/setup-branch" element={<SetupBranch />} />
-              <Route path="/change-password" element={<ChangePasswordScreen />} />
+              
+              {/* NEW: Route for users waiting on approval */}
+              <Route path="/pending-approval" element={<PendingApprovalPage />} />
+              
+              {/* Wrapped in RequireApproval to block unapproved users */}
+              <Route element={<RequireApproval />}>
+                <Route path="/setup-branch" element={<SetupBranch />} />
+                <Route path="/change-password" element={<ChangePasswordScreen />} />
+              </Route>
             </Route>
 
             {/* --- LEVEL 3: FULLY PROTECTED (Auth + Branch + Layout) --- */}
             <Route element={<RequireAuth />}>
               <Route element={<RequireBranch />}>
+              <Route element={<RequireApproval />}>
                 <Route path="/" element={<MainLayout />}>
 
                   {/* Dashboard Children */}
@@ -138,11 +171,12 @@ function App() {
                   <Route path="attendance" element={<AttendancePage />} />
                   <Route path="/my-stats" element={
                       <RoleGuard allowedRoles={['Doctor']}>
-                        <AdminPayrollPage />
+                        <MyStats />
                       </RoleGuard>
                     } 
                  />
                   <Route path="/messages" element={<Messages />} />
+                </Route>
                 </Route>
               </Route>
             </Route>

@@ -22,6 +22,7 @@ export const authService = {
 
   requestOtp: async (email, purpose = 'PASSWORD_RESET') => {
     const response = await api.post('/auth/send-otp', { email, purpose });
+    console.log(response,'@@@@@@@@@@@')
     return response.data;
   },
 

@@ -29,62 +29,56 @@ export default function PatientFiles({ patient, onRefresh }) {
     const { showToast } = useToast();
     const { primaryColor } = useColorMode();
 
-    const handleFileUpload = async (e) => {
-        const originalFile = e.target.files[0];
-        if (!originalFile) return;
+   const handleFileUpload = async (e) => {
+    const originalFile = e.target.files[0];
+    if (!originalFile) return;
 
-        if (originalFile.size > 5 * 1024 * 1024) {
-            showToast('File size too large (Max 5MB)', 'error');
-            return;
+    if (originalFile.size > 5 * 1024 * 1024) {
+        showToast('File size too large (Max 5MB)', 'error');
+        return;
+    }
+    
+    console.log(patient, '#######');
+    
+    try {
+        setUploading(true);
+        let finalFile = originalFile;
+
+        // 1. SMART COMPRESSION (Only compress if it's an image)
+        if (originalFile.type.startsWith('image/')) {
+            showToast('Optimizing image...', 'info');
+            const options = {
+                maxSizeMB: 1,           
+                maxWidthOrHeight: 1920, 
+                useWebWorker: true,
+                fileType: 'image/webp'  
+            };
+            const compressedBlob = await imageCompression(originalFile, options);
+            const optimizedFileName = originalFile.name.replace(/\.[^/.]+$/, "") + ".webp";
+            finalFile = new File([compressedBlob], optimizedFileName, { type: 'image/webp' });
         }
 
-        try {
-            setUploading(true);
-            let finalFile = originalFile;
+        // 2. PREPARE FORM DATA FOR MULTER
+        const formData = new FormData();
+        formData.append('file', finalFile);
+        formData.append('type', 'scan'); // Set the type here ('scan', 'photo', etc.)
 
-            // 1. SMART COMPRESSION (Only compress if it's an image)
-            if (originalFile.type.startsWith('image/')) {
-                showToast('Optimizing image...', 'info');
-                const options = {
-                    maxSizeMB: 1,           
-                    maxWidthOrHeight: 1920, 
-                    useWebWorker: true,
-                    fileType: 'image/webp'  
-                };
-                const compressedBlob = await imageCompression(originalFile, options);
-                const optimizedFileName = originalFile.name.replace(/\.[^/.]+$/, "") + ".webp";
-                finalFile = new File([compressedBlob], optimizedFileName, { type: 'image/webp' });
-            }
+        // 3. SEND DIRECTLY TO NODE.JS BACKEND
+        // The backend will receive this, stream it to R2, and save it to MongoDB in one go!
+        await api.post(`/patients/${patient._id}/upload-file`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
 
-            // 2. Get secure upload URL from Node backend
-            const { data } = await api.post(`/patients/${patient._id}/upload-url`, {
-                fileName: finalFile.name,
-                fileType: finalFile.type
-            });
-
-            // 3. Upload DIRECTLY to Cloudflare R2 / AWS S3
-            await fetch(data.uploadUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': finalFile.type },
-                body: finalFile
-            });
-
-            // 4. Save the final CDN URL to the database
-            await api.post(`/patients/${patient._id}/save-attachment`, {
-                type: 'scan', 
-                fileUrl: data.fileUrl
-            });
-
-            showToast('File securely uploaded to cloud!', 'success');
-            onRefresh(); 
-        } catch (error) {
-            console.error("Upload failed", error);
-            showToast('Upload failed', 'error');
-        } finally {
-            setUploading(false);
-            e.target.value = null; // Reset input
-        }
-    };
+        showToast('File securely uploaded to cloud!', 'success');
+        if (onRefresh) onRefresh(); 
+    } catch (error) {
+        console.error("Upload failed", error);
+        showToast('Upload failed', 'error');
+    } finally {
+        setUploading(false);
+        e.target.value = null; // Reset input
+    }
+};
 
     // Open the Dialog instead of window.confirm
     const requestDelete = (fileUrl) => {

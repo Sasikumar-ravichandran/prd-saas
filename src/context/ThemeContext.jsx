@@ -7,7 +7,7 @@ const ColorModeContext = createContext();
 
 export const useColorMode = () => useContext(ColorModeContext);
 
-const DEFAULT_NAME = "Dental CRM";
+const DEFAULT_NAME = "CRM";
 const DEFAULT_COLOR = "#1976d2"; 
 const DEFAULT_LOGO = null;
 
@@ -22,8 +22,7 @@ export const ThemeWrapper = ({ children }) => {
   const loadBranding = async () => {
     const storedUser = localStorage.getItem('user');
     const user = storedUser ? JSON.parse(storedUser) : null;
-
-    if (user && user.token) {
+    if (user) {
       try {
         const data = await settingService.getClinic();
         if (data) {

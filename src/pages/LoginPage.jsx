@@ -63,10 +63,17 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
+
+      let finalClinicId = undefined;
+      if (tab === 1 && formData.clinicShortId) {
+        const rawId = formData.clinicShortId.trim().toUpperCase().replace(/^CL-?/, '');
+        finalClinicId = `CL-${rawId}`;
+      }
+
       const payload = {
         email: formData.email,
         password: formData.password,
-        clinicShortId: tab === 1 ? formData.clinicShortId : undefined
+        clinicShortId: finalClinicId
       };
       
       const data = await authService.login(payload);
@@ -82,8 +89,6 @@ export default function LoginPage() {
       await loadBranding();
 
       // 2. THE NEW REDIRECT LOGIC
-      // Check if it's an admin who just got approved but hasn't set up a branch yet.
-      // (Adjust `!data.defaultBranch` based on what your backend returns for a new clinic)
       if (data.role === 'Clinic Admin' && !data.defaultBranch) {
         navigate("/setup-branch");
       } else {
@@ -289,15 +294,28 @@ export default function LoginPage() {
 
                     {tab === 1 && (
                       <TextField
-                        fullWidth placeholder="e.g. CL-8821" label="Clinic ID"
-                        sx={premiumInputSx} InputLabelProps={{ shrink: true }}
+                        fullWidth 
+                        placeholder="8821" 
+                        label="Clinic ID"
+                        sx={premiumInputSx} 
+                        InputLabelProps={{ shrink: true }}
                         value={formData.clinicShortId}
                         onChange={(e) => {
                           if (error) setError(null);
-                          setFormData({ ...formData, clinicShortId: e.target.value });
+                          // Strip "CL-" in real-time if they paste it
+                          let val = e.target.value.toUpperCase().replace(/^CL-?/, '');
+                          setFormData({ ...formData, clinicShortId: val });
                         }}
                         InputProps={{
-                          startAdornment: <InputAdornment position="start"><DomainIcon color="action" /></InputAdornment>
+                          startAdornment: (
+                            <InputAdornment position="start" sx={{ mr: 0.5 }}>
+                              <DomainIcon color="action" sx={{ mr: 1 }} />
+                              {/* ⚡️ Visually locks CL- into the input field */}
+                              <Typography variant="body1" fontWeight="800" color="text.primary">
+                                CL-
+                              </Typography>
+                            </InputAdornment>
+                          )
                         }}
                       />
                     )}

@@ -92,6 +92,7 @@ export default function SignupPage() {
       setSuccessMsg('Verification code sent to your email!');
       setStep('OTP');
     } catch (err) {
+      console.log(err,'++++++++++')
       setError(err.response?.data?.message || "Failed to send OTP. Email might be in use.");
     } finally {
       setLoading(false);

@@ -42,7 +42,6 @@ export default function Messages() {
   const [loadingMessages, setLoadingMessages] = useState(false);
 
   const [anchorEl, setAnchorEl] = useState(null);
-  const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
   const sortChatsList = (chatList) => {
@@ -55,7 +54,6 @@ export default function Messages() {
       return dateB - dateA;
     });
   };
-
 
   useEffect(() => {
     socket = io(ENDPOINT);
@@ -119,12 +117,32 @@ export default function Messages() {
     fetchMessages();
   }, [selectedChat]);
 
-  // Scroll to bottom whenever messages change
-  useEffect(() => {
+  // Scroll to bottom when messages change
+  const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
     }
+  };
+
+  useEffect(() => {
+    scrollToBottom();
   }, [messages]);
+
+  // ⚡️ NEW: Bulletproof Mobile Keyboard Fix
+  useEffect(() => {
+    const handleResize = () => {
+      scrollToBottom(); // Re-adjust scroll position exactly when the keyboard pops up
+    };
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+    }
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+      }
+    };
+  }, []);
 
   const updateSidebarLatestMessage = (newMsg) => {
     setChats(prev => {
@@ -222,7 +240,8 @@ export default function Messages() {
         flexDirection: 'column', 
         boxSizing: 'border-box',
         overflow: 'hidden',
-        position: 'relative'
+        position: 'relative',
+        minHeight: 0 // ⚡️ ADDED: Critical for flexbox shrinking
       }}
     >
       <Paper 
@@ -235,7 +254,8 @@ export default function Messages() {
           borderRadius: { xs: 0, md: 3 },
           border: { xs: 'none', md: '1px solid #e2e8f0' },
           bgcolor: '#fff',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          minHeight: 0 // ⚡️ ADDED: Critical for flexbox shrinking
         }}
       >
         {/* ================= LEFT SIDEBAR ================= */}
@@ -248,7 +268,8 @@ export default function Messages() {
             bgcolor: '#fff',
             height: '100%',
             overflow: 'hidden',
-            flexShrink: 0
+            flexShrink: 0,
+            minHeight: 0 // ⚡️ ADDED
           }}
         >
           <Box p={2.5} borderBottom="1px solid #e2e8f0" bgcolor="#f8fafc" flexShrink={0}>
@@ -352,7 +373,8 @@ export default function Messages() {
             flexDirection: 'column', 
             bgcolor: '#f8fafc',
             height: '100%',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            minHeight: 0 // ⚡️ ADDED: Forces the window to shrink when keyboard appears
           }}
         > 
           {!selectedChat ? (
@@ -396,7 +418,7 @@ export default function Messages() {
                   display: 'flex', 
                   flexDirection: 'column', 
                   gap: 1.5,
-                  // Smooth scrolling for iOS
+                  minHeight: 0, // ⚡️ ADDED: Crucial to let this area compress
                   WebkitOverflowScrolling: 'touch'
                 }}
               >
