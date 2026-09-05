@@ -245,7 +245,10 @@ export default function LoginPage() {
               {showForgotPassword ? (
 
                 <ForgotPasswordFlow
-                  onCancel={() => setShowForgotPassword(false)}
+                  onCancel={() => {
+                    setShowForgotPassword(false);
+                    setError('');
+                  }}
                   defaultColor={defaultColor}
                   premiumInputSx={premiumInputSx}
                 />
