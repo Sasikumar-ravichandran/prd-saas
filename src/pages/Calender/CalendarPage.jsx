@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
+import { useSelector } from 'react-redux'; // ADDED: To get clinicType
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import withDragAndDrop from 'react-big-calendar/lib/addons/dragAndDrop';
 import moment from 'moment';
@@ -24,7 +25,12 @@ import AddIcon from '@mui/icons-material/Add';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalPhoneIcon from '@mui/icons-material/LocalPhone';
 import PersonIcon from '@mui/icons-material/Person';
-import EventSeatIcon from '@mui/icons-material/EventSeat';
+
+// PHASE 7: Dynamic Icons
+import EventSeatIcon from '@mui/icons-material/EventSeat'; // Dental
+import MeetingRoomIcon from '@mui/icons-material/MeetingRoom'; // General / Derma
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter'; // Physio
+import VisibilityIcon from '@mui/icons-material/Visibility'; // Ophthalmology
 
 import AppointmentModal from './AppointmentModal';
 
@@ -38,65 +44,84 @@ const EVENT_COLORS = {
   checkup: { bg: '#ecfdf5', border: '#10b981', text: '#064e3b' },
 };
 
-// --- 1. RICH TOOLTIP CARD ( Memoized & Optimized) ---
-const RichTooltip = React.memo(({ event }) => (
-  <Card sx={{ minWidth: { xs: 260, sm: 280 }, maxWidth: { xs: 300, sm: 320 }, boxShadow: '0 8px 16px rgba(0,0,0,0.15)', borderRadius: 3 }}>
-    <Box sx={{ bgcolor: '#f8fafc', p: { xs: 1.5, sm: 2 }, borderBottom: '1px solid #e2e8f0' }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-        <Box>
-          <Typography variant="subtitle1" fontWeight="800" color="#1e293b" lineHeight={1.2} sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
-            {event.title}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            {event.type || 'General Visit'}
-          </Typography>
-        </Box>
-        <Chip
-          label="Scheduled" size="small"
-          sx={{ bgcolor: '#dbeafe', color: '#1e40af', fontWeight: 'bold', fontSize: '0.65rem', height: 20 }}
-        />
-      </Stack>
-    </Box>
-    <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: '12px !important', sm: '16px !important' }, display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.5 } }}>
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><AccessTimeIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
-        <Box>
-          <Typography variant="body2" fontWeight="600" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
-            {event.formattedTimeRange} {/*  Reads pre-calculated string */}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-            Duration: {event.durationMins} mins {/*  Reads pre-calculated number */}
-          </Typography>
-        </Box>
-      </Stack>
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><PersonIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
-        <Typography variant="body2" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Dr. {event.doc}</Typography>
-      </Stack>
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><LocalPhoneIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
-        <Typography variant="body2" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>{event.phone}</Typography>
-      </Stack>
-      <Stack direction="row" spacing={1.5} alignItems="center">
-        <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><EventSeatIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
-        <Typography variant="body2" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Chair {event.resourceId}</Typography>
-      </Stack>
-    </CardContent>
-    <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
-      <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#94a3b8', bgcolor: '#f8fafc', py: 0.5, borderRadius: 1, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
-        Click to edit or reschedule
-      </Typography>
-    </Box>
-  </Card>
-));
+// PHASE 7: Dynamic Terminology Mapper
+const getResourceConfig = (type) => {
+  switch(type) {
+    case 'Dental': return { label: 'Chair', Icon: EventSeatIcon };
+    case 'Physiotherapy': return { label: 'Bay', Icon: FitnessCenterIcon };
+    case 'Ophthalmology': return { label: 'Room', Icon: VisibilityIcon };
+    case 'Dermatology': 
+    case 'General_Practice':
+    default: return { label: 'Room', Icon: MeetingRoomIcon };
+  }
+};
 
-// --- 2. MODERN EVENT COMPONENT ( Memoized & Optimized) ---
+// --- 1. RICH TOOLTIP CARD ---
+const RichTooltip = React.memo(({ event }) => {
+  // Read dynamic config based on the event's injected clinic type
+  const config = getResourceConfig(event.clinicType);
+  const ResourceIcon = config.Icon;
+
+  return (
+    <Card sx={{ minWidth: { xs: 260, sm: 280 }, maxWidth: { xs: 300, sm: 320 }, boxShadow: '0 8px 16px rgba(0,0,0,0.15)', borderRadius: 3 }}>
+      <Box sx={{ bgcolor: '#f8fafc', p: { xs: 1.5, sm: 2 }, borderBottom: '1px solid #e2e8f0' }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+          <Box>
+            <Typography variant="subtitle1" fontWeight="800" color="#1e293b" lineHeight={1.2} sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+              {event.title}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" fontWeight="600" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+              {event.type || 'General Visit'}
+            </Typography>
+          </Box>
+          <Chip
+            label="Scheduled" size="small"
+            sx={{ bgcolor: '#dbeafe', color: '#1e40af', fontWeight: 'bold', fontSize: '0.65rem', height: 20 }}
+          />
+        </Stack>
+      </Box>
+      <CardContent sx={{ p: { xs: 1.5, sm: 2 }, pb: { xs: '12px !important', sm: '16px !important' }, display: 'flex', flexDirection: 'column', gap: { xs: 1, sm: 1.5 } }}>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><AccessTimeIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+          <Box>
+            <Typography variant="body2" fontWeight="600" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
+              {event.formattedTimeRange}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+              Duration: {event.durationMins} mins
+            </Typography>
+          </Box>
+        </Stack>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><PersonIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+          <Typography variant="body2" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Dr. {event.doc}</Typography>
+        </Stack>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><LocalPhoneIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+          <Typography variant="body2" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>{event.phone}</Typography>
+        </Stack>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          {/* DYNAMIC ICON & LABEL HERE */}
+          <Avatar sx={{ width: 24, height: 24, bgcolor: '#f1f5f9' }}><ResourceIcon sx={{ fontSize: 14, color: '#64748b' }} /></Avatar>
+          <Typography variant="body2" color="#334155" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>{config.label} {event.resourceId}</Typography>
+        </Stack>
+      </CardContent>
+      <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
+        <Typography variant="caption" sx={{ display: 'block', textAlign: 'center', color: '#94a3b8', bgcolor: '#f8fafc', py: 0.5, borderRadius: 1, fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+          Click to edit or reschedule
+        </Typography>
+      </Box>
+    </Card>
+  );
+});
+
+// --- 2. MODERN EVENT COMPONENT ---
 const ModernEvent = React.memo(({ event }) => {
   let style = EVENT_COLORS.default;
   if (event.title.toLowerCase().includes('surgery')) style = EVENT_COLORS.surgery;
   if (event.title.toLowerCase().includes('checkup')) style = EVENT_COLORS.checkup;
 
-  const isCompact = event.durationMins <= 30; // Uses pre-calculated data
+  const isCompact = event.durationMins <= 30;
 
   return (
     <Tooltip
@@ -120,7 +145,7 @@ const ModernEvent = React.memo(({ event }) => {
         {!isCompact && (
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 0.5 }}>
             <Typography variant="caption" sx={{ color: style.text, opacity: 0.8, fontWeight: 600, fontSize: { xs: '0.6rem', sm: '0.7rem' } }}>
-              {event.formattedTime} {/*  Reads pre-calculated string */}
+              {event.formattedTime}
             </Typography>
           </Stack>
         )}
@@ -135,7 +160,11 @@ export default function CalendarPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const [isLoading, setIsLoading] = useState(true); // NEW LOADING STATE
+  // GET CLINIC TYPE FROM REDUX
+  const clinicType = useSelector((state) => state.auth?.user?.clinicType) || 'General_Practice';
+  const resourceConfig = getResourceConfig(clinicType);
+
+  const [isLoading, setIsLoading] = useState(true);
   const [view, setView] = useState(Views.DAY);
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -153,7 +182,7 @@ export default function CalendarPage() {
   const { primaryColor } = useColorMode();
 
   const fetchAllData = useCallback(async () => {
-    setIsLoading(true); //  START LOADING
+    setIsLoading(true);
     try {
       const [patRes, userRes, apptRes, branchRes] = await Promise.all([
         api.get('/patients'),
@@ -169,9 +198,10 @@ export default function CalendarPage() {
       const currentBranch = branches.find(b => b._id === activeBranchId);
       const chairCount = currentBranch?.chairCount || 1;
 
+      // MAP DYNAMIC RESOURCES ("Room 1" instead of "Chair 1")
       const dynamicChairs = Array.from({ length: chairCount }, (_, i) => ({
         id: i + 1,
-        title: `Chair ${i + 1}`
+        title: `${resourceConfig.label} ${i + 1}`
       }));
       setResources(dynamicChairs);
 
@@ -180,7 +210,6 @@ export default function CalendarPage() {
         const start = new Date(evt.start);
         const end = new Date(evt.end);
 
-        // PRE-CALCULATING EXPENSIVE MATH ONCE DURING FETCH
         return {
           ...evt,
           id: evt._id,
@@ -193,16 +222,17 @@ export default function CalendarPage() {
           type: evt.type || 'Consultation',
           durationMins: moment(end).diff(moment(start), 'minutes'),
           formattedTime: moment(start).format('h:mm A'),
-          formattedTimeRange: `${moment(start).format('h:mm A')} - ${moment(end).format('h:mm A')}`
+          formattedTimeRange: `${moment(start).format('h:mm A')} - ${moment(end).format('h:mm A')}`,
+          clinicType: clinicType // Inject so Tooltip can read it
         };
       }));
     } catch (err) {
       console.error(err);
       showToast('Failed to load data', 'error');
     } finally {
-      setIsLoading(false); //  STOP LOADING
+      setIsLoading(false);
     }
-  }, [activeBranchId, showToast]);
+  }, [activeBranchId, showToast, clinicType, resourceConfig.label]);
 
   useEffect(() => { fetchAllData(); }, [fetchAllData]);
 
@@ -213,7 +243,6 @@ export default function CalendarPage() {
   };
 
   const onEventDrop = useCallback(({ event, start, end, resourceId }) => {
-    //  UPDATE THE PRE-CALCULATED MATH ON DROP
     const updatedEvent = {
       ...event,
       start,
@@ -239,7 +268,7 @@ export default function CalendarPage() {
       const payload = { ...data, branchId: activeBranchId };
       if (selectedSlot?.id) {
         await api.put(`/appointments/${selectedSlot.id}`, payload);
-        fetchAllData(); // Refresh to recalculate math easily
+        fetchAllData(); 
       } else {
         await api.post('/appointments', payload);
         fetchAllData();
@@ -356,7 +385,7 @@ export default function CalendarPage() {
         </Stack>
       </Box>
 
-      {/* MOBILE CHAIR SWITCHER */}
+      {/* MOBILE CHAIR/ROOM SWITCHER */}
       {isMobile && view === Views.DAY && resources.length > 0 && (
         <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: '#f8fafc', px: { xs: 2, sm: 0 } }}>
           <Tabs

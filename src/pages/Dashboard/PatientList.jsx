@@ -32,6 +32,8 @@ import CardListSkeleton from '../../components/Skeletons/CardSkeleton';
 import TableSkeleton from '../../components/Skeletons/TableSkeleton';
 import StatsCardSkeleton from '../../components/Skeletons/StatsCardSkeleton';
 import AddPatientModal from '../../components/Patients/AddPatientModal';
+import { ADMIN } from '../../constants'
+
 
 export default function PatientList() {
   const navigate = useNavigate();
@@ -466,18 +468,18 @@ export default function PatientList() {
                             <EditIcon sx={{ fontSize: 18, color: '#94a3b8' }} />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title={userRole === userRole ? "Delete Patient" : "Only Admin can delete patients"}>
+                        <Tooltip title={userRole === ADMIN ? "Delete Patient" : "Only Admin can delete patients"}>
                           <span>
                             <IconButton
                               size="small"
-                              disabled={userRole !== userRole}
+                              disabled={userRole !== ADMIN}
                               onClick={(e) => handleDeleteClick(e, row._id)}
                               sx={{
                                 '&:hover': { color: '#ef4444', bgcolor: '#fee2e2' },
-                                ...(userRole !== userRole && { opacity: 0.5, cursor: 'not-allowed' })
+                                ...(userRole !== ADMIN && { opacity: 0.5, cursor: 'not-allowed' })
                               }}
                             >
-                              <DeleteOutlineIcon fontSize="small" sx={{ color: userRole === userRole ? '#94a3b8' : '#cbd5e1', '&:hover': { color: '#ef4444' } }} />
+                              <DeleteOutlineIcon fontSize="small" sx={{ color: userRole === ADMIN ? '#94a3b8' : '#cbd5e1', '&:hover': { color: '#ef4444' } }} />
                             </IconButton>
                           </span>
                         </Tooltip>

@@ -4,7 +4,7 @@ import {
   TableCell, TableContainer, TableHead, TableRow, Button, Chip,
   TextField, InputAdornment, CircularProgress, Alert, Tabs, Tab, Stack,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, IconButton,
-  TablePagination
+  TablePagination, MenuItem
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -25,16 +25,16 @@ export default function SuperAdminDashboard() {
   const [filterTab, setFilterTab] = useState('ALL');
   const [actionLoading, setActionLoading] = useState(null);
 
-  // Pagination states
+  const [selectedType, setSelectedType] = useState('ALL');
+  const clinicTypes = ['ALL', 'Dental', 'Dermatology', 'Physiotherapy', 'General_Practice'];
+
   const [page, setPage] = useState(0); 
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Delete Dialog state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedClinic, setSelectedClinic] = useState(null);
 
-  // Suspend Dialog state
   const [suspendModalOpen, setSuspendModalOpen] = useState(false);
   const [selectedClinicToSuspend, setSelectedClinicToSuspend] = useState(null);
   const [suspendReason, setSuspendReason] = useState('');
@@ -49,7 +49,6 @@ export default function SuperAdminDashboard() {
     headers: { Authorization: `Bearer ${localStorage.getItem('saas_token')}` }
   });
 
-  // Debounce search state
   const [debouncedSearch, setDebouncedSearch] = useState('');
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -67,7 +66,8 @@ export default function SuperAdminDashboard() {
           page: page + 1, 
           limit: rowsPerPage,
           search: debouncedSearch,
-          filter: filterTab
+          filter: filterTab,
+          clinicType: selectedType
         }
       });
       
@@ -78,14 +78,14 @@ export default function SuperAdminDashboard() {
       if (err.response?.status === 401 || err.response?.status === 403) {
         localStorage.removeItem('saas_token');
         localStorage.removeItem('saas_user');
-        navigate('/admin-portal-login');
+        navigate('/admin-login');
       } else {
         setError(err.response?.data?.message || 'Failed to load SaaS management data.');
       }
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, debouncedSearch, filterTab, navigate]);
+  }, [page, rowsPerPage, debouncedSearch, filterTab, selectedType, navigate]);
 
   useEffect(() => {
     fetchDashboard();
@@ -94,7 +94,7 @@ export default function SuperAdminDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('saas_token');
     localStorage.removeItem('saas_user');
-    navigate('/admin-portal-login');
+    navigate('/admin-login');
   };
 
   const handleStatusChange = async (clinicId, newStatus, reason = '') => {
@@ -163,22 +163,23 @@ export default function SuperAdminDashboard() {
 
   if (loading && data.clinics.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress size={40} />
       </Box>
     );
   }
 
   return (
-    // ⚡️ FIX 1: Flex layout setup to contain the height perfectly
-    <Box sx={{ p: { xs: 2, md: 3 }, bgcolor: '#f8fafc', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+    // ⚡️ STRICT 1-PAGE LAYOUT: height 100vh, hidden browser scrollbar.
+    <Box sx={{ p: 2, bgcolor: '#f8fafc', height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxSizing: 'border-box' }}>
       
-      {/* ⚡️ FIX 2: Header wrapped so it doesn't shrink */}
+      {/* ⚡️ TOP CONTENT: flexShrink 0 ensures it doesn't get crushed */}
       <Box sx={{ flexShrink: 0 }}>
-        {/* SaaS Admin Header */}
-        <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
+        
+        {/* Header - slightly tighter margins */}
+        <Box mb={2} display="flex" justifyContent="space-between" alignItems="center">
           <Box>
-            <Typography variant="h4" fontWeight="800" color="#0f172a">
+            <Typography variant="h5" fontWeight="800" color="#0f172a">
               KlinicHub Command Center
             </Typography>
             <Typography variant="body2" color="text.secondary">
@@ -186,55 +187,55 @@ export default function SuperAdminDashboard() {
             </Typography>
           </Box>
           <Stack direction="row" spacing={2} alignItems="center">
-            <Chip label="FOUNDER PORTAL" color="primary" sx={{ fontWeight: 800, borderRadius: 1.5 }} />
+            <Chip label="FOUNDER PORTAL" color="primary" size="small" sx={{ fontWeight: 800, borderRadius: 1.5 }} />
             <Button variant="outlined" size="small" color="error" startIcon={<LogoutIcon />} onClick={handleLogout} sx={{ fontWeight: 700, textTransform: 'none' }}>
               Logout
             </Button>
           </Stack>
         </Box>
 
-        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-        {/* ================= METRICS CARDS ================= */}
+        {/* ================= METRICS CARDS (Tighter spacing) ================= */}
         {data.stats && (
-          <Grid container spacing={2.5} mb={3}>
-            <Grid item xs={12} sm={6} md={4}>
+          <Grid container spacing={2} mb={2}>
+            <Grid item xs={12} sm={4}>
               <Card sx={{ border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: 2 }}>
-                <CardContent>
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Box>
                       <Typography variant="caption" fontWeight="700" color="text.secondary">TOTAL CLINICS</Typography>
-                      <Typography variant="h4" fontWeight="800" color="#0f172a">{data.stats.totalClinics}</Typography>
+                      <Typography variant="h5" fontWeight="800" color="#0f172a">{data.stats.totalClinics}</Typography>
                     </Box>
-                    <BusinessIcon sx={{ color: '#3b82f6', fontSize: 36 }} />
+                    <BusinessIcon sx={{ color: '#3b82f6', fontSize: 28 }} />
                   </Stack>
                 </CardContent>
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={4}>
               <Card sx={{ border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: 2 }}>
-                <CardContent>
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Box>
-                      <Typography variant="caption" fontWeight="700" color="text.secondary">PENDING APPROVALS</Typography>
-                      <Typography variant="h4" fontWeight="800" color="#d97706">{data.stats.pendingApproval}</Typography>
+                      <Typography variant="caption" fontWeight="700" color="text.secondary">PENDING</Typography>
+                      <Typography variant="h5" fontWeight="800" color="#d97706">{data.stats.pendingApproval}</Typography>
                     </Box>
-                    <Chip label="Action Needed" size="small" color="warning" sx={{ fontWeight: 700 }} />
+                    <Chip label="Action Needed" size="small" color="warning" sx={{ fontWeight: 700, fontSize: '0.7rem' }} />
                   </Stack>
                 </CardContent>
               </Card>
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={4}>
               <Card sx={{ border: '1px solid #e2e8f0', boxShadow: 'none', borderRadius: 2 }}>
-                <CardContent>
+                <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Box>
-                      <Typography variant="caption" fontWeight="700" color="text.secondary">TOTAL PATIENTS</Typography>
-                      <Typography variant="h4" fontWeight="800" color="#0f172a">{data.stats.totalPatients || 0}</Typography>
+                      <Typography variant="caption" fontWeight="700" color="text.secondary">PATIENTS</Typography>
+                      <Typography variant="h5" fontWeight="800" color="#0f172a">{data.stats.totalPatients || 0}</Typography>
                     </Box>
-                    <MedicalInformationIcon sx={{ color: '#10b981', fontSize: 36 }} />
+                    <MedicalInformationIcon sx={{ color: '#10b981', fontSize: 28 }} />
                   </Stack>
                 </CardContent>
               </Card>
@@ -243,88 +244,114 @@ export default function SuperAdminDashboard() {
         )}
 
         {/* ================= SEARCH & FILTER ================= */}
-        <Paper sx={{ p: 2, mb: 3, borderRadius: 2, border: '1px solid #e2e8f0', boxShadow: 'none' }}>
+        <Paper sx={{ p: 1.5, mb: 2, borderRadius: 2, border: '1px solid #e2e8f0', boxShadow: 'none' }}>
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center" spacing={2}>
-            <Tabs value={filterTab} onChange={(e, val) => { setFilterTab(val); setPage(0); }} textColor="primary" indicatorColor="primary" sx={{ minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}>
-              <Tab label="All Clinics" value="ALL" sx={{ fontWeight: 600 }} />
-              <Tab label={`Pending (${data.stats?.pendingApproval || 0})`} value="Pending_Approval" sx={{ fontWeight: 600 }} />
-              <Tab label="Active" value="Active" sx={{ fontWeight: 600 }} />
-              <Tab label="Suspended" value="Suspended" sx={{ fontWeight: 600 }} />
+            
+            <Tabs value={filterTab} onChange={(e, val) => { setFilterTab(val); setPage(0); }} textColor="primary" indicatorColor="primary" sx={{ minHeight: 36, '& .MuiTab-root': { minHeight: 36, py: 0.5 } }}>
+              <Tab label="All" value="ALL" sx={{ fontWeight: 600, textTransform: 'none' }} />
+              <Tab label={`Pending (${data.stats?.pendingApproval || 0})`} value="Pending_Approval" sx={{ fontWeight: 600, textTransform: 'none' }} />
+              <Tab label="Active" value="Active" sx={{ fontWeight: 600, textTransform: 'none' }} />
+              <Tab label="Suspended" value="Suspended" sx={{ fontWeight: 600, textTransform: 'none' }} />
             </Tabs>
 
-            <TextField
-              size="small" placeholder="Search clinic name, ID, or email..." value={search} onChange={(e) => setSearch(e.target.value)} sx={{ width: { xs: '100%', md: 320 } }}
-              InputProps={{ startAdornment: ( <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} /></InputAdornment> ) }}
-            />
+            <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', md: 'auto' } }}>
+              <TextField
+                select
+                size="small"
+                value={selectedType}
+                onChange={(e) => { setSelectedType(e.target.value); setPage(0); }}
+                sx={{ width: 160, '& .MuiInputBase-root': { fontSize: '0.875rem' } }}
+              >
+                {clinicTypes.map(type => (
+                  <MenuItem key={type} value={type} sx={{ fontSize: '0.875rem' }}>
+                    {type === 'ALL' ? 'All Types' : type.replace('_', ' ')}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                size="small" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} sx={{ width: { xs: '100%', md: 200 }, '& .MuiInputBase-root': { fontSize: '0.875rem' } }}
+                InputProps={{ startAdornment: ( <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: 'text.secondary' }} /></InputAdornment> ) }}
+              />
+            </Stack>
           </Stack>
         </Paper>
       </Box>
 
-      {/* ⚡️ FIX 3: Flex 1 wrapper allowing table to grow and scroll internally */}
-      <Paper sx={{ borderRadius: 2, border: '1px solid #e2e8f0', boxShadow: 'none', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+      {/* ================= CLINICS TABLE (DYNAMIC FILL) ================= */}
+      {/* flexGrow: 1 tells the Paper to fill EXACTLY the rest of the 100vh screen */}
+      <Paper sx={{ borderRadius: 2, border: '1px solid #e2e8f0', boxShadow: 'none', display: 'flex', flexDirection: 'column', flexGrow: 1, minHeight: 0, overflow: 'hidden' }}>
         
-        {/* The scrolling container */}
-        <TableContainer sx={{ flex: 1, overflowY: 'auto' }}>
-          <Table stickyHeader> {/* ⚡️ FIX 4: Sticky Header applied */}
+        {/* Table Container scrolls internal table ONLY if absolutely necessary */}
+        <TableContainer sx={{ flexGrow: 1, overflowY: 'auto' }}>
+          {/* ⚡️ CRITICAL FIX: size="small" makes the rows compact so 10 rows easily fit without zooming out! */}
+          <Table stickyHeader size="small"> 
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>CLINIC ID & NAME</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>ADMINISTRATOR</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>STAFF</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>BRANCHES</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>PATIENTS</TableCell>
-                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc' }}>STATUS</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', pr: 3 }}>ACTIONS</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', py: 1.5 }}>CLINIC INFO</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', py: 1.5 }}>TYPE</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', py: 1.5 }}>ADMIN</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', py: 1.5 }}>STAFF</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', py: 1.5 }}>BRANCHES</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', py: 1.5 }}>PATIENTS</TableCell>
+                <TableCell sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', py: 1.5 }}>STATUS</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, color: '#475569', bgcolor: '#f8fafc', pr: 3, py: 1.5 }}>ACTIONS</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={30} />
                   </TableCell>
                 </TableRow>
               ) : data.clinics.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <Typography variant="body1" color="text.secondary">No clinics found matching your criteria.</Typography>
+                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                    <Typography variant="body2" color="text.secondary">No clinics found.</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
                 data.clinics.map((clinic) => {
                   const isBusy = actionLoading === clinic._id;
+                  const displayType = (clinic.clinicType || 'General_Practice').replace('_', ' ');
+
                   return (
                     <TableRow key={clinic._id} hover>
-                      <TableCell>
-                        <Typography variant="subtitle2" fontWeight="700" color="#0f172a">{clinic.name}</Typography>
-                        <Chip label={clinic.clinicId} size="small" sx={{ mt: 0.5, fontWeight: 700, bgcolor: '#f1f5f9', fontSize: '0.75rem' }} />
+                      <TableCell sx={{ py: 1 }}>
+                        <Typography variant="body2" fontWeight="700" color="#0f172a">{clinic.name}</Typography>
+                        <Chip label={clinic.clinicId} size="small" sx={{ mt: 0.5, fontWeight: 700, bgcolor: '#f1f5f9', fontSize: '0.65rem', height: 20 }} />
                       </TableCell>
 
-                      <TableCell>
+                      <TableCell sx={{ py: 1 }}>
+                        <Chip label={displayType} size="small" sx={{ fontWeight: 700, bgcolor: '#e0e7ff', color: '#4338ca', fontSize: '0.7rem', height: 22 }} />
+                      </TableCell>
+
+                      <TableCell sx={{ py: 1 }}>
                         <Typography variant="body2" fontWeight="600" color="#1e293b">{clinic.adminName}</Typography>
-                        <Typography variant="caption" color="text.secondary">{clinic.adminEmail}</Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1 }}>{clinic.adminEmail}</Typography>
                       </TableCell>
 
-                      <TableCell align="center"><Chip label={clinic.userCount} size="small" sx={{ fontWeight: 700, bgcolor: '#eff6ff', color: '#1d4ed8' }} /></TableCell>
-                      <TableCell align="center"><Typography variant="body2" fontWeight="700">{clinic.branchCount}</Typography></TableCell>
-                      <TableCell align="center"><Chip label={clinic.patientCount} size="small" sx={{ fontWeight: 800, bgcolor: '#f0fdf4', color: '#15803d' }} /></TableCell>
+                      <TableCell align="center" sx={{ py: 1 }}><Chip label={clinic.userCount} size="small" sx={{ fontWeight: 700, bgcolor: '#eff6ff', color: '#1d4ed8', height: 22 }} /></TableCell>
+                      <TableCell align="center" sx={{ py: 1 }}><Typography variant="body2" fontWeight="700">{clinic.branchCount}</Typography></TableCell>
+                      <TableCell align="center" sx={{ py: 1 }}><Chip label={clinic.patientCount} size="small" sx={{ fontWeight: 800, bgcolor: '#f0fdf4', color: '#15803d', height: 22 }} /></TableCell>
 
-                      <TableCell>
-                        {clinic.accountStatus === 'Active' && <Chip label="Active" size="small" color="success" sx={{ fontWeight: 700 }} />}
-                        {clinic.accountStatus === 'Pending_Approval' && <Chip label="Pending" size="small" color="warning" sx={{ fontWeight: 700 }} />}
-                        {clinic.accountStatus === 'Suspended' && <Chip label="Suspended" size="small" color="error" sx={{ fontWeight: 700 }} />}
+                      <TableCell sx={{ py: 1 }}>
+                        {clinic.accountStatus === 'Active' && <Chip label="Active" size="small" color="success" sx={{ fontWeight: 700, height: 22, fontSize: '0.7rem' }} />}
+                        {clinic.accountStatus === 'Pending_Approval' && <Chip label="Pending" size="small" color="warning" sx={{ fontWeight: 700, height: 22, fontSize: '0.7rem' }} />}
+                        {clinic.accountStatus === 'Suspended' && <Chip label="Suspended" size="small" color="error" sx={{ fontWeight: 700, height: 22, fontSize: '0.7rem' }} />}
                       </TableCell>
 
-                      <TableCell align="right" sx={{ pr: 3 }}>
+                      <TableCell align="right" sx={{ pr: 3, py: 1 }}>
                         {isBusy ? (
-                          <CircularProgress size={20} />
+                          <CircularProgress size={16} />
                         ) : (
-                          <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                          <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
                             {clinic.accountStatus !== 'Active' && (
                               <Button
-                                size="small" variant="contained" color="success" startIcon={<CheckCircleIcon />}
+                                size="small" variant="contained" color="success" startIcon={<CheckCircleIcon sx={{ fontSize: '1rem' }} />}
                                 onClick={() => handleStatusChange(clinic._id, 'Active')}
-                                sx={{ textTransform: 'none', fontWeight: 700, boxShadow: 'none' }}
+                                sx={{ textTransform: 'none', fontWeight: 700, boxShadow: 'none', fontSize: '0.75rem', py: 0.25 }}
                               >
                                 Approve
                               </Button>
@@ -332,16 +359,16 @@ export default function SuperAdminDashboard() {
 
                             {clinic.accountStatus === 'Active' && (
                               <Button
-                                size="small" variant="outlined" color="error" startIcon={<BlockIcon />}
+                                size="small" variant="outlined" color="error" startIcon={<BlockIcon sx={{ fontSize: '1rem' }} />}
                                 onClick={() => openSuspendModal(clinic)} 
-                                sx={{ textTransform: 'none', fontWeight: 600 }}
+                                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', py: 0.25 }}
                               >
                                 Suspend
                               </Button>
                             )}
 
                             <IconButton
-                              size="small" color="error" title="Permanently Delete Clinic"
+                              size="small" color="error" title="Permanently Delete"
                               onClick={() => confirmDeleteClinic(clinic)}
                             >
                               <DeleteOutlineIcon fontSize="small" />
@@ -368,8 +395,8 @@ export default function SuperAdminDashboard() {
             setRowsPerPage(parseInt(e.target.value, 10));
             setPage(0);
           }}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          sx={{ borderTop: '1px solid #e2e8f0', bgcolor: 'white', flexShrink: 0 }}
+          rowsPerPageOptions={[5, 10, 25]}
+          sx={{ borderTop: '1px solid #e2e8f0', bgcolor: 'white', flexShrink: 0, '& .MuiTablePagination-toolbar': { minHeight: 40 } }}
         />
       </Paper>
 

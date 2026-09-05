@@ -1,24 +1,33 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux'; // ADDED: To fetch clinicType dynamically
 import { 
   Dialog, DialogTitle, DialogContent, DialogActions, 
   Button, TextField, Grid, InputAdornment, IconButton, Typography, MenuItem
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
-//  Categories List (Matches your Backend Enum)
-const CATEGORIES = [
-  'General', 'Consultation', 'Endodontics', 'Orthodontics', 'Surgery', 'Prosthetics', 'Pediatrics'
-];
+// PHASE 7: DYNAMIC CATEGORY DICTIONARY
+const CLINIC_CATEGORIES = {
+  Dental: ['General', 'Consultation', 'Endodontics', 'Orthodontics', 'Surgery', 'Prosthetics', 'Pediatrics'],
+  Dermatology: ['Consultation', 'Aesthetics', 'Laser', 'Surgery', 'Skincare', 'Injectables', 'Uncategorized'],
+  General_Practice: ['Consultation', 'Diagnostics', 'Lab Test', 'Minor Surgery', 'Immunization', 'Treatment', 'Uncategorized'],
+  Physiotherapy: ['Consultation', 'Modality', 'Hands-on', 'Invasive', 'Rehab', 'Assessment', 'Uncategorized'],
+  Ophthalmology: ['Consultation', 'Diagnostics', 'Laser', 'Surgery', 'Optical', 'Treatment', 'Uncategorized']
+};
 
 export default function ProcedureModal({ open, onClose, onSave, procedure, primaryColor }) {
   
+  // GET CLINIC TYPE FROM REDUX
+  const clinicType = useSelector((state) => state.auth?.user?.clinicType) || 'General_Practice';
+  const activeCategories = CLINIC_CATEGORIES[clinicType] || CLINIC_CATEGORIES['General_Practice'];
+
   // 1. Updated State to match new Schema
   const [formData, setFormData] = useState({
     code: '', 
     name: '', 
-    category: 'General', // Default
+    category: activeCategories[0], // Default to the first item of their specialty
     price: '', 
-    labCost: '', //  NEW: Critical for Net Revenue
+    labCost: '', 
     active: true
   });
 
@@ -28,9 +37,9 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
         setFormData({
             code: procedure.code || '',
             name: procedure.name || '',
-            category: procedure.category || 'General',
+            category: procedure.category || activeCategories[0],
             price: procedure.price || '',
-            labCost: procedure.labCost || '', // Load existing value
+            labCost: procedure.labCost || '', 
             active: procedure.isActive ?? true
         });
       } else {
@@ -38,14 +47,14 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
         setFormData({ 
             code: '', 
             name: '', 
-            category: 'General', 
+            category: activeCategories[0], // Dynamic fallback
             price: '', 
             labCost: '', 
             active: true 
         });
       }
     }
-  }, [procedure, open]);
+  }, [procedure, open, activeCategories]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,7 +92,7 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
                     name="code" 
                     value={formData.code} 
                     onChange={handleChange} 
-                    placeholder="RCT-01" 
+                    placeholder="e.g. CON-01" 
                     InputLabelProps={{ shrink: true }}
                     required
                 />
@@ -98,7 +107,8 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
                     onChange={handleChange}
                     InputLabelProps={{ shrink: true }}
                 >
-                    {CATEGORIES.map(cat => (
+                    {/* DYNAMICALLY MAPPED CATEGORIES */}
+                    {activeCategories.map(cat => (
                         <MenuItem key={cat} value={cat}>{cat}</MenuItem>
                     ))}
                 </TextField>
@@ -112,7 +122,7 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
                     name="name" 
                     value={formData.name} 
                     onChange={handleChange} 
-                    placeholder="e.g. Root Canal Treatment (Molar)" 
+                    placeholder="e.g. Initial Consultation" 
                     InputLabelProps={{ shrink: true }}
                     required
                 />
@@ -133,7 +143,7 @@ export default function ProcedureModal({ open, onClose, onSave, procedure, prima
                 />
               </Grid>
               
-              {/*  NEW: Lab Cost Field */}
+              {/* Lab Cost Field */}
               <Grid item xs={6}>
                 <TextField 
                     fullWidth 

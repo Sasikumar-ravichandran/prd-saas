@@ -7,7 +7,6 @@ const activeBranchId = localStorage.getItem('activeBranchId') || null;
 const initialState = {
   user: userFromStorage,
   activeBranchId: activeBranchId,
-  // If user exists, use their branches, else empty array
   branches: userFromStorage?.allowedBranches || [], 
 };
 
@@ -17,17 +16,17 @@ const authSlice = createSlice({
   reducers: {
     // A. LOGIN: Set user and populate branches
     setCredentials: (state, action) => {
-      const { user } = action.payload;
-      state.user = user;
-      state.branches = user.allowedBranches || [];
-      state.activeBranchId = user.defaultBranch;
+      const safeUser = { ...action.payload.user || action.payload }; 
+      delete safeUser.token; 
+
+      state.user = safeUser;
+      state.branches = safeUser.allowedBranches || [];
+      state.activeBranchId = safeUser.defaultBranch;
       
-      // Sync to LocalStorage
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('activeBranchId', user.defaultBranch);
+      localStorage.setItem('user', JSON.stringify(safeUser));
+      localStorage.setItem('activeBranchId', safeUser.defaultBranch);
     },
 
-    // B. LOGOUT: Clear everything
     logout: (state) => {
       state.user = null;
       state.branches = [];
@@ -36,7 +35,6 @@ const authSlice = createSlice({
       localStorage.removeItem('activeBranchId');
     },
 
-    // C. UPDATE BRANCHES (The fix for your issue)
     // Call this whenever you Add/Edit/Delete a branch in Settings
     setBranches: (state, action) => {
       state.branches = action.payload;
@@ -48,7 +46,6 @@ const authSlice = createSlice({
       }
     },
 
-    // D. SWITCH BRANCH
     switchBranch: (state, action) => {
       const branchId = action.payload;
       state.activeBranchId = branchId;

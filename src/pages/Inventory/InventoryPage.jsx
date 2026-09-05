@@ -296,7 +296,7 @@ export default function InventoryPage() {
           <Typography variant="body2" color="#64748b" fontWeight="500">Manage your clinic's supplies.</Typography>
         </Box>
         
-        {/* ⚡️ FIX: Responsive Stack - Search bar takes full remaining width, Button shrinks to icon on Mobile */}
+        {/* FIX: Responsive Stack - Search bar takes full remaining width, Button shrinks to icon on Mobile */}
         <Stack direction="row" spacing={2} sx={{ width: { xs: '100%', md: 'auto' } }}>
           <TextField
             placeholder="Search..." size="small" value={search} onChange={(e) => setSearch(e.target.value)}
