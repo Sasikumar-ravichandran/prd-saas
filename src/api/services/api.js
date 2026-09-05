@@ -32,9 +32,6 @@ api.interceptors.request.use((config) => {
     config.headers['x-branch-id'] = activeBranchId;
   }
 
-  // C. Handle CSRF Defense (Blocks external HTML form submissions)
-  config.headers['X-Requested-With'] = 'XMLHttpRequest';
-
   return config;
 });
 
