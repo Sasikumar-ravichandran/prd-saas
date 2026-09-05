@@ -12,23 +12,28 @@ const api = axios.create({
 
 // 1. REQUEST INTERCEPTOR (Attaches Token & Branch ID)
 api.interceptors.request.use((config) => {
+  
   // A. Handle User Token (Fallback for older sessions/mobile)
   const userStr = localStorage.getItem('user');
   if (userStr) {
-    const user = JSON.parse(userStr);
-    if (user.token) {
-      config.headers.Authorization = `Bearer ${user.token}`;
+    try {
+      const user = JSON.parse(userStr);
+      if (user.token) {
+        config.headers.Authorization = `Bearer ${user.token}`;
+      }
+    } catch (e) {
+      console.error("Failed to parse user from localStorage", e);
     }
   }
 
   // B. Handle Active Branch
-  // We check if the user has selected a specific branch to work in
   const activeBranchId = localStorage.getItem('activeBranchId');
-
   if (activeBranchId) {
-    // We send this custom header so the Backend knows which data to return
     config.headers['x-branch-id'] = activeBranchId;
   }
+
+  // C. Handle CSRF Defense (Blocks external HTML form submissions)
+  config.headers['X-Requested-With'] = 'XMLHttpRequest';
 
   return config;
 });

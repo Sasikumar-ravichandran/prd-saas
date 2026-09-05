@@ -79,6 +79,11 @@ export default function SignupPage() {
     setSuccessMsg('');
     setOtp('');
     
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      return setError("Password must be at least 8 characters long and contain at least 1 number and 1 special character.");
+    }
+
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
@@ -92,7 +97,6 @@ export default function SignupPage() {
       setSuccessMsg('Verification code sent to your email!');
       setStep('OTP');
     } catch (err) {
-      console.log(err,'++++++++++')
       setError(err.response?.data?.message || "Failed to send OTP. Email might be in use.");
     } finally {
       setLoading(false);
