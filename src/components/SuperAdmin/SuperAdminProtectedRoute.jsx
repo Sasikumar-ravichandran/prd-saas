@@ -7,7 +7,7 @@ export default function SuperAdminProtectedRoute({ children }) {
 
   // 1. If missing token or user data, redirect immediately
   if (!token || !userStr) {
-    return <Navigate to="/admin-portal-login" replace />;
+    return <Navigate to="/admin-login" replace />;
   }
 
   let isAuthorized = false;
@@ -27,7 +27,7 @@ export default function SuperAdminProtectedRoute({ children }) {
   if (!isAuthorized) {
     localStorage.removeItem('saas_token');
     localStorage.removeItem('saas_user');
-    return <Navigate to="/admin-portal-login" replace />;
+    return <Navigate to="/admin-login" replace />;
   }
 
   return children;

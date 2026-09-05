@@ -368,7 +368,7 @@ export default function PatientProfile() {
                         </Box>
 
                         {/* RIGHT: SIDEBAR */}
-                        <Box sx={{ width: 380, borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', bgcolor: 'white', height: '100%', maxHeight: 400, zIndex: 15 }}>
+                        <Box sx={{ width: 380, borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', bgcolor: 'white', height: '100%', zIndex: 15 }}>
                             <Box sx={{ p: 2, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Box>
                                     <Typography variant="subtitle1" fontWeight="800" color="#0f172a">Treatment Plan</Typography>

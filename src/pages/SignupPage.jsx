@@ -222,18 +222,24 @@ export default function SignupPage() {
               {/*  =========================================================
                   STEP 1: CLINIC TYPE SELECTION
               ========================================================= */}
-              {step === 'TYPE' && (
+             {step === 'TYPE' && (
                 <>
-                  <Box sx={{ mb: 4 }}>
+                  <Box sx={{ mb: 3 }}>
                     <Typography variant="h4" fontWeight="800" sx={{ mb: 1, color: defaultColor, letterSpacing: '-0.5px' }}>
                       Choose your specialty
                     </Typography>
                     <Typography color="text.secondary" fontWeight={500}>
-                      We'll tailor your workspace, clinical charts, and tools to fit your practice perfectly.
+                      We'll tailor your workspace and clinical charts to fit your practice perfectly.
                     </Typography>
                   </Box>
 
-                  <Stack spacing={1.5} sx={{ mt: 1 }}>
+                  {/* ⚡️ COMPACT 2-COLUMN GRID TILES */}
+                  <Box sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, // 1 column on mobile, 2 on desktop
+                    gap: 1.5,
+                    mt: 2
+                  }}>
                     {CLINIC_TYPES.map((type) => {
                       const isSelected = formData.clinicType === type.id;
                       return (
@@ -242,59 +248,55 @@ export default function SignupPage() {
                           elevation={0}
                           onClick={() => setFormData({ ...formData, clinicType: type.id })}
                           sx={{
-                            p: 2,
+                            p: 1.5, // Tighter padding
                             display: 'flex',
                             alignItems: 'center',
-                            borderRadius: 3,
+                            borderRadius: 2.5,
                             cursor: 'pointer',
                             border: '2px solid',
-                            borderColor: isSelected ? defaultColor : 'rgba(226, 232, 240, 0.8)', // soft gray
-                            bgcolor: isSelected ? alpha(defaultColor, 0.04) : '#ffffff',
-                            transition: 'all 0.2s ease',
+                            borderColor: isSelected ? defaultColor : 'rgba(226, 232, 240, 0.8)',
+                            bgcolor: isSelected ? `${defaultColor}10` : '#ffffff', // Hex with 10% opacity
+                            transition: 'all 0.15s ease-in-out',
                             '&:hover': {
                               borderColor: isSelected ? defaultColor : '#cbd5e1',
-                              transform: 'translateY(-2px)',
-                              boxShadow: '0 8px 16px -6px rgba(0,0,0,0.1)'
+                              bgcolor: isSelected ? `${defaultColor}15` : '#f8fafc',
+                              transform: 'translateY(-2px)'
                             }
                           }}
                         >
-                          {/* LEFT: Premium Icon Box */}
+                          {/* Premium Compact Icon Box */}
                           <Box sx={{
-                            width: 48, height: 48, borderRadius: 2.5,
+                            width: 36, height: 36, borderRadius: 2,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1.5rem',
-                            bgcolor: isSelected ? alpha(defaultColor, 0.15) : '#f1f5f9',
-                            mr: 2, transition: 'all 0.2s ease'
+                            fontSize: '1.25rem',
+                            bgcolor: isSelected ? `${defaultColor}25` : '#f1f5f9',
+                            mr: 1.5, transition: 'all 0.2s ease'
                           }}>
                             {type.icon}
                           </Box>
 
-                          {/* MIDDLE: Text */}
+                          {/* Text (No description to save vertical space) */}
                           <Box sx={{ flex: 1 }}>
-                            <Typography variant="subtitle1" fontWeight="800" color="#0f172a" sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                            <Typography variant="body2" fontWeight="800" color="#0f172a">
                               {type.label}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" fontWeight="600">
-                              {type.desc}
                             </Typography>
                           </Box>
 
-                          {/* RIGHT: Modern Selection Indicator */}
+                          {/* Checkbox / Radio Indicator */}
                           <Box sx={{
-                            width: 24, height: 24, borderRadius: '50%',
+                            width: 20, height: 20, borderRadius: '50%',
                             border: '2px solid',
                             borderColor: isSelected ? defaultColor : '#cbd5e1',
                             bgcolor: isSelected ? defaultColor : 'transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             transition: 'all 0.2s ease'
                           }}>
-                            {/* Inner white dot when selected */}
                             {isSelected && <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ffffff' }} />}
                           </Box>
                         </Paper>
                       );
                     })}
-                  </Stack>
+                  </Box>
 
                   <Button 
                     fullWidth size="large" variant="contained" 
