@@ -30,8 +30,6 @@ import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import io from 'socket.io-client';
 import api from '../../api/services/api';
 
-const ENDPOINT = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 const DRAWER_WIDTH = 260;
 const COLLAPSED_WIDTH = 80;
 const HEADER_HEIGHT = 70;
@@ -44,7 +42,7 @@ export default function Header({ isCollapsed, handleDrawerToggle }) {
   const searchInputRef = useRef(null);
   const searchBoxRef = useRef(null);
   const searchDebounceRef = useRef(null);
-
+  const ENDPOINT = import.meta.env.VITE_API_URL
   // REDUX STATE
   const { user, branches, activeBranchId } = useSelector((state) => state.auth);
   const activeBranch = branches.find(b => b._id === activeBranchId) || {};
