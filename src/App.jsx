@@ -114,7 +114,7 @@ function App() {
             {/* --- LEVEL 1: PUBLIC ROUTES --- */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/admin-portal-login" element={<SuperAdminLogin />} />
+            <Route path="/admin-login" element={<SuperAdminLogin />} />
             <Route 
               path="/saas-admin" 
               element={
