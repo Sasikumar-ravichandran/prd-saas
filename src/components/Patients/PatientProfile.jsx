@@ -54,7 +54,7 @@ export default function PatientProfile() {
     const navigate = useNavigate();
 
     // 1. GET CLINIC TYPE FROM REDUX
-    const clinicType = useSelector((state) => state.auth?.user?.clinicType) || 'General_Practice';
+    const clinicType = useSelector((state) => state.auth?.user?.clinicType);
 
     // --- STATE ---
     const [loading, setLoading] = useState(true);
@@ -369,7 +369,7 @@ export default function PatientProfile() {
 
                         {/* RIGHT: SIDEBAR */}
                         <Box sx={{ width: 380, borderLeft: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', bgcolor: 'white', height: '100%', zIndex: 15 }}>
-                            <Box sx={{ p: 2, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Box sx={{ p: 1, borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Box>
                                     <Typography variant="subtitle1" fontWeight="800" color="#0f172a">Treatment Plan</Typography>
                                     <Typography variant="caption" color="text.secondary">{proposedItemsCount} Items Proposed</Typography>
@@ -378,7 +378,7 @@ export default function PatientProfile() {
                             </Box>
 
                             <Box sx={{ flex: 1, overflowY: 'auto' }}>
-                                {treatmentPlan.length === 0 && <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 4 }}>No treatments added yet.</Typography>}
+                                {treatmentPlan.length === 0 && <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>No treatments added yet.</Typography>}
                                 {treatmentPlan.map((item) => (
                                     <Box key={item._id} sx={{ p: 2, borderBottom: '1px solid #f1f5f9', position: 'relative', '&:hover': { bgcolor: '#f8fafc' }, transition: '0.1s' }}>
                                         <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: item.status === 'In Progress' ? '#f59e0b' : (item.status === 'Completed' ? '#22c55e' : '#3b82f6') }} />
@@ -502,7 +502,7 @@ export default function PatientProfile() {
                 </DialogContent>
                 <DialogActions sx={{ p: 2, borderTop: '1px solid #f1f5f9', bgcolor: '#fafafa', borderBottomLeftRadius: 12, borderBottomRightRadius: 12 }}>
                     <Button onClick={() => setAddTreatmentOpen(false)} sx={{ fontWeight: 'bold', color: '#64748b' }}>Cancel</Button>
-                    <Button onClick={handleAddTreatment} variant="contained" disabled={!newTreatment.region || !newTreatment.procedure || submitting} sx={{ borderRadius: 2, px: 3, fontWeight: 'bold', bgcolor: '#0f172a' }}>
+                    <Button onClick={handleAddTreatment} variant="contained" disabled={!newTreatment.region || !newTreatment.procedure || submitting} sx={{ borderRadius: 2, px: 3, fontWeight: 'bold', bgcolor: primaryColor }}>
                         {submitting ? "Adding..." : "Add to Plan"}
                     </Button>
                 </DialogActions>

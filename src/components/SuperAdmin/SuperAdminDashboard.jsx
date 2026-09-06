@@ -39,7 +39,7 @@ export default function SuperAdminDashboard() {
   const [selectedClinicToSuspend, setSelectedClinicToSuspend] = useState(null);
   const [suspendReason, setSuspendReason] = useState('');
 
-  let apiBaseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  let apiBaseURL = import.meta.env.VITE_API_URL;
   if (!apiBaseURL.endsWith('/api')) {
     apiBaseURL = `${apiBaseURL}/api`;
   }

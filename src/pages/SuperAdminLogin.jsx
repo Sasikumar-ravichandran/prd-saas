@@ -21,7 +21,7 @@ export default function SuperAdminLogin() {
 			const cleanEmail = email.trim().toLowerCase();
 
 			// Fix: Ensure we build the correct URL
-			let baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+			let baseURL = import.meta.env.VITE_API_URL;
 
 			// If the baseURL doesn't end with /api, add it.
 			if (!baseURL.endsWith('/api')) {

@@ -108,7 +108,7 @@ export default function MyStats() {
         <Box sx={{ p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
             {/* HEADER SECTION */}
-            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} mb={3} gap={2}>
+            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} mb={1} gap={2}>
                 <Box sx={{ textAlign: 'left' }}>
                     <Typography variant="h4" fontWeight="700" sx={{ color: primaryColor, letterSpacing: '-0.02em', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
                         My Performance
@@ -133,7 +133,7 @@ export default function MyStats() {
                 </FormControl>
             </Box>
 
-            <Grid container spacing={3} mb={4}>
+            <Grid container spacing={2} mb={1}>
                 {kpiData.map((kpi, idx) => (
                     <Grid size={{ xs: 6, md: 3 }} key={idx}>
                         <Paper
@@ -242,7 +242,7 @@ export default function MyStats() {
                                         const maxEarned = stats?.doctorStats?.topProcedures[0].earned;
                                         const progress = (proc.earned / maxEarned) * 100;
                                         return (
-                                            <Grid size={{ xs: 12, sm: 6 }} key={idx}>
+                                            <Grid size={{ xs: 12 }} key={idx}>
                                                 <Box display="flex" justifyContent="space-between" mb={1}>
                                                     <Typography variant="body2" fontWeight="700" color="#334155" noWrap>
                                                         {proc._id} <Typography component="span" variant="caption" color="text.secondary">({proc.count})</Typography>

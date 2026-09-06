@@ -134,8 +134,8 @@ export default function ReceptionistDashboard() {
     <Box sx={{p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
       {/* HEADER SECTION */}
-      <Box sx={{ mb: 3 }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} mb={3} spacing={{ xs: 2, sm: 0 }}>
+      <Box sx={{ mb: 1 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} mb={1} spacing={{ xs: 2, sm: 0 }}>
           <Box sx={{ textAlign: 'left' }}>
             <Typography variant="h4" fontWeight="700" sx={{ color: primaryColor, letterSpacing: '-0.02em', mb: 0.5, fontSize: { xs: '1.5rem', sm: '1.75rem' } }}>
               Front Desk Operations
@@ -154,7 +154,7 @@ export default function ReceptionistDashboard() {
           <Alert
             severity="error"
             icon={<WarningAmberIcon fontSize="inherit" />}
-            sx={{ mb: 3, borderRadius: 2, border: '1px solid #fecaca', alignItems: 'center' }}
+            sx={{ mb: 1, borderRadius: 2, border: '1px solid #fecaca', alignItems: 'center' }}
           >
             <Typography variant="body2" fontWeight="700" color="#991b1b">
               Low Stock Alert: You have {lowInventory.length} items running extremely low ({lowInventory.map(i => i.name).slice(0, 3).join(', ')}{lowInventory.length > 3 ? '...' : ''}). Please restock soon!
@@ -163,7 +163,7 @@ export default function ReceptionistDashboard() {
         )}
 
         {/* KPI CARDS */}
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: { xs: 1.5, md: 2 }, width: '100%', mb: 3 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: { xs: 1.5, md: 2 }, width: '100%', mb: 1 }}>
           {[
             { label: 'TOTAL QUEUE', count: totalAppointments, icon: <AssignmentIndIcon fontSize="small" />, color: '#3b82f6', bg: '#eff6ff' },
             { label: 'WAITING NOW', count: waitingCount, icon: <EventSeatIcon fontSize="small" />, color: '#d97706', bg: '#fef3c7' },
@@ -186,7 +186,7 @@ export default function ReceptionistDashboard() {
       </Box>
 
       {/* ROW 1: 100% WIDTH TABLE (WITH MOBILE RESPONSIVE CARDS) */}
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 1 }}>
         <Paper elevation={0} sx={{ borderRadius: 3, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', overflow: 'hidden', bgcolor: 'white' }}>
           <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h6" fontWeight="700" color="#0f172a" sx={{ fontSize: '1.1rem' }}>Today's Flow</Typography>
@@ -212,7 +212,7 @@ export default function ReceptionistDashboard() {
                     </Box>
 
                     <Box sx={{ mb: 2 }}>
-                      <Typography variant="body1" fontWeight="800" sx={{ cursor: 'pointer', color: primaryColor, mb: 0.25 }} onClick={() => navigate(`/patients/${appt.patientId}`)}>
+                      <Typography variant="body1" fontWeight="800" sx={{ cursor: 'pointer', color: primaryColor, mb: 0.25 }} onClick={() => navigate(`/patients/${appt.displayId}`)}>
                         {appt.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" fontWeight="600" display="block">
@@ -237,7 +237,7 @@ export default function ReceptionistDashboard() {
                           <Button size="small" variant="outlined" color="success" onClick={() => handleStatusUpdate(appt._id, 'Completed')} sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', px: 2 }}>Finish</Button>
                         )}
                         {appt.status === 'Completed' && (
-                          <Button size="small" variant="outlined" color="inherit" onClick={() => navigate(`/patients/${appt.patientId}`)} sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', color: '#475569', borderColor: '#cbd5e1', px: 2 }}>Bill</Button>
+                          <Button size="small" variant="outlined" color="inherit" onClick={() => navigate(`/patients/${appt.displayId}`, { state: { activeTab: 'Billing' } })} sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', color: '#475569', borderColor: '#cbd5e1', px: 2 }}>Bill</Button>
                         )}
                       </Stack>
                     </Box>
@@ -273,7 +273,7 @@ export default function ReceptionistDashboard() {
                           <Typography variant="body2" fontWeight="600" color="#334155" display="flex" alignItems="center" gap={0.5}><AccessTimeIcon sx={{ fontSize: 14, color: '#94a3b8' }} /> {appt.time}</Typography>
                         </TableCell>
                         <TableCell sx={{ borderBottom: '1px solid #f1f5f9' }}>
-                          <Typography variant="body2" fontWeight="700" sx={{ cursor: 'pointer', color: '#0f172a', '&:hover': { color: primaryColor }, lineHeight: 1.2 }} onClick={() => navigate(`/patients/${appt.patientId}`)}>{appt.name}</Typography>
+                          <Typography variant="body2" fontWeight="700" sx={{ cursor: 'pointer', color: '#0f172a', '&:hover': { color: primaryColor }, lineHeight: 1.2 }} onClick={() => navigate(`/patients/${appt.displayId}`)}>{appt.name}</Typography>
                           <Typography variant="caption" color="text.secondary" fontWeight="500">Dr. {appt.doc}</Typography>
                         </TableCell>
                         <TableCell sx={{ borderBottom: '1px solid #f1f5f9' }}>{getStatusChip(appt.status)}</TableCell>
@@ -293,7 +293,7 @@ export default function ReceptionistDashboard() {
                               <Button size="small" variant="outlined" color="success" onClick={() => handleStatusUpdate(appt._id, 'Completed')} sx={{ minWidth: 0, px: 1.5, py: 0.5, borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700, textTransform: 'none' }}><CheckCircleIcon fontSize="small" sx={{ mr: 0.25 }} /> Finish</Button>
                             )}
                             {appt.status === 'Completed' && (
-                              <Button size="small" variant="outlined" color="inherit" onClick={() => navigate(`/patients/${appt.patientId}`)} sx={{ minWidth: 0, px: 1.5, py: 0.5, borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700, textTransform: 'none', color: '#475569', borderColor: '#cbd5e1' }}><PointOfSaleIcon fontSize="small" sx={{ mr: 0.25 }} /> Bill</Button>
+                              <Button size="small" variant="outlined" color="inherit" onClick={() => navigate(`/patients/${appt.displayId}`, { state: { activeTab: 'Billing' } })} sx={{ minWidth: 0, px: 1.5, py: 0.5, borderRadius: 1.5, fontSize: '0.75rem', fontWeight: 700, textTransform: 'none', color: '#475569', borderColor: '#cbd5e1' }}><PointOfSaleIcon fontSize="small" sx={{ mr: 0.25 }} /> Bill</Button>
                             )}
                           </Stack>
                         </TableCell>

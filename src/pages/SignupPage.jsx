@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, TextField, Button, InputAdornment,
   Alert, CircularProgress, Divider, CssBaseline,
@@ -68,6 +68,17 @@ export default function SignupPage() {
 
   const [mobileView, setMobileView] = useState('welcome');
   const [featureDrawerOpen, setFeatureDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    if (successMsg) {
+      const timer = setTimeout(() => {
+        setSuccessMsg('');
+      }, 3000);
+      
+      // Cleanup timer if the component unmounts or if a new message appears
+      return () => clearTimeout(timer); 
+    }
+  }, [successMsg]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
