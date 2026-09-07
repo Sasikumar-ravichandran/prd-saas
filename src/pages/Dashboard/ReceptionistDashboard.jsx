@@ -358,30 +358,36 @@ export default function ReceptionistDashboard() {
           </Paper>
 
           {/* DOCTOR STATUS (SCROLLABLE) */}
-          <Paper elevation={0} sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, borderRadius: 3, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', overflow: 'hidden', bgcolor: 'white' }}>
-            <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
-              <Typography variant="subtitle2" fontWeight="700" color="#0f172a">Doctor Status</Typography>
-            </Box>
+         <Paper elevation={0} sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, borderRadius: 3, border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', overflow: 'hidden', bgcolor: 'white' }}>
+          <Box sx={{ p: 2.5, borderBottom: '1px solid #e2e8f0', flexShrink: 0 }}>
+            <Typography variant="subtitle2" fontWeight="700" color="#0f172a">Doctor Status</Typography>
+          </Box>
 
-            {/* Scrollable Container */}
-            <Box sx={{ p: 2.5, flexGrow: 1, overflowY: 'auto' }}>
-              <Stack spacing={1.5}>
-                {doctorStatus.length === 0 ? (
-                  <Box sx={{ textAlign: 'center', py: 2 }}><Typography variant="body2" color="text.secondary" fontWeight="500">No doctors clocked in.</Typography></Box>
-                ) : (
-                  doctorStatus.map((cabin, idx) => (
-                    <Box key={idx} sx={{ display: 'flex', alignItems: 'center', p: 1.5, bgcolor: cabin.status === 'Busy' ? '#fef2f2' : '#f0fdf4', borderRadius: 2, border: '1px solid', borderColor: cabin.status === 'Busy' ? '#fecaca' : '#bbf7d0' }}>
-                      <Avatar sx={{ width: 36, height: 36, bgcolor: 'white', color: cabin.status === 'Busy' ? '#dc2626' : '#16a34a', fontWeight: 'bold', fontSize: '1rem', border: '1px solid rgba(0,0,0,0.1)', mr: 2 }}>{cabin.doctor ? cabin.doctor.charAt(0) : '?'}</Avatar>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body2" fontWeight="700" color="#0f172a" lineHeight={1.1}>{cabin.doctor}</Typography>
-                        <Typography variant="caption" fontWeight="700" sx={{ color: cabin.status === 'Busy' ? '#dc2626' : '#16a34a' }}>{cabin.status === 'Busy' ? `With ${cabin.patient}` : 'AVAILABLE'}</Typography>
-                      </Box>
+          {/* ⚡️ THE FIX: Added maxHeight: 350 to enforce a scrolling boundary */}
+          <Box sx={{ p: 2.5, flexGrow: 1, overflowY: 'auto', maxHeight: 350 }}>
+            <Stack spacing={1.5}>
+              {doctorStatus.length === 0 ? (
+                <Box sx={{ textAlign: 'center', py: 2 }}>
+                  <Typography variant="body2" color="text.secondary" fontWeight="500">No doctors clocked in.</Typography>
+                </Box>
+              ) : (
+                doctorStatus.map((cabin, idx) => (
+                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', p: 1.5, bgcolor: cabin.status === 'Busy' ? '#fef2f2' : '#f0fdf4', borderRadius: 2, border: '1px solid', borderColor: cabin.status === 'Busy' ? '#fecaca' : '#bbf7d0' }}>
+                    <Avatar sx={{ width: 36, height: 36, bgcolor: 'white', color: cabin.status === 'Busy' ? '#dc2626' : '#16a34a', fontWeight: 'bold', fontSize: '1rem', border: '1px solid rgba(0,0,0,0.1)', mr: 2 }}>
+                      {cabin.doctor ? cabin.doctor.charAt(0) : '?'}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="body2" fontWeight="700" color="#0f172a" lineHeight={1.1}>{cabin.doctor}</Typography>
+                      <Typography variant="caption" fontWeight="700" sx={{ color: cabin.status === 'Busy' ? '#dc2626' : '#16a34a' }}>
+                        {cabin.status === 'Busy' ? `With ${cabin.patient}` : 'AVAILABLE'}
+                      </Typography>
                     </Box>
-                  ))
-                )}
-              </Stack>
-            </Box>
-          </Paper>
+                  </Box>
+                ))
+              )}
+            </Stack>
+          </Box>
+        </Paper>
 
         </Stack>
 
@@ -412,9 +418,12 @@ export default function ReceptionistDashboard() {
           <Divider sx={{ flexShrink: 0 }} />
 
           {/* INVENTORY SUMMARY (SCROLLABLE) */}
-          <Box sx={{ p: 3, pt: 2, bgcolor: '#fafafa', flexGrow: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+          {/* ⚡️ THE FIX: Added maxHeight: 350 to the outer Box */}
+          <Box sx={{ p: 3, pt: 2, bgcolor: '#fafafa', flexGrow: 1, overflowY: 'auto', maxHeight: 350, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexShrink: 0 }}>
-              <Typography variant="caption" fontWeight="800" color="#94a3b8" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Inventory Summary</Typography>
+              <Typography variant="caption" fontWeight="800" color="#94a3b8" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                Inventory Summary
+              </Typography>
             </Box>
 
             {lowInventory?.length === 0 ? (
