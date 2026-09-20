@@ -22,7 +22,7 @@ export default function ForgotPasswordFlow({ onCancel, defaultColor, premiumInpu
     setLoading(true);
     setMessage({ type: '', text: '' });
     try {
-      await authService.requestOtp(resetEmail, 'FORGOT_PASSWORD');
+      await authService.requestOtp(resetEmail, 'PASSWORD_RESET');
       setMessage({ type: 'success', text: 'OTP sent! Please check your email.' });
       setStep('OTP');
     } catch (err) {
@@ -40,7 +40,7 @@ export default function ForgotPasswordFlow({ onCancel, defaultColor, premiumInpu
     setLoading(true);
     setMessage({ type: '', text: '' });
     try {
-      await authService.verifyOtp(resetEmail, resetOtp, 'FORGOT_PASSWORD');
+      await authService.verifyOtp(resetEmail, resetOtp, 'PASSWORD_RESET');
       setMessage({ type: 'success', text: 'OTP Verified! Enter your new password.' });
       setStep('NEW_PASSWORD');
     } catch (err) {
@@ -57,7 +57,7 @@ export default function ForgotPasswordFlow({ onCancel, defaultColor, premiumInpu
 
     setLoading(true);
     try {
-      await authService.resetPassword(resetEmail, newPassword);
+      await authService.resetPassword(resetEmail, resetOtp, newPassword);
       setMessage({ type: 'success', text: 'Password reset successfully! You can now log in.' });
       
       // Auto-return to login screen after 2 seconds

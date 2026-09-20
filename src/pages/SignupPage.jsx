@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, TextField, Button, InputAdornment,
   Alert, CircularProgress, Divider, CssBaseline,
@@ -21,7 +21,7 @@ import { authService } from '../api/services/authService';
 
 const defaultColor = '#1976d2';
 
-//  NEW: The Clinic Types Configuration
+// ⚡️ The Clinic Types Configuration
 const CLINIC_TYPES = [
   { id: 'Dental', label: 'Dental Care', icon: '🦷', desc: 'Odontograms & Perio' },
   { id: 'Dermatology', label: 'Dermatology', icon: '✨', desc: 'Body Mapping & Botox' },
@@ -50,7 +50,7 @@ export default function SignupPage() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
-    clinicType: '', //  NEW: Capture the type
+    clinicType: '', 
     clinicName: '',
     fullName: '',
     email: '',
@@ -61,7 +61,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  //  CHANGED: Flow now starts at 'TYPE' -> 'FORM' -> 'OTP' -> 'SUCCESS'
+  // Flow starts at 'TYPE' -> 'FORM' -> 'OTP' -> 'SUCCESS'
   const [step, setStep] = useState('TYPE');
   const [otp, setOtp] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -79,25 +79,39 @@ export default function SignupPage() {
     setSuccessMsg('');
     setOtp('');
     
+    // ⚡️ INDUSTRY-STANDARD PASSWORD VALIDATION
+    const passwordRegex = /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      return setError("Password must be at least 8 characters long and contain at least 1 number and 1 special character.");
+    }
+
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
-    if (formData.password.length < 6) {
-      return setError("Password must be at least 6 characters");
-    }
-
+    
     try {
       setLoading(true);
       await authService.requestOtp(formData.email, 'SIGNUP_VERIFY');
       setSuccessMsg('Verification code sent to your email!');
       setStep('OTP');
     } catch (err) {
-      console.log(err,'++++++++++')
       setError(err.response?.data?.message || "Failed to send OTP. Email might be in use.");
     } finally {
       setLoading(false);
     }
   };
+
+  // ⚡️ ADD THIS: Auto-clear success messages after 5 seconds
+  useEffect(() => {
+    if (successMsg) {
+      const timer = setTimeout(() => {
+        setSuccessMsg('');
+      }, 5000); // 5000 milliseconds = 5 seconds
+      
+      // Cleanup timer if the component unmounts or if a new message appears
+      return () => clearTimeout(timer); 
+    }
+  }, [successMsg]);
 
   const handleVerifyAndRegister = async (e) => {
     e.preventDefault();
@@ -203,10 +217,12 @@ export default function SignupPage() {
                         setStep('FORM');
                         setSuccessMsg('');
                         setOtp('');
+                        setError(null);
                       } else if (step === 'FORM') {
-                        setStep('TYPE'); //  Go back to type selector
+                        setStep('TYPE'); 
+                        setError(null);
                       } else if (step === 'TYPE') {
-                        setMobileView('welcome'); //  Go back to mobile welcome
+                        setMobileView('welcome'); 
                       }
                     }}
                     sx={{ textTransform: 'none', fontWeight: 700, color: '#0f172a', pl: 0 }}
@@ -216,10 +232,7 @@ export default function SignupPage() {
                 </Box>
               )}
 
-              {error && <Alert severity="error" sx={{ borderRadius: 2, mb: 3 }}>{error}</Alert>}
-              {successMsg && step !== 'SUCCESS' && <Alert severity="success" sx={{ borderRadius: 2, mb: 3 }}>{successMsg}</Alert>}
-
-              {/*  =========================================================
+              {/* =========================================================
                   STEP 1: CLINIC TYPE SELECTION
               ========================================================= */}
              {step === 'TYPE' && (
@@ -233,10 +246,10 @@ export default function SignupPage() {
                     </Typography>
                   </Box>
 
-                  {/* ⚡️ COMPACT 2-COLUMN GRID TILES */}
+                  {/* COMPACT 2-COLUMN GRID TILES */}
                   <Box sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, // 1 column on mobile, 2 on desktop
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' },
                     gap: 1.5,
                     mt: 2
                   }}>
@@ -248,14 +261,14 @@ export default function SignupPage() {
                           elevation={0}
                           onClick={() => setFormData({ ...formData, clinicType: type.id })}
                           sx={{
-                            p: 1.5, // Tighter padding
+                            p: 1.5, 
                             display: 'flex',
                             alignItems: 'center',
                             borderRadius: 2.5,
                             cursor: 'pointer',
                             border: '2px solid',
                             borderColor: isSelected ? defaultColor : 'rgba(226, 232, 240, 0.8)',
-                            bgcolor: isSelected ? `${defaultColor}10` : '#ffffff', // Hex with 10% opacity
+                            bgcolor: isSelected ? `${defaultColor}10` : '#ffffff', 
                             transition: 'all 0.15s ease-in-out',
                             '&:hover': {
                               borderColor: isSelected ? defaultColor : '#cbd5e1',
@@ -275,7 +288,7 @@ export default function SignupPage() {
                             {type.icon}
                           </Box>
 
-                          {/* Text (No description to save vertical space) */}
+                          {/* Text */}
                           <Box sx={{ flex: 1 }}>
                             <Typography variant="body2" fontWeight="800" color="#0f172a">
                               {type.label}
@@ -346,6 +359,9 @@ export default function SignupPage() {
                     <TextField fullWidth placeholder="••••••••" label="Password" name="password" type="password" sx={premiumInputSx} InputLabelProps={{ shrink: true }} required value={formData.password} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon color="action" /></InputAdornment> }} />
                     <TextField fullWidth placeholder="••••••••" label="Confirm Password" name="confirmPassword" type="password" sx={premiumInputSx} InputLabelProps={{ shrink: true }} required value={formData.confirmPassword} onChange={handleChange} InputProps={{ startAdornment: <InputAdornment position="start"><LockIcon color="action" /></InputAdornment> }} />
 
+                    {/* ⚡️ Error placed directly above the button so user doesn't have to scroll */}
+                    {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
+
                     <Button type="submit" fullWidth size="large" variant="contained" disabled={loading} sx={{
                       borderRadius: '12px', py: 1.8, mt: 1, fontSize: '1rem', fontWeight: 700,
                       bgcolor: defaultColor, textTransform: 'none', boxShadow: `0 8px 24px -6px ${defaultColor}`,
@@ -379,6 +395,10 @@ export default function SignupPage() {
                       inputProps={{ maxLength: 6, style: { letterSpacing: '0.5rem', textAlign: 'center', fontSize: '1.2rem', fontWeight: 'bold' } }}
                     />
 
+                    {/* ⚡️ Success and Error placed directly above the button */}
+                    {successMsg && <Alert severity="success" sx={{ borderRadius: 2 }}>{successMsg}</Alert>}
+                    {error && <Alert severity="error" sx={{ borderRadius: 2 }}>{error}</Alert>}
+
                     <Button type="submit" fullWidth size="large" variant="contained" disabled={loading} sx={{
                       borderRadius: '12px', py: 1.8, mt: 1, fontSize: '1rem', fontWeight: 700,
                       bgcolor: defaultColor, textTransform: 'none', boxShadow: `0 8px 24px -6px ${defaultColor}`,
@@ -390,7 +410,7 @@ export default function SignupPage() {
                     <Typography
                       textAlign="center" variant="body2"
                       sx={{ mt: 2, cursor: 'pointer', color: 'text.secondary', fontWeight: 600, '&:hover': { color: defaultColor } }}
-                      onClick={() => { setStep('FORM'); setSuccessMsg(''); }}
+                      onClick={() => { setStep('FORM'); setSuccessMsg(''); setError(null); }}
                     >
                       Wrong email? Go back and edit
                     </Typography>

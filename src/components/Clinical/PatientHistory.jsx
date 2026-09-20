@@ -165,7 +165,7 @@ export default function PatientHistory({ patient, onRefresh }) {
                         <Stack direction="row" justifyContent="space-between">
                             <Typography variant="body2" color="text.secondary">First Visit</Typography>
                             <Typography variant="body2" fontWeight="600">
-                                {notes.length > 0 ? moment(notes[notes.length - 1].visitDate).format('MMM D, YYYY') : 'N/A'}
+                                {patient?.createdAt ? moment(patient.createdAt).format('MMM D, YYYY') : 'N/A'}
                             </Typography>
                         </Stack>
                         <Stack direction="row" justifyContent="space-between">

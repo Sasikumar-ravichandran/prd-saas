@@ -252,7 +252,7 @@ export default function DoctorDashboard() {
     <Box sx={{p: 2, bgcolor: '#f8fafc', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: 3 }}>
 
       {/* HEADER SECTION */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 1 }}>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           justifyContent="space-between"

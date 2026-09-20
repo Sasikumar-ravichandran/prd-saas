@@ -20,15 +20,13 @@ import GroupsIcon from '@mui/icons-material/Groups';
 import DomainIcon from '@mui/icons-material/Domain';
 import GroupAddIcon from '@mui/icons-material/GroupAdd';
 
-const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-const ENDPOINT = rawApiUrl.replace(/\/api\/?$/, "");
-
 var socket, selectedChatCompare;
 
 export default function Messages() {
   const { primaryColor } = useColorMode();
   const loggedInUser = JSON.parse(localStorage.getItem('user')) || { _id: 'REPLACE_ME' };
-
+  const rawApiUrl = import.meta.env.VITE_API_URL;
+  const ENDPOINT = rawApiUrl.replace(/\/api\/?$/, "");
   const [chats, setChats] = useState([]);
   const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
