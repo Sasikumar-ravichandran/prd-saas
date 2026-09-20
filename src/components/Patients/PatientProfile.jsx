@@ -189,6 +189,22 @@ export default function PatientProfile() {
         }
     };
 
+    const handleForceComplete = async (treatmentId) => {
+        try {
+            setSubmitting(true);
+            await api.put(`/patients/${id}/treatments/${treatmentId}`, {
+                status: 'Completed'
+            });
+            await fetchPatientDetails();
+            showToast('Treatment marked as completed!', 'success');
+        } catch (err) {
+            console.error("Force Complete Error:", err);
+            showToast('Failed to complete treatment', 'error');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
     const handleDeleteItem = async (treatmentId) => {
         try {
             const updatedPatient = await patientService.deleteTreatment(id, treatmentId);
@@ -383,23 +399,30 @@ export default function PatientProfile() {
                                     <Box key={item._id} sx={{ p: 2, borderBottom: '1px solid #f1f5f9', position: 'relative', '&:hover': { bgcolor: '#f8fafc' }, transition: '0.1s' }}>
                                         <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: item.status === 'In Progress' ? '#f59e0b' : (item.status === 'Completed' ? '#22c55e' : '#3b82f6') }} />
                                         <Stack direction="row" justifyContent="space-between" mb={1} alignItems="center">
-                                            {/* Updated Label to support Region instead of just Tooth */}
                                             <Chip label={clinicType === 'Dental' ? `Tooth #${item.region || item.tooth}` : `Area: ${item.region || 'General'}`} size="small" sx={{ borderRadius: 1, height: 20, fontSize: '0.7rem', fontWeight: 'bold', bgcolor: '#f1f5f9', color: '#64748b' }} />
                                             <Typography variant="caption" fontWeight="bold" color={item.status === 'In Progress' ? 'warning.main' : 'primary.main'}>{item.status}</Typography>
                                         </Stack>
                                         <Typography variant="body2" fontWeight="700" color="#1e293b" sx={{ mb: 1 }}>{item.procedure}</Typography>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                                             <Typography variant="body2" fontWeight="800">₹ {item.cost.toLocaleString()}</Typography>
-                                            <Stack direction="row">
+                                            <Stack direction="row" spacing={0.5}>
                                                 {item.status === 'Proposed' && (
                                                     <Tooltip title="Delete Item">
                                                         <IconButton size="small" color="error" onClick={() => handleDeleteItem(item._id)}><DeleteOutlineIcon fontSize="small" /></IconButton>
                                                     </Tooltip>
                                                 )}
+                                                {/* ⚡️ ADDED: Force Complete button for active/in-progress treatments */}
                                                 {item.status === 'In Progress' && (
-                                                    <Tooltip title="Mistake? Undo to Plan.">
-                                                        <IconButton size="small" color="warning" onClick={() => handleRevertItem(item._id)}><UndoIcon fontSize="small" /></IconButton>
-                                                    </Tooltip>
+                                                    <>
+                                                        <Tooltip title="Mark as Completed">
+                                                            <IconButton size="small" color="success" onClick={() => handleForceComplete(item._id)}>
+                                                                <CheckCircleIcon fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Mistake? Undo to Plan.">
+                                                            <IconButton size="small" color="warning" onClick={() => handleRevertItem(item._id)}><UndoIcon fontSize="small" /></IconButton>
+                                                        </Tooltip>
+                                                    </>
                                                 )}
                                             </Stack>
                                         </Stack>

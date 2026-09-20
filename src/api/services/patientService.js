@@ -66,6 +66,11 @@ export const patientService = {
     return response.data;
   },
 
+  forceCompleteTreatment: async (patientId, treatmentId) => {
+    const response = await api.put(`/patients/${patientId}/treatments/${treatmentId}/complete`);
+    return response.data;
+  },
+
   getLedger: async (patientId) => {
     // NOTE: Ensure you pass the Mongo _id here, not PID-1001, 
     // unless you updated the backend to handle PID in getPatientLedger

@@ -137,7 +137,7 @@ export default function AdminPayrollPage() {
 				justifyContent="space-between"
 				alignItems={{ xs: 'flex-start', md: 'center' }}
 				spacing={2}
-				mb={4}
+				mb={2}
 			>
 				{/* LEFT: Title Area */}
 				<Box sx={{ textAlign: 'left' }}>
@@ -199,7 +199,7 @@ export default function AdminPayrollPage() {
 
 			{/*  MASTER SAAS METRICS ROW */}
 			{/*  MASTER SAAS METRICS ROW (2x2 on Mobile, 4x1 on Desktop) */}
-			<Grid container spacing={3} mb={4}>
+			<Grid container spacing={3} mb={2}>
 				{[
 					{ label: 'GROSS REVENUE', value: data?.metrics?.grossRevenue, icon: <AccountBalanceIcon fontSize="small" />, color: '#10b981', bg: '#ecfdf5' },
 					{ label: 'OPERATING EXPENSES', value: data?.metrics?.operatingExpenses, icon: <StorefrontIcon fontSize="small" />, color: '#f59e0b', bg: '#fffbeb' },

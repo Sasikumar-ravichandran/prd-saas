@@ -237,7 +237,7 @@ export default function ReceptionistDashboard() {
                           <Button size="small" variant="outlined" color="success" onClick={() => handleStatusUpdate(appt._id, 'Completed')} sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', px: 2 }}>Finish</Button>
                         )}
                         {appt.status === 'Completed' && (
-                          <Button size="small" variant="outlined" color="inherit" onClick={() => navigate(`/patients/${appt.displayId}`, { state: { activeTab: 'Billing' } })} sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', color: '#475569', borderColor: '#cbd5e1', px: 2 }}>Bill</Button>
+                          <Button size="small" variant="outlined" color="inherit" onClick={() => navigate(`/patients/${appt.patientId}`, { state: { activeTab: 'billing' } })} sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', color: '#475569', borderColor: '#cbd5e1', px: 2 }}>Bill</Button>
                         )}
                       </Stack>
                     </Box>
@@ -335,7 +335,7 @@ export default function ReceptionistDashboard() {
               gap: 2
             }}>
               {[
-                { label: "New Patient", icon: <PersonAddIcon />, color: "#4f46e5", bg: "#e0e7ff", link: "/patients/new" },
+                { label: "New Patient", icon: <PersonAddIcon />, color: "#4f46e5", bg: "#e0e7ff", link: "/patients" },
                 { label: "Walk-In", icon: <DirectionsRunIcon />, color: "#d97706", bg: "#fef3c7", link: "/calendar" },
                 { label: "Add Expense", icon: <RequestQuoteIcon />, color: "#dc2626", bg: "#fee2e2", actionType: "modal", target: "expense" },
                 { label: "Restock", icon: <InventoryIcon />, color: "#059669", bg: "#d1fae5", link: "/inventory" }
@@ -343,7 +343,7 @@ export default function ReceptionistDashboard() {
                 <Button
                   key={idx}
                   fullWidth
-                  onClick={() => action.actionType === "modal" ? setExpenseModalOpen(true) : navigate(action.target)}
+                  onClick={() => action.actionType === "modal" ? setExpenseModalOpen(true) : navigate(action.link)}
                   sx={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', py: 2,
                     borderRadius: 2, bgcolor: action.bg, color: action.color, height: '100%',
